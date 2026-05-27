@@ -1,0 +1,298 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import { useState, useEffect } from "react";
+import Header from "./components/Header";
+import Sidebar from "./components/Sidebar";
+import HomeFeed from "./components/HomeFeed";
+import ChannelPage from "./components/ChannelPage";
+import WatchPage from "./components/WatchPage";
+import HistoryPage from "./components/HistoryPage";
+import { getSubscriptions, isSubscribed, toggleSubscription, parseEpisodeSearch } from "./utils";
+import { fetchAnimeFeed } from "./services/anilist";
+import { SubscriptionItem } from "./types";
+import { Tv, Flame, Play, Sparkles } from "lucide-react";
+
+export default function App() {
+  // Navigation states
+  const [activePage, setActivePage] = useState<"home" | "trending" | "subscriptions" | "history" | "channel" | "watch">("home");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Sub-states for specific pages
+  const [selectedChannelId, setSelectedChannelId] = useState<number | null>(null);
+  const [watchDetails, setWatchDetails] = useState<{ animeId: number; seasonNumber: number; episodeNumber: number } | null>(null);
+
+  // Live Subscription list to sync sidebar state instantly
+  const [subscriptionsList, setSubscriptionsList] = useState<SubscriptionItem[]>([]);
+
+  // Initialize and load persistent settings
+  useEffect(() => {
+    setSubscriptionsList(getSubscriptions());
+  }, []);
+
+  const handleSyncSubscriptions = () => {
+    setSubscriptionsList(getSubscriptions());
+  };
+
+  // Browser state routing via hash listeners (e.g. #/channel/32, #/watch/12/1/4)
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash || "#/";
+
+      if (hash.startsWith("#/channel/")) {
+        const id = parseInt(hash.replace("#/channel/", ""), 10);
+        if (!isNaN(id)) {
+          setSelectedChannelId(id);
+          setActivePage("channel");
+          setSearchQuery("");
+        }
+      } else if (hash.startsWith("#/watch/")) {
+        const parts = hash.replace("#/watch/", "").split("/");
+        const animeId = parseInt(parts[0], 10);
+        let seasonNumber = 1;
+        let episodeNumber = 1;
+
+        if (parts[1] === "season" && parts[3] === "episode") {
+          seasonNumber = parseInt(parts[2], 10) || 1;
+          episodeNumber = parseInt(parts[4], 10) || 1;
+        } else {
+          seasonNumber = parseInt(parts[1], 10) || 1;
+          episodeNumber = parseInt(parts[2], 10) || 1;
+        }
+
+        if (!isNaN(animeId)) {
+          setWatchDetails({ animeId, seasonNumber, episodeNumber });
+          setActivePage("watch");
+          setSearchQuery("");
+        }
+      } else if (hash === "#/trending") {
+        setActivePage("trending");
+        setSearchQuery("");
+      } else if (hash === "#/subscriptions") {
+        setActivePage("subscriptions");
+        setSearchQuery("");
+      } else if (hash === "#/history") {
+        setActivePage("history");
+        setSearchQuery("");
+      } else {
+        // Default to home page
+        setActivePage("home");
+      }
+    };
+
+    window.addEventListener("hashchange", handleHashChange);
+    // Execute hash change check at load
+    handleHashChange();
+
+    return () => {
+      window.removeEventListener("hashchange", handleHashChange);
+    };
+  }, []);
+
+  // Helpers to push link state
+  const handleNavigate = (page: "home" | "trending" | "subscriptions" | "history") => {
+    if (page === "home") {
+      window.location.hash = "/";
+    } else {
+      window.location.hash = `/${page}`;
+    }
+    setSearchQuery("");
+  };
+
+  const handleSearchTrigger = async (query: string) => {
+    const trimmed = query.trim();
+    if (!trimmed) {
+      setSearchQuery("");
+      return;
+    }
+
+    const parsed = parseEpisodeSearch(trimmed);
+    if (parsed) {
+      try {
+        const results = await fetchAnimeFeed(undefined, parsed.titleQuery);
+        if (results && results.length > 0) {
+          const matchedAnime = results[0];
+          handleOpenEpisode(matchedAnime.id, parsed.seasonNumber, parsed.episodeNumber);
+          return;
+        }
+      } catch (err) {
+        console.error("Direct episode routing search failed:", err);
+      }
+    }
+
+    setSearchQuery(trimmed);
+    if (activePage !== "home") {
+      window.location.hash = "/"; // search triggers on the homepage recommendations feed
+    }
+  };
+
+  const handleOpenChannel = (animeId: number) => {
+    window.location.hash = `/channel/${animeId}`;
+  };
+
+  const handleOpenEpisode = (animeId: number, seasonNumber: number, episodeNumber: number) => {
+    window.location.hash = `/watch/${animeId}/${seasonNumber}/${episodeNumber}`;
+  };
+
+  return (
+    <div className="w-full min-h-screen bg-[#09090b] text-white flex flex-col font-sans select-none antialiased relative overflow-hidden">
+      
+      {/* Frosted Glass Floating Ambient Blobs */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute top-[-10vw] left-[-10vw] w-[45vw] h-[45vw] rounded-full glass-blur-bg-1 blur-[100px] opacity-60 animate-glow-1"></div>
+        <div className="absolute bottom-[-10vw] right-[-10vw] w-[50vw] h-[50vw] rounded-full glass-blur-bg-2 blur-[120px] opacity-50 animate-glow-2"></div>
+        <div className="absolute top-[35%] right-[5vw] w-[40vw] h-[40vw] rounded-full glass-blur-bg-3 blur-[110px] opacity-60 animate-glow-3"></div>
+      </div>
+
+      {/* 1. Youtube-style Top header layout */}
+      <Header
+        onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
+        onSearch={handleSearchTrigger}
+        initialSearchQuery={searchQuery}
+        onNavigateHome={() => handleNavigate("home")}
+        onNavigateHistory={() => handleNavigate("history")}
+        onNavigateSubscriptions={() => handleNavigate("subscriptions")}
+      />
+
+      <div className="flex flex-1 pt-14 text-white z-10 relative">
+        
+        {/* 2. Left side expandable dynamic Sidebar (Collapses slightly on small desktop screens, hidden or bottom bar on mobile) */}
+        <Sidebar
+          activeTab={
+            activePage === "channel" || activePage === "watch"
+              ? "home" // default highlighted drawer
+              : (activePage as any)
+          }
+          isCollapsed={sidebarCollapsed}
+          onNavigate={handleNavigate}
+          onChannelClick={handleOpenChannel}
+          subscriptions={subscriptionsList}
+        />
+
+        {/* 3. Right main contents stage viewport with left spacing padding matching sidebar scale */}
+        <main
+          className={`flex-1 min-w-0 transition-all duration-200 bg-transparent ${
+            sidebarCollapsed
+              ? "md:pl-[72px]"
+              : "md:pl-[240px]"
+          } pb-16 md:pb-0 z-10 relative`}
+        >
+          {/* RENDER LAYER 1: Home recommender Feed */}
+          {activePage === "home" && (
+            <HomeFeed
+              onSelectAnime={handleOpenChannel}
+              searchQuery={searchQuery}
+              onClearSearch={() => setSearchQuery("")}
+            />
+          )}
+
+          {/* RENDER LAYER 2: Trending content (Re-use feed query sorted by trendings) */}
+          {activePage === "trending" && (
+            <div className="w-full min-h-screen">
+              <div className="px-4 md:px-6 pt-5 flex items-center gap-2">
+                <Flame className="w-6 h-6 text-[#ff6b35]" />
+                <h1 className="text-white text-xl sm:text-2xl font-black font-sans tracking-tight leading-none">
+                  Trending Anime Channels
+                </h1>
+              </div>
+              <HomeFeed
+                onSelectAnime={handleOpenChannel}
+                searchQuery=""
+              />
+            </div>
+          )}
+
+          {/* RENDER LAYER 3: Subscription pages displaying all subscribed series channels */}
+          {activePage === "subscriptions" && (
+            <div className="w-full min-h-screen px-4 md:px-6 py-6 space-y-6">
+              <div className="flex items-center gap-2.5 border-b border-[#222] pb-4">
+                <Tv className="w-6 h-6 text-[#ff6b35]" />
+                <div>
+                  <h1 className="text-white text-xl sm:text-2xl font-black font-sans tracking-tight">
+                    Subscribed Channels
+                  </h1>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Explore videos and seasons from your subscribed anime series
+                  </p>
+                </div>
+              </div>
+
+              {subscriptionsList.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 text-center select-none max-w-sm mx-auto gap-4">
+                  <div className="w-16 h-16 bg-[#181818] border border-[#2d2d2d] rounded-full flex items-center justify-center text-[#ff6b35]">
+                    <Tv className="w-8 h-8" />
+                  </div>
+                  <div>
+                    <h3 className="text-white font-bold text-base leading-snug">Don't miss a season release!</h3>
+                    <p className="text-xs text-gray-500 mt-2 font-light leading-relaxed">
+                      Toggle the subscribe action inside any anime's channel page to structure your subscriptions list beautifully, just like standard YouTube!
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {subscriptionsList.map((sub) => (
+                    <div
+                      key={sub.animeId}
+                      onClick={() => handleOpenChannel(sub.animeId)}
+                      className="flex flex-col items-center text-center p-4 bg-[#121212] hover:bg-[#181818] border border-white/5 rounded-2xl cursor-pointer transition-colors group select-none relative"
+                    >
+                      <div className="w-20 h-20 rounded-full overflow-hidden mb-3 shadow shadow-black ring-2 ring-white/5 group-hover:scale-105 transition-transform">
+                        <img
+                          src={sub.coverImage}
+                          alt={sub.animeTitle}
+                          className="w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      </div>
+                      <h3 className="text-white text-xs sm:text-sm font-bold truncate w-full group-hover:text-[#ff6b35] transition-colors">
+                        {sub.animeTitle}
+                      </h3>
+                      <span className="text-[10px] uppercase text-[#ff6b35] mt-1 bg-[#ff6b35]/10 border border-[#ff6b35]/25 px-2 py-0.5 rounded-full font-bold font-sans tracking-wider flex items-center gap-1">
+                        <Sparkles className="w-2.5 h-2.5 stroke-[2.5]" />
+                        <span>Channel</span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* RENDER LAYER 4: Watch History Dashboard */}
+          {activePage === "history" && (
+            <HistoryPage
+              onWatchEpisode={handleOpenEpisode}
+              onNavigateToChannel={handleOpenChannel}
+              onHistoryCleared={handleSyncSubscriptions} // full status refresh
+            />
+          )}
+
+          {/* RENDER LAYER 5: Specific Hub Anime channel System Dashboard */}
+          {activePage === "channel" && selectedChannelId && (
+            <ChannelPage
+              animeId={selectedChannelId}
+              onWatchEpisode={handleOpenEpisode}
+              onSubscriptionChanged={handleSyncSubscriptions}
+            />
+          )}
+
+          {/* RENDER LAYER 6: Watching interface stage */}
+          {activePage === "watch" && watchDetails && (
+            <WatchPage
+              animeId={watchDetails.animeId}
+              seasonNumber={watchDetails.seasonNumber}
+              episodeNumber={watchDetails.episodeNumber}
+              onNavigateToChannel={handleOpenChannel}
+              onNavigateToEpisode={handleOpenEpisode}
+              onSubscriptionChanged={handleSyncSubscriptions}
+            />
+          )}
+        </main>
+      </div>
+    </div>
+  );
+}
