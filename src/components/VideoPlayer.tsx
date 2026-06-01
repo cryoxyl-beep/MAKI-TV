@@ -41,6 +41,10 @@ export default function VideoPlayer({
   // Trigger loading screen reset when any major state changes
   useEffect(() => {
     setIframeLoading(true);
+    const timer = setTimeout(() => {
+      setIframeLoading(false);
+    }, 4000); // 4-second safety threshold fallback
+    return () => clearTimeout(timer);
   }, [animeId, episodeNumber, seasonNumber, selectedProvider, tmdbId]);
 
   // Construct standard Embed URLs
@@ -186,6 +190,7 @@ export default function VideoPlayer({
           src={embedUrl}
           className="w-full h-full border-0 absolute inset-0 z-10 pointer-events-auto"
           allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+          referrerPolicy="origin"
           allowFullScreen
           onLoad={() => setIframeLoading(false)}
           title={`MakiTV Player: ${animeTitle}`}
@@ -199,7 +204,7 @@ export default function VideoPlayer({
 
       {/* Loading Glass overlay */}
       {iframeLoading && embedUrl && (
-        <div className="absolute inset-0 bg-[#0a0a0c] flex flex-col items-center justify-center z-20 gap-3">
+        <div className="absolute inset-0 bg-[#0a0a0c] flex flex-col items-center justify-center z-20 gap-3 pointer-events-none">
           <RefreshCw className="w-7 h-7 text-[#ff6b35] animate-spin" />
           <div className="text-center font-sans">
             <span className="text-[10px] uppercase text-[#ff6b35] font-bold tracking-widest block mb-0.5">
