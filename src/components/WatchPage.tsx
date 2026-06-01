@@ -44,7 +44,7 @@ export default function WatchPage({
 
   // Selected active server/provider
   const [selectedProvider, setSelectedProvider] = useState<string>(() => {
-    return localStorage.getItem("makitv_selected_provider") || "cinesrc";
+    return localStorage.getItem("makitv_selected_provider") || "sakura";
   });
 
   // Floating continue/session resume prompt trigger
@@ -231,6 +231,7 @@ export default function WatchPage({
             tmdbId={tmdbId}
             mediaType={mediaType}
             onNextEpisode={handleNextEpisode}
+            onProviderChange={handleSelectProvider}
           />
 
           {/* Episode Title Row */}
@@ -282,8 +283,9 @@ export default function WatchPage({
               </h3>
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+             <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
               {[
+                { id: "sakura", name: "Sakura", desc: "Premium Subs (AniPub)" },
                 { id: "cinesrc", name: "Taberu", desc: "Sub & Dub" },
                 { id: "vidfast", name: "Matsuri", desc: "Fast Dubs/Subs" },
                 { id: "movies111", name: "Onigiri", desc: "Backup" },
