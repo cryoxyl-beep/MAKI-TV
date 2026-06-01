@@ -5,7 +5,7 @@
 
 import { useState, useEffect } from "react";
 import { AniListAnime } from "../types";
-import { fetchAnimeDetails, formatViews, formatPopularity } from "../services/anilist";
+import { fetchAnimeDetails } from "../services/anilist";
 import { getTMDBMapping } from "../services/mapping";
 import { 
   addToWatchHistory, 
@@ -16,8 +16,7 @@ import {
 } from "../utils";
 import VideoPlayer from "./VideoPlayer";
 import SkeletonLoader from "./SkeletonLoader";
-import AnimeCard from "./AnimeCard";
-import { ThumbsUp, Share2, Bookmark, Layers, Play } from "lucide-react";
+import { Share2, Bookmark, Layers, Play } from "lucide-react";
 
 interface WatchPageProps {
   animeId: number;
@@ -56,14 +55,9 @@ export default function WatchPage({
   } | null>(null);
 
   // Likes and share interaction trackers
-  const [isLiked, setIsLiked] = useState(false);
-  const [likesCount, setLikesCount] = useState(0);
   const [copiedNotification, setCopiedNotification] = useState(false);
   const [savedBookmark, setSavedBookmark] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
-
-  // Cinema presentation state
-  const [isCinemaMode, setIsCinemaMode] = useState(false);
 
   useEffect(() => {
     async function loadWatchAnime() {
@@ -72,7 +66,6 @@ export default function WatchPage({
         const data = await fetchAnimeDetails(animeId);
         if (data) {
           setAnime(data);
-          setLikesCount(Math.floor(data.popularity * 0.45));
           setSubscribed(isSubscribed(data.id));
 
           // Load target TMDB maps
@@ -147,15 +140,6 @@ export default function WatchPage({
     }
   };
 
-  const handleLikeToggle = () => {
-    if (isLiked) {
-      setLikesCount((prev) => prev - 1);
-    } else {
-      setLikesCount((prev) => prev + 1);
-    }
-    setIsLiked(!isLiked);
-  };
-
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
     setCopiedNotification(true);
@@ -190,58 +174,9 @@ export default function WatchPage({
   const studioName = anime.studios?.nodes?.[0]?.name || "Independent Studio";
   const avatar = anime.coverImage.medium || anime.coverImage.large || "";
 
-  // Up Next calculations
-  const hasNextEpisode = episodeNumber < episodesCount;
-  const upNextEpisodeNumber = hasNextEpisode ? episodeNumber + 1 : 1;
-  const upNextTitle = hasNextEpisode
-    ? `Episode ${episodeNumber + 1}`
-    : `Re-watch Episode 1`;
-
-  // Filter recommendations based on AniList relations
-  const recommendations: AniListAnime[] = [];
-  if (anime.relations?.edges) {
-    anime.relations.edges.forEach((edge) => {
-      // Find anime relation nodes
-      if (edge.node.type === "ANIME" && edge.node.id !== anime.id) {
-        // Convert relation node schema to compatible AniListAnime schema
-        recommendations.push({
-          id: edge.node.id,
-          title: edge.node.title,
-          coverImage: edge.node.coverImage,
-          bannerImage: edge.node.bannerImage,
-          popularity: edge.node.popularity || 0,
-          episodes: edge.node.episodes,
-          status: edge.node.status,
-        });
-      }
-    });
-  }
-
   return (
     <div className="w-full bg-transparent pb-20 select-none z-10 relative">
       
-      {/* =============== CINEMA MODE PLAYER (Full Width Banner) =============== */}
-      {isCinemaMode && (
-        <div className="w-full bg-[#0a0a0c] py-2.5 flex justify-center border-b border-[#222]">
-          <div className="w-full max-w-6xl px-4">
-            <VideoPlayer
-              animeId={anime.id}
-              episodeNumber={episodeNumber}
-              seasonNumber={seasonNumber}
-              animeTitle={mainTitle}
-              onProgressUpdate={handleProgressUpdate}
-              savedProgress={getEpisodeProgress(anime.id, seasonNumber, episodeNumber)}
-              isCinemaMode={isCinemaMode}
-              onToggleCinema={() => setIsCinemaMode(!isCinemaMode)}
-              selectedProvider={selectedProvider}
-              tmdbId={tmdbId}
-              mediaType={mediaType}
-              onNextEpisode={handleNextEpisode}
-            />
-          </div>
-        </div>
-      )}
-
       {/* =============== RESUME PREVIOUS SESSION HUD ALERT =============== */}
       {resumeSession && (
         <div className="max-w-7xl mx-auto px-4 pt-4">
@@ -280,30 +215,23 @@ export default function WatchPage({
       )}
 
       {/* =============== MAIN TWO-COLUMN VIEWPORT LISTS =============== */}
-      <div className={`max-w-7xl mx-auto px-4 py-5 grid grid-cols-1 lg:grid-cols-12 gap-6 leading-relaxed ${
-        isCinemaMode ? "pt-6" : ""
-      }`}>
+      <div className="max-w-7xl mx-auto px-4 py-5 grid grid-cols-1 lg:grid-cols-12 gap-6 leading-relaxed">
         
-        {/* LEFT COLUMN: Player (if not Cinema Mode), Details, and Episode Selectors */}
+        {/* LEFT COLUMN: Player, Details, and Info Panels */}
         <div className="lg:col-span-8 flex flex-col gap-4 min-w-0">
           
-          {/* Main Video player if not in Cinema mode */}
-          {!isCinemaMode && (
-            <VideoPlayer
-              animeId={anime.id}
-              episodeNumber={episodeNumber}
-              seasonNumber={seasonNumber}
-              animeTitle={mainTitle}
-              onProgressUpdate={handleProgressUpdate}
-              savedProgress={getEpisodeProgress(anime.id, seasonNumber, episodeNumber)}
-              isCinemaMode={isCinemaMode}
-              onToggleCinema={() => setIsCinemaMode(!isCinemaMode)}
-              selectedProvider={selectedProvider}
-              tmdbId={tmdbId}
-              mediaType={mediaType}
-              onNextEpisode={handleNextEpisode}
-            />
-          )}
+          <VideoPlayer
+            animeId={anime.id}
+            episodeNumber={episodeNumber}
+            seasonNumber={seasonNumber}
+            animeTitle={mainTitle}
+            onProgressUpdate={handleProgressUpdate}
+            savedProgress={getEpisodeProgress(anime.id, seasonNumber, episodeNumber)}
+            selectedProvider={selectedProvider}
+            tmdbId={tmdbId}
+            mediaType={mediaType}
+            onNextEpisode={handleNextEpisode}
+          />
 
           {/* Episode Title Row */}
           <div>
@@ -318,29 +246,19 @@ export default function WatchPage({
           {/* Interactions and metadata Row (Views, Likes, Share buttons) */}
           <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center py-2 border-b border-white/[0.08] text-[#f1f1f1] select-none">
             <div className="text-xs sm:text-sm text-[#aaa] font-normal">
-              <span>{formatViews(anime.popularity)}</span>
+              <span>{anime.format || "TV"}</span>
               <span className="mx-2">•</span>
-              <span>Updated 3 hours ago</span>
+              <span>{anime.seasonYear || "Simulcast"}</span>
             </div>
 
             {/* Icons row */}
             <div className="flex items-center gap-2 text-xs sm:text-sm">
               <button
-                onClick={handleLikeToggle}
-                className={`py-1.5 px-3.5 bg-white/[0.04] border border-white/[0.08] hover:border-white/[0.15] rounded-full flex items-center gap-2 cursor-pointer transition-all active:scale-[0.94] ${
-                  isLiked ? "text-[#ff6b35] border-[#ff6b35]/20 bg-[#ff6b35]/5" : "text-white"
-                }`}
-              >
-                <ThumbsUp className={`w-4 h-4 ${isLiked ? "fill-[#ff6b35]" : ""}`} />
-                <span className="font-semibold">{likesCount.toLocaleString()}</span>
-              </button>
-
-              <button
                 onClick={handleShare}
                 className="py-1.5 px-3.5 bg-white/[0.04] border border-white/[0.08] rounded-full hover:bg-white/[0.1] flex items-center gap-2 cursor-pointer transition-colors relative"
               >
                 <Share2 className="w-4 h-4 text-gray-400" />
-                <span className="font-semibold">{copiedNotification ? "Copied Link!" : "Share"}</span>
+                <span className="font-semibold">{copiedNotification ? "Copied Link!" : "Share Link"}</span>
               </button>
 
               <button
@@ -350,7 +268,7 @@ export default function WatchPage({
                 }`}
               >
                 <Bookmark className={`w-4 h-4 ${savedBookmark ? "fill-[#ff6b35]" : ""}`} />
-                <span className="font-semibold">{savedBookmark ? "Saved" : "Save List"}</span>
+                <span className="font-semibold">{savedBookmark ? "Saved" : "Watch Later"}</span>
               </button>
             </div>
           </div>
@@ -366,9 +284,9 @@ export default function WatchPage({
             
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               {[
-                { id: "cinesrc", name: "CineSrc Fast (Multi-Sub)", desc: "Supports Skip & Autonext" },
-                { id: "vidfast", name: "VidFast Cloud (High Speed)", desc: "Adless Cloud Player" },
-                { id: "movies111", name: "111Movies Ultra (Backup)", desc: "P2P Robust Stream" },
+                { id: "cinesrc", name: "Taberu", desc: "Sub & Dub" },
+                { id: "vidfast", name: "Matsuri", desc: "Fast Dubs/Subs" },
+                { id: "movies111", name: "Onigiri", desc: "Backup" },
               ].map((provider) => {
                 const isActive = selectedProvider === provider.id;
                 return (
@@ -414,8 +332,8 @@ export default function WatchPage({
                 <h3 className="text-white text-sm font-bold group-hover:text-[#ff6b35] transition-colors truncate">
                   {studioName}
                 </h3>
-                <span className="text-[11px] text-[#aaa] font-medium block">
-                  {formatPopularity(anime.popularity)}
+                <span className="text-[11px] text-gray-400 font-medium block">
+                  Official Anime Publisher
                 </span>
               </div>
             </div>
@@ -450,119 +368,85 @@ export default function WatchPage({
               </div>
             )}
           </div>
+        </div>
 
-          {/* ================= EPISODE SELECTOR GRID ================= */}
-          <div className="space-y-4 pt-2 pb-6">
+        {/* =============== RIGHT COLUMN: INTEGRATED EPISODE QUEUE SIDEBAR =============== */}
+        <div className="lg:col-span-4 flex flex-col gap-4">
+          <div className="flex items-center justify-between pb-2 border-b border-white/[0.08]">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-[#ff6b35]" />
-              <h3 className="text-white text-sm md:text-base font-bold font-sans tracking-tight">
-                Episode Select Grid (Click to load)
+              <h3 className="text-white text-sm font-bold font-sans tracking-tight">
+                Up Next Episodes
               </h3>
             </div>
-            
-            {/* 10 Boxes per row max wrapper */}
-            <div className="flex flex-wrap gap-2 justify-center py-2 max-w-full">
-              {[...Array(episodesCount)].map((_, idx) => {
-                const epNum = idx + 1;
-                const isActive = epNum === episodeNumber;
-                
-                // Fetch progress indicator for small visual underlines
-                const progressVal = getEpisodeProgress(animeId, seasonNumber, epNum);
+            <span className="text-xs text-gray-400 font-medium">
+              {episodeNumber} / {episodesCount}
+            </span>
+          </div>
 
-                return (
-                  <button
-                    key={epNum}
-                    onClick={() => onNavigateToEpisode(animeId, seasonNumber, epNum)}
-                    className={`h-[42px] w-[42px] flex flex-col items-center justify-center rounded-lg text-xs font-bold transition-all cursor-pointer relative select-none overflow-hidden hover:scale-105 active:scale-95 duration-150 ${
-                      isActive
-                        ? "bg-[#ff6b35] text-white shadow-lg shadow-[#ff6b35]/20 font-bold border border-white/10"
-                        : "bg-white/[0.04] border border-white/[0.08] text-gray-300 hover:bg-white/[0.1] hover:text-white"
-                    }`}
-                  >
-                    <span>{epNum}</span>
-                    {/* Small visual dot or red bar representing progress underneath */}
-                    {progressVal > 0 && !isActive && (
-                      <div className="absolute bottom-0 left-1 right-1 h-0.5 bg-[#ff6b35]" />
+          {/* Scrollable Playlist Queue Container */}
+          <div className="flex flex-col gap-2 max-h-[75vh] overflow-y-auto pr-1 custom-scrollbar">
+            {[...Array(episodesCount)].map((_, idx) => {
+              const epNum = idx + 1;
+              const isActive = epNum === episodeNumber;
+              const progressVal = getEpisodeProgress(anime.id, seasonNumber, epNum);
+
+              return (
+                <div
+                  key={epNum}
+                  onClick={() => onNavigateToEpisode(anime.id, seasonNumber, epNum)}
+                  className={`flex gap-3 p-2.5 rounded-xl cursor-pointer transition-all duration-200 group relative border ${
+                    isActive
+                      ? "bg-[#ff6b35]/10 border-[#ff6b35]/40 text-white animate-fade-in"
+                      : "bg-white/[0.02] border-white/[0.04] hover:bg-white/[0.06] hover:border-white/[0.08]"
+                  }`}
+                >
+                  {/* Episode Thumbnail */}
+                  <div className="relative w-24 aspect-video bg-black/40 rounded-lg overflow-hidden flex-shrink-0 border border-white/5">
+                    <img
+                      src={anime.coverImage.medium || anime.coverImage.large}
+                      alt={`${mainTitle} Episode ${epNum}`}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      referrerPolicy="no-referrer"
+                    />
+                    <span className="absolute bottom-1 right-1 px-1 py-0.5 bg-black/80 text-white text-[9px] font-bold rounded">
+                      EP {epNum}
+                    </span>
+                    
+                    {isActive && (
+                      <div className="absolute inset-0 bg-[#ff6b35]/20 flex items-center justify-center">
+                        <Play className="w-4 h-4 fill-white stroke-none animate-pulse" />
+                      </div>
                     )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
+                  </div>
 
-        {/* =============== RIGHT COLUMN: RECO suggestions SIDEBAR =============== */}
-        <div className="lg:col-span-4 flex flex-col gap-5">
-          
-          {/* UP NEXT SECTION */}
-          <div className="space-y-3.5">
-            <div className="flex items-center gap-1.5 leading-none select-none">
-              <span className="w-2 h-2 rounded-full bg-[#ff6b35]" />
-              <h3 className="text-white text-xs sm:text-sm font-semibold uppercase tracking-wider text-gray-400">
-                Up Next Episode
-              </h3>
-            </div>
-            
-            {/* Large Horizontal visual recommendation card for the Next episode */}
-            <div
-              onClick={handleNextEpisode}
-              className="flex gap-3 bg-white/[0.01] hover:bg-white/[0.06] border border-white/[0.04] hover:border-white/[0.08] p-3 rounded-2xl cursor-pointer transition-all duration-200 group relative backdrop-blur-sm shadow"
-            >
-              <div className="relative w-32 h-18 bg-black/40 rounded-lg overflow-hidden flex-shrink-0 border border-white/5">
-                <img
-                  src={anime.bannerImage || anime.coverImage.large}
-                  alt={upNextTitle}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  referrerPolicy="no-referrer"
-                />
-                <span className="absolute bottom-1 right-1 px-1 bg-black/80 text-white text-[9px] font-bold rounded">
-                  {hasNextEpisode ? "Next Movie" : "Loop"}
-                </span>
-                <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
-                  <Play className="w-4 h-4 fill-white stroke-none" />
+                  {/* Episode Metadata */}
+                  <div className="flex-1 min-w-0 flex flex-col justify-center font-sans">
+                    <span className={`text-[9px] font-bold uppercase tracking-wider ${isActive ? "text-[#ff6b35]" : "text-gray-400"}`}>
+                      {isActive ? "Now Playing" : `Up Next - Episode ${epNum}`}
+                    </span>
+                    <h4 className={`text-xs font-bold truncate transition-colors leading-snug mt-0.5 ${isActive ? "text-[#ff6b35]" : "text-white group-hover:text-[#ff6b35]"}`}>
+                      Episode {epNum}
+                    </h4>
+                    <div className="flex items-center gap-2 mt-1">
+                      {progressVal > 0 ? (
+                        <div className="flex items-center gap-1.5 w-full">
+                          <div className="w-12 bg-white/10 h-1 rounded-full overflow-hidden">
+                            <div className="bg-[#ff6b35] h-full" style={{ width: `${progressVal}%` }} />
+                          </div>
+                          <span className="text-[9px] text-gray-500 font-mono">{Math.round(progressVal)}% watched</span>
+                        </div>
+                      ) : (
+                        <span className="text-[10px] text-gray-500 font-sans">Ready to play</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-
-              <div className="flex-1 min-w-0 flex flex-col justify-center">
-                <span className="text-[9px] font-bold text-[#ff6b35] uppercase tracking-wider">
-                  Season {seasonNumber} • {upNextTitle}
-                </span>
-                <h4 className="text-white text-xs font-bold truncate group-hover:text-[#ff6b35] transition-colors leading-snug">
-                  {mainTitle} Episode {upNextEpisodeNumber}
-                </h4>
-                <span className="text-[10px] text-gray-400 truncate mt-0.5">
-                  Click to autoload
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="border-b border-white/[0.08] mr-2" />
-
-          {/* RELATED RECOMMENDATIONS LIST */}
-          <div className="space-y-3.5 pb-10">
-            <h3 className="text-white text-xs sm:text-sm font-semibold uppercase tracking-wider text-gray-400">
-              Related Series Channels
-            </h3>
-            
-            {recommendations.length === 0 ? (
-              <div className="text-xs text-gray-500 italic px-2">
-                No related anime found. Explore categories at the home drawer!
-              </div>
-            ) : (
-              <div className="flex flex-col gap-3">
-                {recommendations.slice(0, 10).map((rec) => (
-                  <AnimeCard
-                    key={rec.id}
-                    anime={rec}
-                    onClick={() => onNavigateToChannel(rec.id)}
-                    layout="sidebar"
-                  />
-                ))}
-              </div>
-            )}
+              );
+            })}
           </div>
         </div>
+
       </div>
     </div>
   );

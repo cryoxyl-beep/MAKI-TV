@@ -14,8 +14,6 @@ interface VideoPlayerProps {
   animeTitle: string;
   onProgressUpdate: (percentage: number) => void;
   savedProgress?: number;
-  isCinemaMode: boolean;
-  onToggleCinema: () => void;
   selectedProvider: string;
   tmdbId: number;
   mediaType: "tv" | "movie";
@@ -28,8 +26,6 @@ export default function VideoPlayer({
   seasonNumber,
   animeTitle,
   onProgressUpdate,
-  isCinemaMode,
-  onToggleCinema,
   selectedProvider,
   tmdbId,
   mediaType,
@@ -180,9 +176,7 @@ export default function VideoPlayer({
   return (
     <div
       ref={containerRef}
-      className={`relative w-full aspect-video bg-[#0a0a0c] overflow-hidden group select-none shadow-2xl transition-all duration-300 ${
-        isCinemaMode ? "z-30 border-y border-[#ff6b35]/20 shadow-[#ff6b35]/5" : "rounded-2xl border border-white/[0.06]"
-      }`}
+      className="relative w-full aspect-video bg-[#0a0a0c] overflow-hidden group select-none shadow-2xl transition-all duration-300 rounded-2xl border border-white/[0.06]"
     >
       {/* Target Iframe Stream Layer */}
       {embedUrl ? (
@@ -216,20 +210,6 @@ export default function VideoPlayer({
           </div>
         </div>
       )}
-
-      {/* Top Floating Controls Overlay for Cinema Modes */}
-      <div className="absolute right-4 top-4 z-20 flex gap-2 pointer-events-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-        <button
-          onClick={onToggleCinema}
-          className={`h-9 px-3 bg-black/75 hover:bg-black text-white text-xs font-bold rounded-lg border border-white/10 flex items-center gap-1.5 cursor-pointer backdrop-blur-md shadow-2xl transition-all ${
-            isCinemaMode ? "text-[#ff6b35] border-[#ff6b35]/30 bg-[#ff6b35]/5" : ""
-          }`}
-          title="Toggle Cinema Wide Mode"
-        >
-          <Landmark className="w-3.5 h-3.5" />
-          <span>{isCinemaMode ? "Regular Mode" : "Cinema Mode"}</span>
-        </button>
-      </div>
     </div>
   );
 }
