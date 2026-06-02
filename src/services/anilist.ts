@@ -79,14 +79,11 @@ export async function fetchAniList(query: string, variables: any = {}): Promise<
   return json.data;
 }
 
-export async function fetchAniListImagesByTitle(title: string): Promise<{
-    coverImage?: any;
-    bannerImage?: string;
-    color?: string;
-}> {
-  const query = `
-    query ($search: String) {
-      Media (search: $search, type: ANIME, sort: SEARCH_MATCH) {
+export async function fetchAniListImagesByTitles(titles: string[]): Promise<Record<string, any>> {
+  if (!titles.length) return {};
+  
+  const queryChunks = titles.map((title, index) => {
+    return `anime_${index}: Media (search: $search_${index}, type: ANIME, sort: SEARCH_MATCH) {
         coverImage {
           extraLarge
           large
@@ -94,9 +91,21 @@ export async function fetchAniListImagesByTitle(title: string): Promise<{
           color
         }
         bannerImage
-      }
+      }`;
+  });
+
+  const variableDeclarations = titles.map((_, index) => `$search_${index}: String`).join(', ');
+
+  const query = `
+    query (${variableDeclarations}) {
+      ${queryChunks.join('\n')}
     }
   `;
+
+  const variables = titles.reduce((acc, title, index) => {
+    acc[`search_${index}`] = title;
+    return acc;
+  }, {} as Record<string, string>);
 
   try {
     const response = await fetch("https://graphql.anilist.co", {
@@ -105,22 +114,32 @@ export async function fetchAniListImagesByTitle(title: string): Promise<{
         "Content-Type": "application/json",
         "Accept": "application/json",
       },
-      body: JSON.stringify({
-        query,
-        variables: { search: title },
-      }),
+      body: JSON.stringify({ query, variables }),
     });
+
+    if (response.status === 429) {
+      const waitTime = parseInt(response.headers.get("Retry-After") || "2", 10) * 1000;
+      await new Promise(r => setTimeout(r, waitTime));
+      return fetchAniListImagesByTitles(titles);
+    }
 
     if (response.ok) {
       const json = await response.json();
-      if (json.data && json.data.Media) {
-        return json.data.Media;
-      }
+      return json.data || {};
     }
   } catch (err) {
     console.error("AniList fetch error:", err);
   }
   return {};
+}
+
+export async function fetchAniListImagesByTitle(title: string): Promise<{
+    coverImage?: any;
+    bannerImage?: string;
+    color?: string;
+}> {
+  const result = await fetchAniListImagesByTitles([title]);
+  return result["anime_0"] || {};
 }
 
 export async function fetchAnimeFeed(category?: string, searchWord?: string, page: number = 1): Promise<AniListAnime[]> {
@@ -173,11 +192,11 @@ export async function fetchAnimeFeed(category?: string, searchWord?: string, pag
     const json = await response.json();
     const jikanData = json.data || [];
 
-    const result: AniListAnime[] = await Promise.all(jikanData.map(async (item: any) => {
-      // Delay slightly to prevent strict rate limiting on Anilist
-      await new Promise(r => setTimeout(r, 50));
-      const titleRomaji = item.title;
-      const images = await fetchAniListImagesByTitle(titleRomaji);
+    const titles = jikanData.map((item: any) => item.title);
+    const imagesBatch = await fetchAniListImagesByTitles(titles);
+
+    const result: AniListAnime[] = jikanData.map((item: any, index: number) => {
+      const images = imagesBatch[`anime_${index}`] || {};
 
       return {
         id: item.mal_id,
@@ -205,7 +224,7 @@ export async function fetchAnimeFeed(category?: string, searchWord?: string, pag
         synonyms: item.title_synonyms || [],
         format: item.type || "TV",
       };
-    }));
+    });
 
     try {
         localStorage.setItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data: result }));
