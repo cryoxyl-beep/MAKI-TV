@@ -91,6 +91,10 @@ export async function fetchAniListImagesByTitles(titles: string[]): Promise<Reco
           color
         }
         bannerImage
+        trailer {
+          id
+          site
+        }
       }`;
   });
 
@@ -223,6 +227,7 @@ export async function fetchAnimeFeed(category?: string, searchWord?: string, pag
         genres: item.genres?.map((g: any) => g.name) || [],
         synonyms: item.title_synonyms || [],
         format: item.type || "TV",
+        trailer: images.trailer?.id && images.trailer?.site === "youtube" ? { id: images.trailer.id, site: "youtube" } : (item.trailer?.youtube_id ? { id: item.trailer.youtube_id, site: "youtube" } : null),
       };
     });
 

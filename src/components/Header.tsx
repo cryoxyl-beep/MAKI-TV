@@ -38,18 +38,18 @@ export default function Header({
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-      // Scroll down hides it, scroll up shows it.
-      // Don't hide if we are at the very top or if input is focused.
-      if (currentScrollY > lastScrollY && currentScrollY > 80 && !isFocused) {
+      if (isFocused) {
+        setIsVisible(true);
+      } else if (currentScrollY > 50) {
         setIsVisible(false);
-      } else if (currentScrollY < lastScrollY || currentScrollY <= 80) {
+      } else {
         setIsVisible(true);
       }
-      setLastScrollY(currentScrollY);
     };
+    handleScroll();
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [lastScrollY, isFocused]);
+  }, [isFocused]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

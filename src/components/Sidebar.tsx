@@ -60,36 +60,6 @@ export default function Sidebar({
               );
             })}
           </div>
-
-          {/* Subscribed "Anime Channels" Section as centered circular avatars */}
-          {subscriptions.length > 0 && (
-            <div className="h-full flex flex-row items-center border-l border-white/[0.06] pl-3 ml-1 gap-2">
-              <span className="hidden">Subs</span>
-              <div className="flex flex-row items-center gap-2">
-                {subscriptions.map((sub) => (
-                  <button
-                    key={sub.animeId}
-                    onClick={() => onChannelClick(sub.animeId)}
-                    title={sub.animeTitle}
-                    className="w-8 h-8 rounded-full flex items-center justify-center hover:scale-110 hover:shadow-[0_0_10px_rgba(255,255,255,0.1)] transition-all duration-300 cursor-pointer relative group ring-1 ring-white/10 hover:ring-white/30"
-                  >
-                    {sub.coverImage ? (
-                       <img
-                        src={sub.coverImage}
-                        alt={sub.animeTitle}
-                        className="w-full h-full rounded-full object-cover"
-                        referrerPolicy="no-referrer"
-                      />
-                    ) : (
-                      <div className="w-full h-full rounded-full bg-gradient-to-tr from-[#ff6b35] to-[#ffa585] flex items-center justify-center text-white text-[10px] font-bold">
-                        {sub.animeTitle.charAt(0)}
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
           
           {/* User Profile */}
           <div className="pl-3 py-1 h-full flex items-center justify-center border-l border-white/[0.06]">
