@@ -93,57 +93,11 @@ export default function HomeFeed({
     }
   }
 
-  const [activeSlideIndex, setActiveSlideIndex] = useState(0);
-  const [showTrailerIndex, setShowTrailerIndex] = useState<number | null>(null);
-  const [randomOffsets, setRandomOffsets] = useState<Record<number, number>>(
-    {},
-  );
-
   // Extract top 8 for the banner
   const bannerAnimes =
     !searchQuery && selectedCategory === "All" ? animeList.slice(0, 8) : [];
   const feedAnimes =
     !searchQuery && selectedCategory === "All" ? animeList.slice(8) : animeList;
-
-  useEffect(() => {
-    if (bannerAnimes.length > 0) {
-      console.log("--- HERO SWIPER TRAILER DATA ---");
-      bannerAnimes.forEach((anime) => {
-        const title = anime.title.english || anime.title.romaji || anime.title.userPreferred;
-        console.log(`Title: ${title} | Trailer ID: ${anime.trailer?.id || "NONE"} | Site: ${anime.trailer?.site || "NONE"}`);
-      });
-      
-      const offsets: Record<number, number> = {};
-      bannerAnimes.forEach((anime) => {
-        if (offsets[anime.id] === undefined) {
-          // Netflix style random offset 5-40s
-          offsets[anime.id] = Math.floor(Math.random() * 36) + 5;
-        }
-      });
-      setRandomOffsets((prev) => ({ ...prev, ...offsets }));
-    }
-  }, [animeList]);
-
-  const activeAnimeId = bannerAnimes[activeSlideIndex]?.id;
-
-  // Handle Netflix-style 2s delayed trailer pop-in and randomize offset every visit
-  useEffect(() => {
-    setShowTrailerIndex(null); // Hide trailer immediately when slide changes
-
-    if (activeAnimeId) {
-      // Randomize offset each time the slide becomes active to prevent repetitive hero experiences
-      setRandomOffsets((prev) => ({
-        ...prev,
-        [activeAnimeId]: Math.floor(Math.random() * 36) + 5,
-      }));
-    }
-
-    const timer = setTimeout(() => {
-      setShowTrailerIndex(activeSlideIndex);
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, [activeSlideIndex, activeAnimeId]);
 
   return (
     <div className="w-full min-h-screen bg-transparent pb-20">
@@ -155,21 +109,14 @@ export default function HomeFeed({
             <Swiper
               modules={[Autoplay, EffectFade]}
               effect="fade"
-              autoplay={{ delay: 14000, disableOnInteraction: false }}
+              autoplay={{ delay: 5000, disableOnInteraction: false }}
               loop={true}
-              onSlideChange={(swiper) => setActiveSlideIndex(swiper.realIndex)}
               className="w-full h-48 md:h-[400px] rounded-2xl overflow-hidden relative group border border-white/[0.08] shadow-2xl shadow-black/50"
             >
-              {bannerAnimes.map((recommendedAnime, idx) => {
+              {bannerAnimes.map((recommendedAnime) => {
                 const animeTitle =
                   recommendedAnime.title.english ||
                   recommendedAnime.title.romaji;
-                const isActiveSlide = activeSlideIndex === idx;
-                const isTrailerVisible = showTrailerIndex === idx;
-                const startSeconds =
-                  randomOffsets[recommendedAnime.id] !== undefined
-                    ? randomOffsets[recommendedAnime.id]
-                    : 10;
 
                 return (
                   <SwiperSlide key={recommendedAnime.id}>
@@ -188,21 +135,6 @@ export default function HomeFeed({
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 brightness-75 bg-gradient-to-tr from-[#ff6b35]/20 to-[#ffa585]/1"
                         referrerPolicy="no-referrer"
                       />
-
-                      {/* Netflix-style Cinematic Trailer */}
-                      {isActiveSlide && recommendedAnime.trailer?.id && (
-                        <div
-                          className={`absolute inset-0 overflow-hidden pointer-events-none transition-opacity duration-1000 ${isTrailerVisible ? "opacity-100" : "opacity-0"}`}
-                        >
-                          <div className="absolute inset-0 bg-black" />
-                          <iframe
-                            src={`https://www.youtube.com/embed/${recommendedAnime.trailer.id}?autoplay=1&mute=1&controls=0&loop=0&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1&playsinline=1&start=${startSeconds}`}
-                            title="Anime Trailer"
-                            className="w-full h-[150%] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none scale-[1.35] brightness-[0.55] border-none"
-                            allow="autoplay; encrypted-media"
-                          />
-                        </div>
-                      )}
 
                       <div className="absolute inset-0 bg-gradient-to-t from-[#09090b] via-[#09090b]/40 to-transparent flex flex-col justify-end p-6 md:p-10 pointer-events-none">
                         <div className="pointer-events-auto">
