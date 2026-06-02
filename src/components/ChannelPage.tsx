@@ -19,12 +19,14 @@ interface ChannelPageProps {
 export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionChanged }: ChannelPageProps) {
   const [anime, setAnime] = useState<AniListAnime | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"all" | "seasons" | "about">("seasons");
+  const [activeTab, setActiveTab] = useState<"all" | "playlists" | "about">("playlists");
   const [subscribed, setSubscribed] = useState(false);
   
   // Seasons and episode configurations
   const [seasons, setSeasons] = useState<ReturnType<typeof buildSeasonsList>>([]);
-  const [activeSeasonIndex, setActiveSeasonIndex] = useState(0);
+  const [activeSeasonIndex, setActiveSeasonIndex] = useState(-1); // -1 specifies no specific playlist is active, we just show the selection view
+  const [episodesPage, setEpisodesPage] = useState(1);
+
 
   useEffect(() => {
     async function loadChannel() {
@@ -76,7 +78,7 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
   
   const banner = anime.bannerImage || anime.coverImage.extraLarge || "";
   const profileAvatar = anime.coverImage.large || anime.coverImage.medium || "";
-  const studioName = anime.studios?.nodes?.[0]?.name || "Independent Studio";
+  const channelHandle = mainTitle.split(" ")[0].replace(/[^a-zA-Z0-9]/g, "").toLowerCase() || "anime";
 
   // Current active season details
   const activeSeason = seasons[activeSeasonIndex] || {
@@ -126,7 +128,9 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
           </h1>
           
           <div className="flex flex-wrap items-center mt-1.5 text-xs sm:text-sm text-[#aaa] gap-1.5 sm:gap-2 leading-none">
-            <span className="text-white hover:text-[#ff6b35] transition-colors font-semibold">@{studioName.replace(/\s+/g, "").toLowerCase()}</span>
+            <span className="text-white hover:text-[#ff6b35] transition-colors font-semibold">
+              @{channelHandle}
+            </span>
             <span className="text-gray-600">•</span>
             {anime.averageScore && (
               <span className="text-[#ff6b35] font-bold flex items-center gap-0.5">
@@ -176,7 +180,7 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
       <div className="border-b border-white/[0.08] bg-[#0c0c10] sticky top-14 z-30 shadow-md">
         <div className="max-w-6xl mx-auto px-4 md:px-6 flex gap-6 sm:gap-8 items-center h-12">
           {[
-            { id: "seasons" as const, label: "Seasons", icon: Layers },
+            { id: "playlists" as const, label: "Playlists", icon: Layers },
             { id: "all" as const, label: "Home feed", icon: Youtube },
             { id: "about" as const, label: "About channel", icon: Info },
           ].map((tab) => {
@@ -291,7 +295,7 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
                       <div className="w-6 h-6 rounded-full overflow-hidden">
                         <img src={profileAvatar} className="w-full h-full object-cover" />
                       </div>
-                      <span className="text-white text-xs font-bold">@{studioName.replace(/\s+/g, "").toLowerCase()}</span>
+                      <span className="text-white text-xs font-bold">@{channelHandle}</span>
                       <span className="text-gray-500 text-[10px]">{post.days}</span>
                     </div>
                     <p className="text-xs text-gray-300 font-sans leading-relaxed">
@@ -308,105 +312,181 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
           </div>
         )}
 
-        {/* TAB 2: SEASONS TAB (Central feature!) */}
-        {activeTab === "seasons" && (
-          <div className="space-y-6 animate-fade-in">
-            {/* Horizontal sub-tabs for multiple Seasons */}
-            {seasons.length > 1 && (
-              <div className="flex items-center gap-2 pb-2 overflow-x-auto scrollbar-none border-b border-white/[0.06] w-full">
-                {seasons.map((season, idx) => {
-                  const isActive = activeSeasonIndex === idx;
-                  return (
-                    <button
-                      key={season.animeId}
-                      onClick={() => setActiveSeasonIndex(idx)}
-                      className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap cursor-pointer transition-all ${
-                        isActive
-                          ? "bg-[#ff6b35] text-white shadow-lg shadow-[#ff6b35]/25 border border-[#ff6b35]/50"
-                          : "bg-white/[0.04] text-[#aaa] border border-white/[0.08] hover:bg-white/[0.1] hover:text-white"
-                      }`}
-                    >
-                      Season {season.seasonNumber}: {season.title.replace(/Season \d+|Part \d+/gi, "").trim() || "Main Series"}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Active Season Info Area */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 leading-none">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#ff6b35]" />
-                <h3 className="text-white text-base md:text-lg font-bold tracking-tight">
-                  Episodes in Season {activeSeason.seasonNumber}
-                </h3>
-                <span className="text-xs text-gray-500 font-medium">({activeSeason.episodesCount} total items)</span>
-              </div>
-            </div>
-
-            {/* Episode Grid (rendered exactly like Youtube Thumbnails) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-7">
-              {(() => {
-                const totalEpisodes = activeSeason.episodesCount;
-                return [...Array(totalEpisodes)].map((_, i) => {
-                  const episodeNum = i + 1;
-                  // Look up watched history progress percentage from local storage helper
-                  const watchProgress = getEpisodeProgress(activeSeason.animeId, activeSeason.seasonNumber, episodeNum);
-                  
-                  return (
+        {/* TAB 2: PLAYLISTS TAB */}
+        {activeTab === "playlists" && (
+          <div className="animate-fade-in">
+            {activeSeasonIndex === -1 ? (
+              <div className="space-y-6">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#ff6b35]" />
+                  <h3 className="text-white text-base md:text-lg font-bold tracking-tight">
+                    Created Playlists
+                  </h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                  {seasons.map((season, idx) => (
                     <div
-                      key={episodeNum}
-                      onClick={() => onWatchEpisode(activeSeason.animeId, activeSeason.seasonNumber, episodeNum)}
-                      className="flex flex-col gap-2.5 group cursor-pointer transition-all"
+                      key={season.animeId}
+                      onClick={() => {
+                        setActiveSeasonIndex(idx);
+                        setEpisodesPage(1);
+                      }}
+                      className="group cursor-pointer space-y-2.5 flex flex-col"
                     >
-                      {/* Thumbnail frame (ratio 16:9 like Youtube) */}
                       <div className="relative aspect-video w-full bg-black/40 rounded-xl overflow-hidden shadow border border-white/[0.06]">
                         <img
-                          src={activeSeason.bannerImage || activeSeason.coverImage}
-                          alt={`Episode ${episodeNum}`}
+                          src={season.bannerImage || season.coverImage}
+                          alt={season.title}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           referrerPolicy="no-referrer"
                           loading="lazy"
                         />
-                        {/* Play trigger overlay */}
-                        <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200">
-                          <div className="p-2.5 bg-[#ff6b35] rounded-full text-white shadow shadow-[#ff6b35]/20 transform scale-90 group-hover:scale-100 transition-transform">
-                            <Play className="w-4 h-4 fill-white stroke-none" />
-                          </div>
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Play className="w-8 h-8 fill-white stroke-none drop-shadow-md" />
                         </div>
-
-                        {/* Static duration equivalent */}
-                        <span className="absolute bottom-2 right-2 px-1 bg-black/80 text-white text-[10px] font-bold rounded">
-                          23:45
-                        </span>
-
-                        {/* Dynamic Watched Red Progress Bar at bottom of card */}
-                        {watchProgress > 0 && (
-                          <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20 select-none">
-                            <div
-                              style={{ width: `${watchProgress}%` }}
-                              className="bg-[#ff6b35] h-full"
-                            />
-                          </div>
-                        )}
+                        <div className="absolute right-2 bottom-2 bg-black/80 px-1.5 py-0.5 rounded flex items-center gap-1">
+                          <Layers className="w-3 h-3 text-white" />
+                          <span className="text-[10px] text-white font-bold">{season.episodesCount}</span>
+                        </div>
                       </div>
-
-                      {/* Episode Info meta */}
-                      <div className="px-0.5">
-                        <h4 className="text-white text-sm font-semibold tracking-tight leading-tight line-clamp-1 group-hover:text-[#ff6b35] transition-colors">
-                          Episode {episodeNum}: {activeSeason.title.replace(/Season \d+/gi, "").trim()} Part {episodeNum}
+                      <div className="px-1">
+                        <h4 className="text-white text-sm font-semibold tracking-tight leading-tight line-clamp-2 group-hover:text-[#ff6b35] transition-colors pb-0.5">
+                          {season.title}
                         </h4>
-                        <div className="flex items-center text-[11px] text-gray-400 gap-1 mt-0.5 font-normal">
-                          <span>Episode {episodeNum}</span>
-                          <span>•</span>
-                          <span>{watchProgress > 0 ? `Resume at ${Math.round(watchProgress)}%` : "Not watched yet"}</span>
-                        </div>
+                        <span className="text-[11px] text-gray-400 font-medium pb-2">View full playlist</span>
                       </div>
                     </div>
-                  );
-                });
-              })()}
-            </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start relative">
+                {/* LEFT PANEL: Playlist Details (Sticky) */}
+                <div className="w-full md:w-[320px] lg:w-[360px] flex-shrink-0 md:sticky md:top-28 space-y-4 bg-[#0d0d11] p-4 lg:p-5 rounded-2xl border border-white/[0.05] shadow-xl">
+                  <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-black/50 border border-white/10 shadow-lg group">
+                    <img
+                      src={activeSeason.bannerImage || activeSeason.coverImage}
+                      alt={activeSeason.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      referrerPolicy="no-referrer"
+                    />
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer group-hover:bg-black/20 transition-all" onClick={() => onWatchEpisode(activeSeason.animeId, activeSeason.seasonNumber, 1)}>
+                       <div className="p-3 bg-[#ff6b35]/90 rounded-full hover:scale-110 transition-transform">
+                          <Play className="w-6 h-6 fill-white stroke-none" />
+                       </div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <h2 className="text-white text-xl lg:text-2xl font-extrabold tracking-tight leading-tight">
+                      {activeSeason.title}
+                    </h2>
+                    <p className="text-gray-400 text-xs font-semibold uppercase tracking-wider">
+                      {activeSeason.role || "Season"}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col gap-1 text-xs text-gray-300 border-y border-white/[0.08] py-3">
+                    <p className="flex justify-between">
+                      <span className="text-gray-500">Episodes</span>
+                      <span className="font-semibold text-white">{activeSeason.episodesCount} total</span>
+                    </p>
+                    <p className="flex justify-between">
+                      <span className="text-gray-500">Aired Year</span>
+                      <span className="font-semibold text-white">{anime.seasonYear || activeSeason.seasonNumber * 2000 || "Unknown"}</span>
+                    </p>
+                    {activeSeason.popularity && (
+                      <p className="flex justify-between">
+                        <span className="text-gray-500">Rating</span>
+                        <span className="text-[#ff6b35] font-bold flex items-center gap-1">
+                          <Star className="w-3 h-3 fill-[#ff6b35] stroke-none" />
+                          {(activeSeason.popularity / 1000).toFixed(1)}k
+                        </span>
+                      </p>
+                    )}
+                  </div>
+                  
+                  <p className="text-xs lg:text-sm text-gray-400 leading-relaxed max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 pr-2">
+                    {anime.description?.replace(/<[^>]+>/g, '') || "No description available."}
+                  </p>
+                  
+                  <button onClick={() => setActiveSeasonIndex(-1)} className="w-full py-2 bg-white/5 hover:bg-white/10 text-white rounded-full text-xs font-bold transition-colors">
+                    Back to all Playlists
+                  </button>
+                </div>
+
+                {/* RIGHT PANEL: Scrolable Episodes */}
+                <div className="flex-1 min-w-0 flex flex-col space-y-4 mb-10 w-full">
+                  <div className="flex items-center justify-between">
+                     <h3 className="text-white text-lg font-bold">Videos</h3>
+                     
+                     {activeSeason.episodesCount > 50 && (
+                        <div className="flex gap-2 items-center bg-[#0d0d11] rounded-lg p-1 border border-white/5 shadow-md">
+                           {Array.from({ length: Math.ceil(activeSeason.episodesCount / 50) }).map((_, i) => (
+                             <button
+                               key={i}
+                               onClick={() => setEpisodesPage(i + 1)}
+                               className={`px-2.5 py-1 text-[10px] sm:text-xs font-bold rounded-md transition-all ${episodesPage === i + 1 ? "bg-[#ff6b35] text-white" : "text-gray-400 hover:text-white"}`}
+                             >
+                               {i * 50 + 1}-{Math.min((i + 1) * 50, activeSeason.episodesCount)}
+                             </button>
+                           ))}
+                        </div>
+                     )}
+                  </div>
+                  
+                  <div className="flex flex-col gap-2.5">
+                    {(() => {
+                      const startIndex = (episodesPage - 1) * 50;
+                      const endIndex = Math.min(startIndex + 50, activeSeason.episodesCount);
+                      const eps = Array.from({ length: endIndex - startIndex }, (_, i) => startIndex + i + 1);
+
+                      return eps.map((episodeNum, listIndex) => {
+                        const watchProgress = getEpisodeProgress(activeSeason.animeId, activeSeason.seasonNumber, episodeNum);
+                        
+                        return (
+                          <div
+                            key={episodeNum}
+                            onClick={() => onWatchEpisode(activeSeason.animeId, activeSeason.seasonNumber, episodeNum)}
+                            className="flex gap-3 lg:gap-4 p-2 lg:p-2.5 rounded-xl hover:bg-white/[0.04] transition-colors cursor-pointer group items-center"
+                          >
+                            <div className="text-gray-500 font-bold text-xs lg:text-sm w-4 lg:w-6 text-center">{startIndex + listIndex + 1}</div>
+                            
+                            <div className="relative w-28 lg:w-40 aspect-video rounded-lg overflow-hidden bg-black/40 shadow shrink-0">
+                              <img
+                                src={activeSeason.bannerImage || activeSeason.coverImage}
+                                alt={`Ep ${episodeNum}`}
+                                className="w-full h-full object-cover"
+                                referrerPolicy="no-referrer"
+                                loading="lazy"
+                              />
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all bg-opacity-70">
+                                <Play className="w-5 h-5 fill-white stroke-none" />
+                              </div>
+                              <span className="absolute bottom-1 right-1 px-1 bg-black/80 text-white text-[9px] font-bold rounded">23:45</span>
+                              {watchProgress > 0 && (
+                                <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
+                                  <div style={{ width: `${watchProgress}%` }} className="bg-[#ff6b35] h-full" />
+                                </div>
+                              )}
+                            </div>
+                            
+                            <div className="flex-1 min-w-0 flex flex-col justify-center">
+                              <h4 className="text-white text-xs lg:text-sm font-semibold tracking-tight leading-snug line-clamp-2 group-hover:text-[#ff6b35] transition-colors">
+                                {activeSeason.title.replace(/Season \d+/gi, "").trim()} - Episode {episodeNum}
+                              </h4>
+                              <p className="text-[10px] lg:text-xs text-gray-400 mt-1 line-clamp-1">
+                                {watchProgress > 0 ? `Resume at ${Math.round(watchProgress)}%` : "Not watched yet"}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -454,7 +534,7 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
                 </div>
                 <div className="flex justify-between items-center py-1.5 border-b border-white/[0.06]">
                   <span className="text-gray-400">Primary Studio</span>
-                  <span className="text-white font-bold hover:text-[#ff6b35] cursor-pointer transition-colors">{studioName}</span>
+                  <span className="text-white font-bold hover:text-[#ff6b35] cursor-pointer transition-colors">@{channelHandle}</span>
                 </div>
               </div>
             </div>

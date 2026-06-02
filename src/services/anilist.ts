@@ -219,7 +219,7 @@ export async function fetchAnimeFeed(category?: string, searchWord?: string, pag
 }
 
 export async function fetchAnimeDetails(id: number): Promise<AniListAnime | null> {
-  const url = `https://api.jikan.moe/v4/anime/${id}`;
+  const url = `https://api.jikan.moe/v4/anime/${id}/full`;
   
   const cacheKey = `jikan_cache_details_${id}`;
   const cached = localStorage.getItem(cacheKey);
@@ -269,6 +269,22 @@ export async function fetchAnimeDetails(id: number): Promise<AniListAnime | null
         format: item.type || "TV",
         studios: { nodes: item.studios?.map((s: any) => ({ name: s.name })) || [] },
         trailer: item.trailer?.youtube_id ? { id: item.trailer.youtube_id, site: "youtube" } : null,
+        relations: {
+          edges: item.relations?.flatMap((rel: any) => 
+            rel.entry.filter((e: any) => e.type === "anime").map((e: any) => ({
+              relationType: rel.relation.toUpperCase().replace(" ", "_"),
+              node: {
+                id: e.mal_id,
+                type: "ANIME",
+                title: { userPreferred: e.name, english: e.name, romaji: e.name },
+                coverImage: { extraLarge: "", large: "", medium: "" },
+                bannerImage: "",
+                episodes: 12,
+                popularity: 1500
+              }
+            }))
+          ) || []
+        }
     };
     
     try {

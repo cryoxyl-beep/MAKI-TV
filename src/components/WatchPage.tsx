@@ -171,7 +171,7 @@ export default function WatchPage({
   const mainTitle = english || romaji || anime.title.userPreferred || "Untitled Anime";
   
   const episodesCount = anime.episodes || 12;
-  const studioName = anime.studios?.nodes?.[0]?.name || "Independent Studio";
+  const channelHandle = mainTitle.split(" ")[0].replace(/[^a-zA-Z0-9]/g, "").toLowerCase() || "anime";
   const avatar = anime.coverImage.medium || anime.coverImage.large || "";
 
   return (
@@ -336,7 +336,7 @@ export default function WatchPage({
               </div>
               <div className="min-w-0">
                 <h3 className="text-white text-sm font-bold group-hover:text-[#ff6b35] transition-colors truncate">
-                  {studioName}
+                  @{channelHandle}
                 </h3>
                 <span className="text-[11px] text-gray-400 font-medium block">
                   Official Anime Publisher

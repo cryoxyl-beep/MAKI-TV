@@ -26,7 +26,7 @@ export default function AnimeCard({ anime, onClick, layout = "grid" }: AnimeCard
 
   // Dynamic status/season detail
   const episodesCount = anime.episodes ? `${anime.episodes} eps` : "Ongoing";
-  const studioName = anime.studios?.nodes?.[0]?.name || "Independent Studio";
+  const channelHandle = mainTitle.split(" ")[0].replace(/[^a-zA-Z0-9]/g, "").toLowerCase() || "anime";
   const averageScore = anime.averageScore ? `★ ${anime.averageScore / 10}` : "★ 7.5";
 
   // Layout specific classes
@@ -70,7 +70,7 @@ export default function AnimeCard({ anime, onClick, layout = "grid" }: AnimeCard
           </h3>
           
           <div className="flex flex-wrap items-center text-xs text-[#aaa] gap-1.5 mt-1.5">
-            <span className="hover:text-white transition-colors">{studioName}</span>
+            <span className="hover:text-white transition-colors">@{channelHandle}</span>
             <span className="opacity-40">•</span>
             <span>{formatViews(anime.popularity)}</span>
             <span className="opacity-40">•</span>
@@ -122,7 +122,7 @@ export default function AnimeCard({ anime, onClick, layout = "grid" }: AnimeCard
             {mainTitle}
           </h4>
           <span className="text-[10px] text-[#aaa] truncate mt-1 block font-medium">
-            {studioName}
+            @{channelHandle}
           </span>
           <span className="text-[9px] text-[#777] truncate block mt-0.5 font-mono">
             {formatViews(anime.popularity)} • {anime.seasonYear || "TBA"}
@@ -191,7 +191,7 @@ export default function AnimeCard({ anime, onClick, layout = "grid" }: AnimeCard
           <div className="text-xs text-[#aaa] mt-1.5 space-y-0.5 leading-snug">
             {/* Displaying studio as Channel name */}
             <span className="hover:text-white transition-colors block truncate font-medium">
-              {studioName}
+              @{channelHandle}
             </span>
             <div className="flex items-center text-[10px] text-[#888] gap-1 truncate font-mono">
               <span>{formatViews(anime.popularity)}</span>

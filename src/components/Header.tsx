@@ -25,7 +25,8 @@ export default function Header({
 }: HeaderProps) {
   const [searchVal, setSearchVal] = useState(initialSearchQuery);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
   const [isFocused, setIsFocused] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -36,11 +37,19 @@ export default function Header({
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 80); // scroll threshold
+      const currentScrollY = window.scrollY;
+      // Scroll down hides it, scroll up shows it.
+      // Don't hide if we are at the very top or if input is focused.
+      if (currentScrollY > lastScrollY && currentScrollY > 80 && !isFocused) {
+        setIsVisible(false);
+      } else if (currentScrollY < lastScrollY || currentScrollY <= 80) {
+        setIsVisible(true);
+      }
+      setLastScrollY(currentScrollY);
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [lastScrollY, isFocused]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,8 +67,6 @@ export default function Header({
     onSearch("");
     inputRef.current?.focus();
   };
-
-  const isMinimized = isScrolled && !isFocused && !searchVal && !isHomeScreen;
 
   return (
     <header className="fixed top-0 left-0 right-0 h-14 flex items-center justify-between px-4 md:px-6 z-50 select-none bg-transparent transition-all duration-300">
@@ -105,24 +112,20 @@ export default function Header({
           <div className="flex items-center gap-3 md:gap-4 flex-1" />
 
           {/* Central Portion: perfectly centered search bar */}
-          <div className="absolute left-1/2 -translate-x-1/2 hidden md:flex items-center justify-center w-[416px] z-10 pointer-events-none">
+          <div className={`absolute left-1/2 -translate-x-1/2 hidden md:flex items-center justify-center w-[416px] z-10 pointer-events-none transition-all duration-300 ease-in-out ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-full"}`}>
             <form
               onSubmit={handleSubmit}
-              className={`flex items-center justify-center group cursor-text relative transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-auto ${isSubmitting ? "scale-95" : isFocused && !isMinimized ? "scale-[1.02]" : "scale-100"} ${isMinimized ? "w-10" : "w-full"}`}
+              className={`flex items-center justify-center group cursor-text relative transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-auto w-full ${isSubmitting ? "scale-95" : isFocused ? "scale-[1.02]" : "scale-100"}`}
             >
               <div
                 onClick={() => {
-                  if (isMinimized) {
-                    setIsFocused(true);
-                    setTimeout(() => {
-                      inputRef.current?.focus();
-                    }, 50);
-                  }
+                  setIsFocused(true);
+                  setTimeout(() => inputRef.current?.focus(), 50);
                 }}
-                className={`w-full flex items-center bg-white/[0.1] hover:bg-white/[0.15] backdrop-blur-[40px] saturate-[200%] border border-white/[0.25] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden relative shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.4),_0_8px_32px_rgba(0,0,0,0.4)] ${isMinimized ? "h-10 rounded-full justify-center px-0 cursor-pointer hover:shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:border-white/[0.4]" : "h-10 rounded-full px-4 focus-within:border-white/[0.4] focus-within:bg-white/[0.18] focus-within:ring-4 focus-within:ring-white/[0.1]"}`}
+                className={`w-full flex items-center bg-white/[0.1] hover:bg-white/[0.15] backdrop-blur-[40px] saturate-[200%] border border-white/[0.25] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden relative shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.4),_0_8px_32px_rgba(0,0,0,0.4)] h-10 rounded-full px-4 focus-within:border-white/[0.4] focus-within:bg-white/[0.18] focus-within:ring-4 focus-within:ring-white/[0.1]`}
               >
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/[0.05] to-white/0 pointer-events-none" />
-                <Search className={`text-white/80 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] relative z-10 shrink-0 w-[18px] h-[18px] ${isMinimized ? "group-hover:text-white group-hover:scale-110 mr-0" : "mr-2.5 group-focus-within:text-white"}`} />
+                <Search className={`text-white/80 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] relative z-10 shrink-0 w-[18px] h-[18px] mr-2.5 group-focus-within:text-white`} />
                 <input
                   ref={inputRef}
                   type="text"
@@ -131,9 +134,9 @@ export default function Header({
                   onChange={(e) => setSearchVal(e.target.value)}
                   onFocus={() => setIsFocused(true)}
                   onBlur={() => setIsFocused(false)}
-                  className={`bg-transparent border-none text-white focus:outline-none text-sm font-medium tracking-wide relative z-10 block transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] min-w-0 placeholder-white/60 overflow-hidden whitespace-nowrap ${isMinimized ? "w-0 opacity-0 px-0 ml-0" : "w-full opacity-100 ml-0"}`}
+                  className={`bg-transparent border-none text-white focus:outline-none text-sm font-medium tracking-wide relative z-10 block transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] min-w-0 placeholder-white/60 overflow-hidden whitespace-nowrap w-full opacity-100 ml-0`}
                 />
-                {searchVal && !isMinimized && (
+                {searchVal && (
                   <button
                     type="button"
                     onClick={handleClear}
