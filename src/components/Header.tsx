@@ -112,22 +112,24 @@ export default function Header({
           </div>
 
           {/* Central Portion: perfectly centered search bar */}
-          <div className="absolute left-1/2 -translate-x-1/2 hidden md:flex items-center justify-center w-full max-w-sm lg:max-w-md z-10 pointer-events-none">
+          <div className="absolute left-1/2 -translate-x-1/2 hidden md:flex items-center justify-center w-[416px] z-10 pointer-events-none">
             <form
               onSubmit={handleSubmit}
-              className={`flex items-center justify-center group cursor-text relative transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-auto ${isSubmitting ? "scale-95" : isFocused && !isMinimized ? "scale-[1.02]" : "scale-100"} ${isMinimized ? "w-11" : "w-full"}`}
+              className={`flex items-center justify-center group cursor-text relative transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-auto ${isSubmitting ? "scale-95" : isFocused && !isMinimized ? "scale-[1.02]" : "scale-100"} ${isMinimized ? "w-10" : "w-full"}`}
             >
               <div
                 onClick={() => {
                   if (isMinimized) {
                     setIsFocused(true);
-                    inputRef.current?.focus();
+                    setTimeout(() => {
+                      inputRef.current?.focus();
+                    }, 50);
                   }
                 }}
-                className={`w-full flex items-center bg-white/[0.1] hover:bg-white/[0.15] backdrop-blur-[40px] saturate-[200%] border border-white/[0.25] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden relative shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.4),_0_8px_32px_rgba(0,0,0,0.4)] ${isMinimized ? "h-11 rounded-full justify-center px-0 cursor-pointer hover:shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:border-white/[0.4]" : "h-10 rounded-full px-4 focus-within:border-white/[0.4] focus-within:bg-white/[0.18] focus-within:ring-4 focus-within:ring-white/[0.1]"}`}
+                className={`w-full flex items-center bg-white/[0.1] hover:bg-white/[0.15] backdrop-blur-[40px] saturate-[200%] border border-white/[0.25] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden relative shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.4),_0_8px_32px_rgba(0,0,0,0.4)] ${isMinimized ? "h-10 rounded-full justify-center px-0 cursor-pointer hover:shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:border-white/[0.4]" : "h-10 rounded-full px-4 focus-within:border-white/[0.4] focus-within:bg-white/[0.18] focus-within:ring-4 focus-within:ring-white/[0.1]"}`}
               >
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/[0.05] to-white/0 pointer-events-none" />
-                <Search className={`text-white/80 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] relative z-10 shrink-0 ${isMinimized ? "w-5 h-5 group-hover:text-white group-hover:scale-110" : "w-4 h-4 mr-2.5 group-focus-within:text-white"}`} />
+                <Search className={`text-white/80 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] relative z-10 shrink-0 w-[18px] h-[18px] ${isMinimized ? "group-hover:text-white group-hover:scale-110 mr-0" : "mr-2.5 group-focus-within:text-white"}`} />
                 <input
                   ref={inputRef}
                   type="text"
@@ -136,13 +138,13 @@ export default function Header({
                   onChange={(e) => setSearchVal(e.target.value)}
                   onFocus={() => setIsFocused(true)}
                   onBlur={() => setIsFocused(false)}
-                  className={`bg-transparent border-none text-white focus:outline-none text-sm font-medium tracking-wide relative z-10 block transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] min-w-0 placeholder-white/60 ${isMinimized ? "w-0 opacity-0" : "w-full opacity-100"}`}
+                  className={`bg-transparent border-none text-white focus:outline-none text-sm font-medium tracking-wide relative z-10 block transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] min-w-0 placeholder-white/60 overflow-hidden whitespace-nowrap ${isMinimized ? "w-0 opacity-0 px-0 ml-0" : "w-full opacity-100 ml-0"}`}
                 />
                 {searchVal && !isMinimized && (
                   <button
                     type="button"
                     onClick={handleClear}
-                    className="p-1 hover:bg-white/20 rounded-full text-white/80 hover:text-white transition-colors cursor-pointer relative z-10 shrink-0"
+                    className="p-1 hover:bg-white/20 rounded-full text-white/80 hover:text-white transition-colors cursor-pointer relative z-10 shrink-0 ml-1"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
