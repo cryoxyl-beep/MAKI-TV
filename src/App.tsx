@@ -153,9 +153,10 @@ export default function App() {
         onNavigateHome={() => handleNavigate("home")}
         onNavigateHistory={() => handleNavigate("history")}
         onNavigateSubscriptions={() => handleNavigate("subscriptions")}
+        isHomeScreen={activePage === "home"}
       />
 
-      <div className="flex flex-1 pt-[72px] text-white z-10 relative">
+      <div className="flex flex-1 pt-[56px] text-white z-10 relative">
         
         {/* 2. Left side expandable dynamic Sidebar (Collapses slightly on small desktop screens, hidden or bottom bar on mobile) */}
         <Sidebar

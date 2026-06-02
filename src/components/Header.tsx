@@ -12,6 +12,7 @@ interface HeaderProps {
   onNavigateHome: () => void;
   onNavigateHistory: () => void;
   onNavigateSubscriptions: () => void;
+  isHomeScreen?: boolean;
 }
 
 export default function Header({
@@ -20,6 +21,7 @@ export default function Header({
   onNavigateHome,
   onNavigateHistory,
   onNavigateSubscriptions,
+  isHomeScreen = false,
 }: HeaderProps) {
   const [searchVal, setSearchVal] = useState(initialSearchQuery);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
@@ -57,10 +59,10 @@ export default function Header({
     inputRef.current?.focus();
   };
 
-  const isMinimized = isScrolled && !isFocused && !searchVal;
+  const isMinimized = isScrolled && !isFocused && !searchVal && !isHomeScreen;
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-16 bg-transparent flex items-center justify-between px-4 md:px-6 z-50 select-none transition-all duration-300">
+    <header className="fixed top-0 left-0 right-0 h-14 flex items-center justify-between px-4 md:px-6 z-50 select-none bg-transparent transition-all duration-300">
       {/* Search Header for Mobile overlay */}
       {showMobileSearch ? (
         <form onSubmit={handleSubmit} className="absolute inset-0 bg-[#0a0a0c] flex items-center px-4 gap-2 z-50">
@@ -100,16 +102,7 @@ export default function Header({
       ) : (
         <>
           {/* Left Portion: Logo */}
-          <div className="flex items-center gap-3 md:gap-4 flex-1">
-            <div
-              onClick={onNavigateHome}
-              className="flex items-center cursor-pointer select-none group py-1"
-            >
-              <span className="text-white text-xl md:text-2xl font-black tracking-tight font-sans flex items-center group-hover:scale-105 transition-all duration-300 pl-2">
-                Maki<span className="text-[#ff6b35]">TV</span>
-              </span>
-            </div>
-          </div>
+          <div className="flex items-center gap-3 md:gap-4 flex-1" />
 
           {/* Central Portion: perfectly centered search bar */}
           <div className="absolute left-1/2 -translate-x-1/2 hidden md:flex items-center justify-center w-[416px] z-10 pointer-events-none">

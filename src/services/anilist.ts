@@ -5,384 +5,283 @@
 
 import { AniListAnime } from "../types";
 
-// Jikan genre mapper mapping AniList chip text names directly to Jikan numerical IDs
-const JIKAN_GENRE_MAP: Record<string, number> = {
-  "Action": 1,
-  "Adventure": 2,
-  "Comedy": 4,
-  "Drama": 8,
-  "Fantasy": 10,
-  "Romance": 22,
-  "Sci-Fi": 24,
-  "Slice of Life": 36,
-  "Supernatural": 37,
-  "Mystery": 7,
-  "Sports": 30,
-  "Suspense": 14,
-  "Horror": 14,
+const ANILIST_API_URL = "https://graphql.anilist.co";
+
+const ANILIST_GENRE_MAP: Record<string, string> = {
+  "Action": "Action",
+  "Adventure": "Adventure",
+  "Comedy": "Comedy",
+  "Drama": "Drama",
+  "Fantasy": "Fantasy",
+  "Romance": "Romance",
+  "Sci-Fi": "Sci-Fi",
+  "Slice of Life": "Slice of Life",
+  "Supernatural": "Supernatural",
+  "Mystery": "Mystery",
+  "Sports": "Sports",
+  "Suspense": "Psychological", // Mapping suspense to psychological as it's common in AniList
+  "Horror": "Horror",
 };
 
-/**
- * Unified Jikan client wrapper.
- * Automatically respects rate-limiting (429 handling) and caches results in localStorage.
- */
-async function fetchJikan(endpoint: string, params: Record<string, string> = {}): Promise<any> {
-  const queryStr = new URLSearchParams(params).toString();
-  const url = `https://api.jikan.moe/v4${endpoint}${queryStr ? "?" + queryStr : ""}`;
-
-  // Use localStorage cache to minimize outward API queries
-  const isCacheable = !endpoint.includes("/anime") || Object.keys(params).length > 0;
-  const cacheKey = `makitv_core_cache_jikan_${btoa(url).replace(/=/g, "")}`;
+export async function fetchAniList(query: string, variables: any = {}): Promise<any> {
+  const cacheKey = `makitv_core_cache_anilist_${btoa(query + JSON.stringify(variables)).replace(/=/g, "")}`;
   
-  if (isCacheable) {
-    const cached = localStorage.getItem(cacheKey);
-    if (cached) {
-      try {
-        const parsed = JSON.parse(cached);
-        // Expiry durations: details and relations have long lives (7 days), category searches live for 30 minutes
-        const isDetails = endpoint.includes("/anime/") && !endpoint.includes("/relations");
-        const expiry = isDetails ? 7 * 24 * 60 * 60 * 1000 : 30 * 60 * 1000;
-        
-        if (Date.now() - parsed.timestamp < expiry) {
-          return parsed.data;
-        }
-      } catch {
-        // fail-silent and refetch
-      }
-    }
-  }
-
-  // Artificial short delay to prevent simultaneous queries triggering rate limits
-  await new Promise((resolve) => setTimeout(resolve, 250));
-
-  let attempts = 3;
-  while (attempts > 0) {
+  const cached = localStorage.getItem(cacheKey);
+  if (cached) {
     try {
-      const response = await fetch(url);
-      if (response.status === 429) {
-        console.warn(`Jikan Rate Limit (429) hit. Re-trying after backoff sleep...`);
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        attempts--;
-        continue;
+      const parsed = JSON.parse(cached);
+      // Determine expiry. 24 hours.
+      const expiry = 24 * 60 * 60 * 1000;
+      if (Date.now() - parsed.timestamp < expiry) {
+        return parsed.data;
       }
-      if (!response.ok) {
-        throw new Error(`Jikan API Error: ${response.status} ${response.statusText}`);
-      }
-      const result = await response.json();
-      
-      if (isCacheable && result) {
-        try {
-          localStorage.setItem(cacheKey, JSON.stringify({
-            timestamp: Date.now(),
-            data: result,
-          }));
-        } catch (e) {
-          console.warn("localStorage quota exceeded for Jikan cache:", e);
-        }
-      }
-      return result;
-    } catch (err) {
-      console.error(`Jikan fetch failed for ${url}:`, err);
-      attempts--;
-      if (attempts === 0) throw err;
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+    } catch {
+      // ignore
     }
   }
-}
 
-/**
- * Helper to fetch and merge multiple pages securely to meet target limit requirements,
- * since Jikan limit is hard-capped at 25 items max. Also handles Jikan rate limits nicely.
- */
-async function fetchJikanPaginated(
-  endpoint: string,
-  params: Record<string, string> = {},
-  targetCount: number = 35
-): Promise<any> {
-  let combinedData: any[] = [];
-  const limit = 25; // Strict maximum boundary for Jikan API
-  
-  // Create copies of the original parameters
-  const queryParams: Record<string, string> = { ...params, limit: String(limit) };
-  
-  // Standard two-page loop to get up to 50 results (since limit=25)
-  for (let page = 1; page <= 2; page++) {
-    queryParams.page = String(page);
-    try {
-      const res = await fetchJikan(endpoint, queryParams);
-      if (res && Array.isArray(res.data)) {
-        combinedData = [...combinedData, ...res.data];
-        
-        // If there's no next page, we don't need to try pulling the next page
-        if (res.pagination && !res.pagination.has_next_page) {
-          break;
-        }
-      } else {
-        break;
-      }
-    } catch (err) {
-      console.error(`Jikan paginated retrieval failed on page ${page} of ${endpoint}:`, err);
-      break;
-    }
-    
-    // Stop early if we have enough raw items and we don't need another page
-    if (combinedData.length >= targetCount) {
-      break;
-    }
-    
-    // Slight gap to respect rate-limiting limits
-    await new Promise((resolve) => setTimeout(resolve, 300));
-  }
-
-  return { data: combinedData };
-}
-
-/**
- * Clean up and filter out Jikan responses to drop content pollution.
- * Supports rule: Only accept 'tv' and 'movie'. Exclude 'special', 'ova', 'ona', 'music', 
- * and blocklists containing "Chibi", "Shorts", "Recap", "Summary", or "Mini-Anime".
- */
-function cleanAndFilterJikanItems(items: any[]): any[] {
-  if (!Array.isArray(items)) return [];
-  
-  return items.filter((item) => {
-    if (!item) return false;
-    
-    // 1. Strict format check
-    const format = (item.type || "").toLowerCase();
-    if (format !== "tv" && format !== "movie") {
-      return false;
-    }
-
-    // 2. Strict text checking for metadata tags
-    const titleEnglish = (item.title_english || "").toLowerCase();
-    const titleRomaji = (item.title || "").toLowerCase();
-    const titleJapanese = (item.title_japanese || "").toLowerCase();
-    const synonyms = Array.isArray(item.titles) 
-      ? item.titles.map((t: any) => (t.title || "").toLowerCase()) 
-      : [];
-      
-    const allTitles = [titleEnglish, titleRomaji, titleJapanese, ...synonyms];
-    const blockedFlags = ["chibi", "shorts", "recap", "summary", "mini-anime"];
-    
-    const isBlocked = allTitles.some((titleText) => 
-      blockedFlags.some((flag) => titleText.includes(flag))
-    );
-    
-    if (isBlocked) {
-      return false;
-    }
-
-    return true;
+  const response = await fetch(ANILIST_API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+    },
+    body: JSON.stringify({
+      query,
+      variables,
+    }),
   });
+
+  if (!response.ok) {
+    if (response.status === 429) {
+      await new Promise((res) => setTimeout(res, 2000));
+      return fetchAniList(query, variables); // retry once
+    }
+    throw new Error(`AniList API Error: ${response.status} ${response.statusText}`);
+  }
+
+  const json = await response.json();
+  if (json.errors) {
+    throw new Error(`AniList API Error: ${json.errors[0].message}`);
+  }
+
+  if (json.data) {
+    try {
+      localStorage.setItem(cacheKey, JSON.stringify({
+        timestamp: Date.now(),
+        data: json.data,
+      }));
+    } catch (e) {
+      console.warn("localStorage quota exceeded for AniList cache:", e);
+    }
+  }
+
+  return json.data;
 }
 
-/**
- * Maps a filtered Jikan API record to our standardized AniListAnime schema style
- */
-function mapJikanToAniListAnime(item: any): AniListAnime {
-  const titleRomaji = item.title || "";
-  const titleEnglish = item.title_english || titleRomaji;
-  const titleJapanese = item.title_japanese || titleRomaji;
-
-  const coverLarge = item.images?.webp?.image_url || item.images?.jpg?.image_url || "";
-  const coverExtraLarge = item.images?.webp?.large_image_url || item.images?.jpg?.large_image_url || coverLarge;
-  const coverMedium = item.images?.webp?.small_image_url || item.images?.jpg?.small_image_url || coverLarge;
-
-  let statusStr = "FINISHED";
-  const jikanStatus = (item.status || "").toLowerCase();
-  if (jikanStatus.includes("airing") || jikanStatus.includes("releasing")) {
-    statusStr = "RELEASING";
-  } else if (jikanStatus.includes("yet") || jikanStatus.includes("upcoming")) {
-    statusStr = "NOT_YET_RELEASED";
-  }
-
-  // Fallback synonyms indexing
-  const synonyms: string[] = [];
-  if (Array.isArray(item.titles)) {
-    item.titles.forEach((t: any) => {
-      if (t.title && !synonyms.includes(t.title)) {
-        synonyms.push(t.title);
+export async function fetchAniListImagesByTitle(title: string): Promise<{
+    coverImage?: any;
+    bannerImage?: string;
+    color?: string;
+}> {
+  const query = `
+    query ($search: String) {
+      Media (search: $search, type: ANIME, sort: SEARCH_MATCH) {
+        coverImage {
+          extraLarge
+          large
+          medium
+          color
+        }
+        bannerImage
       }
-    });
-  }
-  if (item.title_synonyms && Array.isArray(item.title_synonyms)) {
-    item.title_synonyms.forEach((syn: string) => {
-      if (syn && !synonyms.includes(syn)) {
-        synonyms.push(syn);
-      }
-    });
-  }
+    }
+  `;
 
-  return {
-    id: item.mal_id,
-    title: {
-      romaji: titleRomaji,
-      english: titleEnglish,
-      native: titleJapanese,
-      userPreferred: titleEnglish || titleRomaji,
-    },
-    coverImage: {
-      extraLarge: coverExtraLarge,
-      large: coverLarge,
-      medium: coverMedium,
-      color: "#ff6b35",
-    },
-    bannerImage: coverExtraLarge, // cropped by browser object-cover
-    episodes: item.episodes || 12,
-    season: (item.season || "unknown").toUpperCase(),
-    seasonYear: item.year || (item.aired?.from ? new Date(item.aired.from).getFullYear() : undefined),
-    status: statusStr,
-    popularity: item.members || (item.score ? Math.round(item.score * 5000) : 10000),
-    averageScore: item.score ? Math.round(item.score * 10) : undefined,
-    description: item.synopsis || "No biography summary available for this item.",
-    genres: item.genres?.map((g: any) => g.name) || [],
-    synonyms,
-    format: (item.type || "TV").toUpperCase(),
-    studios: {
-      nodes: item.studios?.map((s: any) => ({ name: s.name })) || [],
-    },
-    trailer: item.trailer?.youtube_id ? { id: item.trailer.youtube_id, site: "youtube" } : undefined,
-  };
-}
-
-/**
- * Backoff-supported helper to query Jikan relations
- */
-async function fetchJikanRelations(id: number): Promise<any[]> {
   try {
-    const res = await fetchJikan(`/anime/${id}/relations`);
-    return res?.data || [];
-  } catch {
+    const response = await fetch("https://graphql.anilist.co", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      body: JSON.stringify({
+        query,
+        variables: { search: title },
+      }),
+    });
+
+    if (response.ok) {
+      const json = await response.json();
+      if (json.data && json.data.Media) {
+        return json.data.Media;
+      }
+    }
+  } catch (err) {
+    console.error("AniList fetch error:", err);
+  }
+  return {};
+}
+
+export async function fetchAnimeFeed(category?: string, searchWord?: string, page: number = 1): Promise<AniListAnime[]> {
+  let url = `https://api.jikan.moe/v4/anime?page=${page}&limit=25`;
+  
+  if (searchWord && searchWord.trim()) {
+    url += `&q=${encodeURIComponent(searchWord)}`;
+  } else {
+    if (!category || category === "All" || category === "Trending") {
+      url = `https://api.jikan.moe/v4/top/anime?page=${page}&limit=25`;
+    } else if (category === "Most Watched") {
+      url = `https://api.jikan.moe/v4/top/anime?filter=bypopularity&page=${page}&limit=25`;
+    } else if (category === "Currently Airing") {
+      url = `https://api.jikan.moe/v4/top/anime?filter=airing&page=${page}&limit=25`;
+    } else {
+      // Basic genre matching for Jikan categories (Action: 1, Adventure: 2, Comedy: 4, etc.)
+      const genreMap: Record<string, string> = {
+        "Action": "1", "Adventure": "2", "Comedy": "4", "Drama": "8", "Fantasy": "10", 
+        "Romance": "22", "Sci-Fi": "24", "Slice of Life": "36", "Supernatural": "37", 
+        "Mystery": "7", "Sports": "30", "Suspense": "41", "Horror": "14"
+      };
+      if (genreMap[category]) {
+         url = `https://api.jikan.moe/v4/anime?genres=${genreMap[category]}&page=${page}&limit=25&order_by=popularity`;
+      } else {
+         url = `https://api.jikan.moe/v4/top/anime?page=${page}&limit=25`;
+      }
+    }
+  }
+
+  const cacheKey = `jikan_cache_${btoa(url)}`;
+  const cached = localStorage.getItem(cacheKey);
+  if (cached) {
+      try {
+          const parsed = JSON.parse(cached);
+          if (Date.now() - parsed.timestamp < 24 * 60 * 60 * 1000) {
+              return parsed.data;
+          }
+      } catch (e) {}
+  }
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+        if (response.status === 429) {
+          await new Promise(r => setTimeout(r, 1000));
+          return fetchAnimeFeed(category, searchWord, page);
+        }
+        return [];
+    }
+    const json = await response.json();
+    const jikanData = json.data || [];
+
+    const result: AniListAnime[] = await Promise.all(jikanData.map(async (item: any) => {
+      // Delay slightly to prevent strict rate limiting on Anilist
+      await new Promise(r => setTimeout(r, 50));
+      const titleRomaji = item.title;
+      const images = await fetchAniListImagesByTitle(titleRomaji);
+
+      return {
+        id: item.mal_id,
+        title: {
+          romaji: item.title,
+          english: item.title_english || item.title,
+          native: item.title_japanese,
+          userPreferred: item.title,
+        },
+        coverImage: images.coverImage || {
+          extraLarge: item.images?.jpg?.large_image_url || item.images?.jpg?.image_url,
+          large: item.images?.jpg?.large_image_url || item.images?.jpg?.image_url,
+          medium: item.images?.jpg?.image_url,
+          color: images.color || "#ff6b35"
+        },
+        bannerImage: images.bannerImage || "",
+        episodes: item.episodes || 12,
+        season: item.season || "UNKNOWN",
+        seasonYear: item.year || 2024,
+        status: item.status || "UNKNOWN",
+        popularity: item.members || 0,
+        averageScore: Math.round((item.score || 0) * 10),
+        description: item.synopsis || "No description available.",
+        genres: item.genres?.map((g: any) => g.name) || [],
+        synonyms: item.title_synonyms || [],
+        format: item.type || "TV",
+      };
+    }));
+
+    try {
+        localStorage.setItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data: result }));
+    } catch(e) { }
+
+    return result;
+  } catch (err) {
+    console.error("fetchAnimeFeed Error:", err);
     return [];
   }
 }
 
-// ================= PUBLIC EXPORTS =================
-
-/**
- * 1. Fetch main feed channels from Jikan rather than AniList GraphQL
- */
-export async function fetchAnimeFeed(category?: string, searchWord?: string): Promise<AniListAnime[]> {
-  try {
-    let result: any = null;
-
-    if (searchWord && searchWord.trim()) {
-      result = await fetchJikanPaginated("/anime", {
-        q: searchWord,
-        sfw: "true",
-      });
-    } else {
-      if (!category || category === "All") {
-        result = await fetchJikanPaginated("/top/anime", { type: "tv" });
-      } else if (category === "Trending") {
-        result = await fetchJikanPaginated("/top/anime", { filter: "airing", type: "tv" });
-      } else if (category === "Most Watched") {
-        result = await fetchJikanPaginated("/top/anime", { filter: "bypopularity", type: "tv" });
-      } else if (category === "Currently Airing") {
-        result = await fetchJikanPaginated("/top/anime", { filter: "airing", type: "tv" });
-      } else {
-        // Genre Chip mapping
-        const genreId = JIKAN_GENRE_MAP[category];
-        if (genreId) {
-          result = await fetchJikanPaginated("/anime", {
-            genres: String(genreId),
-            orderBy: "popularity",
-            sort: "desc",
-            sfw: "true",
-            type: "tv",
-          });
-        } else {
-          result = await fetchJikanPaginated("/top/anime", { type: "tv" });
-        }
-      }
-    }
-
-    if (result && result.data) {
-      const filtered = cleanAndFilterJikanItems(result.data);
-      return filtered.map(mapJikanToAniListAnime);
-    }
-  } catch (err) {
-    console.error("fetchAnimeFeed failed inside Jikan service layer:", err);
-  }
-  return [];
-}
-
-/**
- * 2. Fetch specific channel details, compiling relations as virtual seasons structures
- */
 export async function fetchAnimeDetails(id: number): Promise<AniListAnime | null> {
-  try {
-    const res = await fetchJikan(`/anime/${id}`);
-    if (!res || !res.data) {
-      return null;
-    }
-    const mapped = mapJikanToAniListAnime(res.data);
-
-    // Dynamic Sequel/Prequel relations lookup to populate visual seasons selection arrays
-    const relationsCacheKey = `makitv_core_cache_relations_refined_${id}`;
-    const cachedEdges = localStorage.getItem(relationsCacheKey);
-    let edges: any[] = [];
-
-    if (cachedEdges) {
+  const url = `https://api.jikan.moe/v4/anime/${id}`;
+  
+  const cacheKey = `jikan_cache_details_${id}`;
+  const cached = localStorage.getItem(cacheKey);
+  if (cached) {
       try {
-        edges = JSON.parse(cachedEdges);
-      } catch {
-        edges = [];
-      }
-    } else {
-      const relationsData = await fetchJikanRelations(id);
-      if (relationsData && Array.isArray(relationsData)) {
-        for (const relGroup of relationsData) {
-          const relationType = (relGroup.relation || "").toUpperCase();
-          
-          if (relGroup.entry && Array.isArray(relGroup.entry)) {
-            for (const itemEntry of relGroup.entry) {
-              if (itemEntry.type === "anime") {
-                edges.push({
-                  relationType,
-                  node: {
-                    id: itemEntry.mal_id,
-                    title: {
-                      romaji: itemEntry.name,
-                      english: itemEntry.name,
-                      userPreferred: itemEntry.name,
-                    },
-                    coverImage: {
-                      extraLarge: `https://images.unsplash.com/photo-1578632767115-351597cf2477?w=300`,
-                      large: `https://images.unsplash.com/photo-1578632767115-351597cf2477?w=300`,
-                      medium: `https://images.unsplash.com/photo-1578632767115-351597cf2477?w=150`,
-                    },
-                    bannerImage: `https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1200`,
-                    episodes: 12,
-                    status: "FINISHED",
-                    popularity: 10000,
-                    type: "ANIME",
-                  },
-                });
-              }
-            }
+          const parsed = JSON.parse(cached);
+          if (Date.now() - parsed.timestamp < 24 * 60 * 60 * 1000) {
+              return parsed.data;
           }
-        }
-        try {
-          localStorage.setItem(relationsCacheKey, JSON.stringify(edges));
-        } catch (err) {
-          console.warn("Failed to cache relations in localStorage:", err);
-        }
-      }
-    }
+      } catch (e) {}
+  }
 
-    mapped.relations = { edges };
-    return mapped;
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    const json = await response.json();
+    const item = json.data;
+    if (!item) return null;
+
+    const titleRomaji = item.title;
+    const images = await fetchAniListImagesByTitle(titleRomaji);
+
+    const result = {
+        id: item.mal_id,
+        title: {
+          romaji: item.title,
+          english: item.title_english || item.title,
+          native: item.title_japanese,
+          userPreferred: item.title,
+        },
+        coverImage: images.coverImage || {
+          extraLarge: item.images?.jpg?.large_image_url || item.images?.jpg?.image_url,
+          large: item.images?.jpg?.large_image_url || item.images?.jpg?.image_url,
+          medium: item.images?.jpg?.image_url,
+          color: images.color || "#ff6b35"
+        },
+        bannerImage: images.bannerImage || "",
+        episodes: item.episodes || 12,
+        season: item.season || "UNKNOWN",
+        seasonYear: item.year || 2024,
+        status: item.status || "UNKNOWN",
+        popularity: item.members || 0,
+        averageScore: Math.round((item.score || 0) * 10),
+        description: item.synopsis || "No description available.",
+        genres: item.genres?.map((g: any) => g.name) || [],
+        synonyms: item.title_synonyms || [],
+        format: item.type || "TV",
+        studios: { nodes: item.studios?.map((s: any) => ({ name: s.name })) || [] },
+        trailer: item.trailer?.youtube_id ? { id: item.trailer.youtube_id, site: "youtube" } : null,
+    };
+    
+    try {
+        localStorage.setItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data: result }));
+    } catch(e) { }
+
+    return result as AniListAnime;
   } catch (err) {
-    console.error(`fetchAnimeDetails failed for ID ${id}:`, err);
+    console.error("fetchAnimeDetails failed:", err);
     return null;
   }
 }
 
-/**
- * 3. Formatter to cleanly render status descriptions
- */
 export function formatAiringStatus(status?: string): string {
   if (!status) return "Unknown Status";
   switch (status.toUpperCase()) {
@@ -401,9 +300,6 @@ export function formatAiringStatus(status?: string): string {
   }
 }
 
-/**
- * 4. Formatter to render numbers nicely in YouTube styles (e.g. 1.2M, 450K)
- */
 export function formatPopularity(count: number): string {
   if (count >= 1000000) {
     return `${(count / 1000000).toFixed(1).replace(/\.0$/, "")}M subscribers`;
@@ -414,9 +310,6 @@ export function formatPopularity(count: number): string {
   return `${count} subscribers`;
 }
 
-/**
- * 5. Similar format for views on videos
- */
 export function formatViews(count: number): string {
   const simulatedViews = Math.floor(count * 8.5);
   if (simulatedViews >= 1000000) {
