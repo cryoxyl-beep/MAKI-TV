@@ -251,12 +251,134 @@ export async function fetchAnimeDetails(id: number): Promise<AniListAnime | null
       } catch (e) {}
   }
 
+  let jikanFailed = false;
+  let json: any = null;
+
   try {
     const response = await fetch(url);
-    if (!response.ok) return null;
-    const json = await response.json();
-    const item = json.data;
-    if (!item) return null;
+    if (!response.ok) {
+      jikanFailed = true;
+    } else {
+      json = await response.json();
+    }
+  } catch (err) {
+    jikanFailed = true;
+  }
+
+  if (jikanFailed || !json || !json.data) {
+    console.log("Jikan failed, falling back to AniList for MAL ID", id);
+    const fallbackQuery = `
+      query ($idMal: Int) {
+        Media (idMal: $idMal, type: ANIME) {
+          idMal
+          title {
+            romaji
+            english
+            native
+            userPreferred
+          }
+          coverImage {
+            extraLarge
+            large
+            medium
+            color
+          }
+          bannerImage
+          episodes
+          season
+          seasonYear
+          status
+          popularity
+          averageScore
+          description
+          genres
+          synonyms
+          format
+          studios(isMain: true) {
+            nodes {
+              name
+            }
+          }
+          trailer {
+            id
+            site
+          }
+          relations {
+            edges {
+              relationType(version: 2)
+              node {
+                idMal
+                title {
+                  userPreferred
+                  english
+                  romaji
+                }
+                coverImage {
+                  large
+                }
+                type
+                format
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    try {
+      const fallbackData = await fetchAniList(fallbackQuery, { idMal: id });
+      if (fallbackData && fallbackData.Media) {
+         const m = fallbackData.Media;
+         const result = {
+            id: m.idMal || id,
+            title: m.title || { romaji: "Unknown", english: "Unknown", native: null, userPreferred: "Unknown" },
+            coverImage: m.coverImage || { extraLarge: "", large: "", medium: "", color: "#ff6b35" },
+            bannerImage: m.bannerImage || "",
+            episodes: m.episodes || 12,
+            season: m.season || "UNKNOWN",
+            seasonYear: m.seasonYear || 2024,
+            status: m.status || "UNKNOWN",
+            popularity: m.popularity || 0,
+            averageScore: m.averageScore || 0,
+            description: m.description || "No description available.",
+            genres: m.genres || [],
+            synonyms: m.synonyms || [],
+            format: m.format || "TV",
+            studios: m.studios || { nodes: [] },
+            trailer: m.trailer || null,
+            relations: {
+              edges: (m.relations?.edges || [])
+                .filter((e: any) => e.node && e.node.type === "ANIME" && e.node.idMal)
+                .map((e: any) => ({
+                relationType: e.relationType,
+                node: {
+                  id: e.node.idMal,
+                  type: "ANIME",
+                  title: e.node.title || { userPreferred: "Unknown", english: "Unknown", romaji: "Unknown" },
+                  coverImage: e.node.coverImage || { extraLarge: "", large: "", medium: "" },
+                  bannerImage: "",
+                  episodes: 12,
+                  popularity: 1500
+                }
+              }))
+            }
+         };
+
+         try {
+             localStorage.setItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data: result }));
+         } catch(e) { }
+
+         return result as AniListAnime;
+      }
+    } catch (fallbackErr) {
+      console.error("AniList fallback also failed:", fallbackErr);
+      return null;
+    }
+    return null;
+  }
+
+  const item = json.data;
+  if (!item) return null;
 
     const titleRomaji = item.title;
     const images = await fetchAniListImagesByTitle(titleRomaji);
@@ -311,10 +433,6 @@ export async function fetchAnimeDetails(id: number): Promise<AniListAnime | null
     } catch(e) { }
 
     return result as AniListAnime;
-  } catch (err) {
-    console.error("fetchAnimeDetails failed:", err);
-    return null;
-  }
 }
 
 export function formatAiringStatus(status?: string): string {
