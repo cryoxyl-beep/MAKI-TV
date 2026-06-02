@@ -286,9 +286,10 @@ export default function WatchPage({
               </h3>
             </div>
             
-             <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
+             <div className="grid grid-cols-1 sm:grid-cols-5 gap-2.5">
               {[
                 { id: "megaplay", name: "MegaPlay", desc: "Native Sub & Dub" },
+                { id: "origami", name: "Origami", desc: "Direct MAL Sub & Dub" },
                 { id: "cinesrc", name: "Taberu", desc: "Sub & Dub" },
                 { id: "vidfast", name: "Matsuri", desc: "Fast Dubs/Subs" },
                 { id: "movies111", name: "Onigiri", desc: "Backup" },

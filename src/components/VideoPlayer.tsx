@@ -43,13 +43,14 @@ export default function VideoPlayer({
   const [iframeLoading, setIframeLoading] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // MegaPlay Stream state and Language Config (sub vs dub)
+  // MegaPlay and Origami Stream state and Language Config (sub vs dub)
   const [megaPlayLanguage, setMegaPlayLanguage] = useState<"sub" | "dub">(() => {
     return (localStorage.getItem("makitv_megaplay_language") as "sub" | "dub") || "sub";
   });
   const [megaplayLoadError, setMegaplayLoadError] = useState<boolean>(false);
+  const [origamiLoadError, setOrigamiLoadError] = useState<boolean>(false);
 
-  // MegaPlay loading and watchdog state tracking refs
+  // loading and watchdog state tracking refs
   const watchdogTimerRef = useRef<any>(null);
   const watchdogCancelledRef = useRef<boolean>(false);
   const hasReceivedFirstEventRef = useRef<boolean>(false);
@@ -59,13 +60,15 @@ export default function VideoPlayer({
     localStorage.setItem("makitv_megaplay_language", lang);
     setIframeLoading(true);
     setMegaplayLoadError(false);
+    setOrigamiLoadError(false);
   };
 
   const handleIframeLoad = () => {
-    if (selectedProvider === "megaplay") {
-      console.log("[MegaPlay] iframe loaded");
+    if (selectedProvider === "megaplay" || selectedProvider === "origami") {
+      const isOrigami = selectedProvider === "origami";
+      console.log(`[${isOrigami ? "Origami" : "MegaPlay"}] iframe loaded`);
       if (!watchdogCancelledRef.current) {
-        console.log("[MegaPlay] watchdog cancelled");
+        console.log(`[${isOrigami ? "Origami" : "MegaPlay"}] watchdog cancelled`);
         watchdogCancelledRef.current = true;
       }
       if (watchdogTimerRef.current) {
@@ -75,6 +78,7 @@ export default function VideoPlayer({
     }
     setIframeLoading(false);
     setMegaplayLoadError(false);
+    setOrigamiLoadError(false);
   };
 
   // Trigger loading screen reset when any major state changes
@@ -87,11 +91,16 @@ export default function VideoPlayer({
     return () => clearTimeout(timer);
   }, [animeId, episodeNumber, seasonNumber, selectedProvider, tmdbId]);
 
-  // MegaPlay loading and fallback watchdog effect loop
+  // MegaPlay and Origami loading and fallback watchdog effect loop
   useEffect(() => {
-    if (selectedProvider === "megaplay") {
-      console.log("[MegaPlay] iframe created");
-      setMegaplayLoadError(false);
+    if (selectedProvider === "megaplay" || selectedProvider === "origami") {
+      const isOrigami = selectedProvider === "origami";
+      console.log(`[${isOrigami ? "Origami" : "MegaPlay"}] iframe created`);
+      if (isOrigami) {
+        setOrigamiLoadError(false);
+      } else {
+        setMegaplayLoadError(false);
+      }
       setIframeLoading(true);
       watchdogCancelledRef.current = false;
       hasReceivedFirstEventRef.current = false;
@@ -100,12 +109,16 @@ export default function VideoPlayer({
         clearTimeout(watchdogTimerRef.current);
       }
 
-      console.log("[MegaPlay] watchdog started");
+      console.log(`[${isOrigami ? "Origami" : "MegaPlay"}] watchdog started`);
       watchdogTimerRef.current = setTimeout(() => {
         // Safe watchdog: If iframe has not loaded within 7 seconds, display a recovery card
         if (!watchdogCancelledRef.current) {
-          console.log("[MegaPlay] timeout card triggered");
-          setMegaplayLoadError(true);
+          console.log(`[${isOrigami ? "Origami" : "MegaPlay"}] timeout card triggered`);
+          if (isOrigami) {
+            setOrigamiLoadError(true);
+          } else {
+            setMegaplayLoadError(true);
+          }
           setIframeLoading(false);
         }
       }, 7000);
@@ -200,20 +213,37 @@ export default function VideoPlayer({
             data.type === "watching-log"
           );
 
-          if (isMegaPlayEvent) {
+          const isOrigamiEvent = selectedProvider === "origami" && (
+            eventType === "time" ||
+            eventType === "complete" ||
+            data.type === "watching-log" ||
+            eventType === "error"
+          );
+
+          if (isMegaPlayEvent || isOrigamiEvent) {
+            const providerName = selectedProvider === "origami" ? "Origami" : "MegaPlay";
             if (!hasReceivedFirstEventRef.current) {
-              console.log("[MegaPlay] first player event received");
+              console.log(`[${providerName}] first player event received`);
               hasReceivedFirstEventRef.current = true;
             }
             if (!watchdogCancelledRef.current) {
-              console.log("[MegaPlay] watchdog cancelled");
+              console.log(`[${providerName}] watchdog cancelled`);
               watchdogCancelledRef.current = true;
             }
             if (watchdogTimerRef.current) {
               clearTimeout(watchdogTimerRef.current);
               watchdogTimerRef.current = null;
             }
-            setMegaplayLoadError(false);
+            if (selectedProvider === "origami") {
+              if (eventType === "error") {
+                console.log("[Origami] received error event, triggering error card");
+                setOrigamiLoadError(true);
+              } else {
+                setOrigamiLoadError(false);
+              }
+            } else {
+              setMegaplayLoadError(false);
+            }
             setIframeLoading(false);
           }
           
@@ -319,9 +349,12 @@ export default function VideoPlayer({
   const megaPlayUrl = selectedProvider === "megaplay"
     ? `https://animeplay.cfd/stream/mal/${animeId}/${episodeNumber}/${megaPlayLanguage}`
     : "";
+  const origamiUrl = selectedProvider === "origami"
+    ? `https://megaplay.buzz/stream/mal/${animeId}/${episodeNumber}/${megaPlayLanguage}`
+    : "";
   const embedUrl = getEmbedUrl();
 
-  // Development Logging for MegaPlay Integration
+  // Development Logging for MegaPlay and Origami Integration
   useEffect(() => {
     if (selectedProvider === "megaplay") {
       console.log(`[MegaPlay Integration Debug]`);
@@ -329,8 +362,14 @@ export default function VideoPlayer({
       console.log(`Current Episode: ${episodeNumber}`);
       console.log(`Current Language: ${megaPlayLanguage}`);
       console.log(`Generated MegaPlay URL: ${megaPlayUrl}`);
+    } else if (selectedProvider === "origami") {
+      console.log(`[Origami Integration Debug]`);
+      console.log(`Current MAL ID: ${animeId}`);
+      console.log(`Current Episode: ${episodeNumber}`);
+      console.log(`Current Language: ${megaPlayLanguage}`);
+      console.log(`Generated Origami URL: ${origamiUrl}`);
     }
-  }, [selectedProvider, animeId, episodeNumber, megaPlayLanguage, megaPlayUrl]);
+  }, [selectedProvider, animeId, episodeNumber, megaPlayLanguage, megaPlayUrl, origamiUrl]);
  
   return (
     <div
@@ -425,6 +464,94 @@ export default function VideoPlayer({
             </div>
           </>
         )
+      ) : selectedProvider === "origami" ? (
+        origamiLoadError ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-gray-400 z-10 gap-3 bg-[#0a0a0c]">
+            <Landmark className="w-12 h-12 text-[#ff6b35]/80 mb-2" />
+            <h4 className="text-white text-sm font-bold">Origami Connection Timeout / Error</h4>
+            <p className="text-xs text-gray-500 max-w-sm leading-relaxed">
+              Premium Origami stream timed out or was blocked. Switch language above or choose a fallback server like Taberu or Matsuri below.
+            </p>
+            <div className="flex gap-2.5 mt-2">
+              <button
+                onClick={() => {
+                  setOrigamiLoadError(false);
+                  setIframeLoading(true);
+                  handleLanguageChange(megaPlayLanguage);
+                }}
+                className="px-4 py-1.5 bg-[#ff6b35] hover:bg-[#ff7e4e] text-white text-xs font-bold rounded-lg cursor-pointer transition-colors"
+              >
+                Retry Stream
+              </button>
+              {onProviderChange && (
+                <button
+                  onClick={() => onProviderChange("cinesrc")}
+                  className="px-4 py-1.5 bg-white/5 hover:bg-white/10 text-gray-300 text-xs font-bold rounded-lg border border-white/10 cursor-pointer transition-colors"
+                >
+                  Use Backup (Taberu)
+                </button>
+              )}
+            </div>
+            
+            {/* Inline Sub/Dub Switch even on Error */}
+            <div className="absolute top-4 right-4 z-30 flex items-center bg-black/60 backdrop-blur-md border border-white/10 rounded-xl p-1 shadow-lg pointer-events-auto">
+              <button
+                onClick={() => handleLanguageChange("sub")}
+                className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
+                  megaPlayLanguage === "sub"
+                    ? "bg-[#ff6b35] text-white"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                SUB
+              </button>
+              <button
+                onClick={() => handleLanguageChange("dub")}
+                className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
+                  megaPlayLanguage === "dub"
+                    ? "bg-[#ff6b35] text-white"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                DUB
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <iframe
+              src={origamiUrl}
+              className="w-full h-full border-0 absolute inset-0 z-10 pointer-events-auto"
+              allow="autoplay; fullscreen; picture-in-picture"
+              allowFullScreen
+              onLoad={handleIframeLoad}
+              title={`MakiTV Player: ${animeTitle}`}
+            />
+            {/* Elegant Sub / Dub toggle overlay bar on top right of the player */}
+            <div className="absolute top-4 right-4 z-30 flex items-center bg-black/60 backdrop-blur-md border border-white/10 rounded-xl p-1 shadow-lg pointer-events-auto transition-opacity duration-300 opacity-80 hover:opacity-100">
+              <button
+                onClick={() => handleLanguageChange("sub")}
+                className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
+                  megaPlayLanguage === "sub"
+                    ? "bg-[#ff6b35] text-white"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                SUB
+              </button>
+              <button
+                onClick={() => handleLanguageChange("dub")}
+                className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
+                  megaPlayLanguage === "dub"
+                    ? "bg-[#ff6b35] text-white"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                DUB
+              </button>
+            </div>
+          </>
+        )
       ) : embedUrl ? (
         <iframe
           src={embedUrl}
@@ -443,7 +570,7 @@ export default function VideoPlayer({
       )}
  
       {/* Loading Glass overlay */}
-      {iframeLoading && (selectedProvider === "megaplay" ? !megaplayLoadError : !!embedUrl) && (
+      {iframeLoading && (selectedProvider === "megaplay" ? !megaplayLoadError : selectedProvider === "origami" ? !origamiLoadError : !!embedUrl) && (
         <div className="absolute inset-0 bg-[#0a0a0c] flex flex-col items-center justify-center z-20 gap-3 pointer-events-none">
           <RefreshCw className="w-7 h-7 text-[#ff6b35] animate-spin" />
           <div className="text-center font-sans">
@@ -451,7 +578,7 @@ export default function VideoPlayer({
               Secure Proxy Stream
             </span>
             <span className="text-white text-xs font-semibold">
-              Loading {selectedProvider === "megaplay" ? "MegaPlay" : "source"} channel connection...
+              Loading {selectedProvider === "megaplay" ? "MegaPlay" : selectedProvider === "origami" ? "Origami" : "source"} channel connection...
             </span>
           </div>
         </div>
