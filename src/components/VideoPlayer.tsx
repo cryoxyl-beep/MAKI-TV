@@ -49,6 +49,11 @@ export default function VideoPlayer({
   });
   const [megaplayLoadError, setMegaplayLoadError] = useState<boolean>(false);
 
+  // MegaPlay loading and watchdog state tracking refs
+  const watchdogTimerRef = useRef<any>(null);
+  const watchdogCancelledRef = useRef<boolean>(false);
+  const hasReceivedFirstEventRef = useRef<boolean>(false);
+
   const handleLanguageChange = (lang: "sub" | "dub") => {
     setMegaPlayLanguage(lang);
     localStorage.setItem("makitv_megaplay_language", lang);
@@ -57,6 +62,17 @@ export default function VideoPlayer({
   };
 
   const handleIframeLoad = () => {
+    if (selectedProvider === "megaplay") {
+      console.log("[MegaPlay] iframe loaded");
+      if (!watchdogCancelledRef.current) {
+        console.log("[MegaPlay] watchdog cancelled");
+        watchdogCancelledRef.current = true;
+      }
+      if (watchdogTimerRef.current) {
+        clearTimeout(watchdogTimerRef.current);
+        watchdogTimerRef.current = null;
+      }
+    }
     setIframeLoading(false);
     setMegaplayLoadError(false);
   };
@@ -74,14 +90,32 @@ export default function VideoPlayer({
   // MegaPlay loading and fallback watchdog effect loop
   useEffect(() => {
     if (selectedProvider === "megaplay") {
+      console.log("[MegaPlay] iframe created");
       setMegaplayLoadError(false);
       setIframeLoading(true);
-      const timer = setTimeout(() => {
+      watchdogCancelledRef.current = false;
+      hasReceivedFirstEventRef.current = false;
+
+      if (watchdogTimerRef.current) {
+        clearTimeout(watchdogTimerRef.current);
+      }
+
+      console.log("[MegaPlay] watchdog started");
+      watchdogTimerRef.current = setTimeout(() => {
         // Safe watchdog: If iframe has not loaded within 7 seconds, display a recovery card
-        setMegaplayLoadError(true);
-        setIframeLoading(false);
+        if (!watchdogCancelledRef.current) {
+          console.log("[MegaPlay] timeout card triggered");
+          setMegaplayLoadError(true);
+          setIframeLoading(false);
+        }
       }, 7000);
-      return () => clearTimeout(timer);
+
+      return () => {
+        if (watchdogTimerRef.current) {
+          clearTimeout(watchdogTimerRef.current);
+          watchdogTimerRef.current = null;
+        }
+      };
     }
   }, [animeId, episodeNumber, selectedProvider, megaPlayLanguage]);
 
@@ -159,6 +193,29 @@ export default function VideoPlayer({
         const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
         if (data) {
           const eventType = data.event || data.type;
+          
+          const isMegaPlayEvent = selectedProvider === "megaplay" && (
+            eventType === "time" ||
+            eventType === "complete" ||
+            data.type === "watching-log"
+          );
+
+          if (isMegaPlayEvent) {
+            if (!hasReceivedFirstEventRef.current) {
+              console.log("[MegaPlay] first player event received");
+              hasReceivedFirstEventRef.current = true;
+            }
+            if (!watchdogCancelledRef.current) {
+              console.log("[MegaPlay] watchdog cancelled");
+              watchdogCancelledRef.current = true;
+            }
+            if (watchdogTimerRef.current) {
+              clearTimeout(watchdogTimerRef.current);
+              watchdogTimerRef.current = null;
+            }
+            setMegaplayLoadError(false);
+            setIframeLoading(false);
+          }
           
           if (eventType === "time") {
             // MegaPlay time updates
@@ -260,9 +317,20 @@ export default function VideoPlayer({
   }, [animeId, episodeNumber, seasonNumber, animeTitle, selectedProvider, tmdbId, onProgressUpdate, onNextEpisode]);
  
   const megaPlayUrl = selectedProvider === "megaplay"
-    ? `https://animeplay.cfd/stream/ani/${animeId}/${episodeNumber}/${megaPlayLanguage}`
+    ? `https://animeplay.cfd/stream/mal/${animeId}/${episodeNumber}/${megaPlayLanguage}`
     : "";
   const embedUrl = getEmbedUrl();
+
+  // Development Logging for MegaPlay Integration
+  useEffect(() => {
+    if (selectedProvider === "megaplay") {
+      console.log(`[MegaPlay Integration Debug]`);
+      console.log(`Current MAL ID: ${animeId}`);
+      console.log(`Current Episode: ${episodeNumber}`);
+      console.log(`Current Language: ${megaPlayLanguage}`);
+      console.log(`Generated MegaPlay URL: ${megaPlayUrl}`);
+    }
+  }, [selectedProvider, animeId, episodeNumber, megaPlayLanguage, megaPlayUrl]);
  
   return (
     <div
