@@ -473,3 +473,43 @@ export function formatViews(count: number): string {
   }
   return `${simulatedViews} views`;
 }
+
+export async function fetchAnimeTrailer(idMal: number, signal?: AbortSignal): Promise<{ id: string, site: string } | null> {
+  const query = `
+    query ($idMal: Int) {
+      Media(idMal: $idMal, type: ANIME) {
+        trailer {
+          id
+          site
+        }
+      }
+    }
+  `;
+
+  try {
+    const response = await fetch("https://graphql.anilist.co", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        query,
+        variables: { idMal },
+      }),
+      signal
+    });
+
+    if (response.ok) {
+      const json = await response.json();
+      if (json.data?.Media?.trailer?.id && json.data?.Media?.trailer?.site === "youtube") {
+        return json.data.Media.trailer;
+      }
+    }
+  } catch (err: any) {
+    if (err.name !== 'AbortError') {
+      console.error("[Hero Trailer] Failed to fetch trailer", err);
+    }
+  }
+  return null;
+}
