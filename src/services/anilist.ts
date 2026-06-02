@@ -127,8 +127,27 @@ export async function fetchAniListImagesByTitles(titles: string[]): Promise<Reco
       return fetchAniListImagesByTitles(titles);
     }
 
+    console.log("[AniList GraphQL Audit] Request Status:", response.status);
+    const json = await response.json();
+    if (json.errors) {
+      console.log("[AniList GraphQL Audit] Query errors detected:", json.errors.map((e: any) => e.message));
+    }
+    
+    if (json.data) {
+      console.log("[AniList GraphQL Audit] Successfully parsed partial/full data. Keys found:", Object.keys(json.data).length);
+      // Let's audit some items
+      titles.forEach((title, index) => {
+        const item = json.data[`anime_${index}`];
+        if (item) {
+          console.log(`[AniList Item Match] Jikan Title: "${title}" -> Found in AniList. Banner: ${!!item.bannerImage}, Trailer ID: ${item.trailer?.id || "NONE"}`);
+        } else {
+          console.log(`[AniList Item Match] Jikan Title: "${title}" -> NOT found in AniList.`);
+        }
+      });
+      return json.data;
+    }
+
     if (response.ok) {
-      const json = await response.json();
       return json.data || {};
     }
   } catch (err) {
