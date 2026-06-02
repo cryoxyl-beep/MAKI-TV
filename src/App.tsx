@@ -18,7 +18,6 @@ import { Tv, Flame, Play, Sparkles } from "lucide-react";
 export default function App() {
   // Navigation states
   const [activePage, setActivePage] = useState<"home" | "trending" | "subscriptions" | "history" | "channel" | "watch">("home");
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   // Sub-states for specific pages
@@ -149,7 +148,6 @@ export default function App() {
 
       {/* 1. Youtube-style Top header layout */}
       <Header
-        onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
         onSearch={handleSearchTrigger}
         initialSearchQuery={searchQuery}
         onNavigateHome={() => handleNavigate("home")}
@@ -157,7 +155,7 @@ export default function App() {
         onNavigateSubscriptions={() => handleNavigate("subscriptions")}
       />
 
-      <div className="flex flex-1 pt-14 text-white z-10 relative">
+      <div className="flex flex-1 pt-[72px] text-white z-10 relative">
         
         {/* 2. Left side expandable dynamic Sidebar (Collapses slightly on small desktop screens, hidden or bottom bar on mobile) */}
         <Sidebar
@@ -166,19 +164,14 @@ export default function App() {
               ? "home" // default highlighted drawer
               : (activePage as any)
           }
-          isCollapsed={sidebarCollapsed}
           onNavigate={handleNavigate}
           onChannelClick={handleOpenChannel}
           subscriptions={subscriptionsList}
         />
 
-        {/* 3. Right main contents stage viewport with left spacing padding matching sidebar scale */}
+        {/* 3. Right main contents stage viewport with standard padding scale */}
         <main
-          className={`flex-1 min-w-0 transition-all duration-200 bg-transparent ${
-            sidebarCollapsed
-              ? "md:pl-[72px]"
-              : "md:pl-[240px]"
-          } pb-16 md:pb-0 z-10 relative`}
+          className="flex-1 min-w-0 bg-transparent pb-32 z-10 relative px-0"
         >
           {/* RENDER LAYER 1: Home recommender Feed */}
           {activePage === "home" && (

@@ -3,11 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from "react";
-import { Menu, Search, Bell, User, Tv, X, ArrowLeft } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { Search, X, ArrowLeft } from "lucide-react";
 
 interface HeaderProps {
-  onToggleSidebar: () => void;
   onSearch: (query: string) => void;
   initialSearchQuery?: string;
   onNavigateHome: () => void;
@@ -16,7 +15,6 @@ interface HeaderProps {
 }
 
 export default function Header({
-  onToggleSidebar,
   onSearch,
   initialSearchQuery = "",
   onNavigateHome,
@@ -25,27 +23,47 @@ export default function Header({
 }: HeaderProps) {
   const [searchVal, setSearchVal] = useState(initialSearchQuery);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setSearchVal(initialSearchQuery);
   }, [initialSearchQuery]);
 
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 80); // scroll threshold
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSearch(searchVal.trim());
     setShowMobileSearch(false);
+    
+    // Trigger submit bounce animation
+    setIsSubmitting(true);
+    setTimeout(() => setIsSubmitting(false), 300);
+    inputRef.current?.blur();
   };
 
   const handleClear = () => {
     setSearchVal("");
     onSearch("");
+    inputRef.current?.focus();
   };
 
+  const isMinimized = isScrolled && !isFocused && !searchVal;
+
   return (
-    <header className="fixed top-0 left-0 right-0 h-14 bg-[#0a0a0c]/60 backdrop-blur-md border-b border-white/[0.08] flex items-center justify-between px-4 z-50">
+    <header className="fixed top-0 left-0 right-0 h-16 bg-transparent flex items-center justify-between px-4 md:px-6 z-50 select-none transition-all duration-300">
       {/* Search Header for Mobile overlay */}
       {showMobileSearch ? (
-        <form onSubmit={handleSubmit} className="absolute inset-0 bg-[#09090b]/90 backdrop-blur-xl flex items-center px-4 gap-2">
+        <form onSubmit={handleSubmit} className="absolute inset-0 bg-[#0a0a0c] flex items-center px-4 gap-2 z-50">
           <button
             type="button"
             onClick={() => setShowMobileSearch(false)}
@@ -74,66 +92,62 @@ export default function Header({
           </div>
           <button
             type="submit"
-            className="p-2 bg-white/[0.04] border border-white/[0.08] rounded-full text-white hover:bg-white/[0.12] transition-colors"
+            className="p-2 bg-[#ff6b35] rounded-full text-white hover:bg-opacity-90 transition-colors"
           >
             <Search className="w-5 h-5" />
           </button>
         </form>
       ) : (
         <>
-          {/* Left Portion: Hamburger & Logo */}
-          <div className="flex items-center gap-3 md:gap-4">
-            <button
-              onClick={onToggleSidebar}
-              className="p-2 hover:bg-white/[0.08] text-white rounded-full transition-colors hidden md:inline-flex items-center justify-center cursor-pointer"
-              title="Toggle Menu"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
+          {/* Left Portion: Logo */}
+          <div className="flex items-center gap-3 md:gap-4 flex-1">
             <div
               onClick={onNavigateHome}
               className="flex items-center cursor-pointer select-none group py-1"
             >
-              <span className="text-white text-xl md:text-2xl font-black tracking-tight font-sans flex items-center group-hover:scale-105 transition-all duration-200 pl-3 md:pl-1">
+              <span className="text-white text-xl md:text-2xl font-black tracking-tight font-sans flex items-center group-hover:scale-105 transition-all duration-300 pl-2">
                 Maki<span className="text-[#ff6b35]">TV</span>
               </span>
             </div>
           </div>
 
-          {/* Central Portion: Search bar (Middle screen + Desktop) */}
-          <form
-            onSubmit={handleSubmit}
-            className="hidden md:flex items-center w-full max-w-lg lg:max-w-xl mx-4"
-          >
-            <div className="flex-1 flex items-center bg-white/[0.04] backdrop-blur-md rounded-l-full border border-white/[0.08] focus-within:border-[#ff6b35] focus-within:bg-black/35 transition-all px-4 py-1.5">
-              <input
-                type="text"
-                placeholder="Search anime, genres or studios..."
-                value={searchVal}
-                onChange={(e) => setSearchVal(e.target.value)}
-                className="w-full bg-transparent border-none text-white placeholder-gray-500 focus:outline-none text-sm"
-              />
-              {searchVal && (
-                <button
-                  type="button"
-                  onClick={handleClear}
-                  className="p-1 hover:bg-white/[0.08] rounded-full text-[#aaa] transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-            <button
-              type="submit"
-              className="py-1.5 px-6 bg-white/[0.08] border-y border-r border-white/[0.08] rounded-r-full text-white hover:bg-white/[0.15] hover:border-white/[0.15] transition-all flex items-center justify-center cursor-pointer shadow-sm"
-              title="Search"
+          {/* Central Portion: perfectly centered search bar */}
+          <div className={`absolute left-1/2 -translate-x-1/2 hidden md:flex transition-all duration-[500ms] ease-[cubic-bezier(0.23,1,0.32,1)] z-10 ${isMinimized ? "w-11" : "w-full max-w-sm lg:max-w-md"}`}>
+            <form
+              onSubmit={handleSubmit}
+              className={`flex items-center w-full group cursor-text relative transition-transform duration-300 ${isSubmitting ? "scale-95" : isFocused && !isMinimized ? "scale-[1.02]" : "scale-100"}`}
             >
-              <Search className="w-4 h-4 text-[#aaa] group-hover:text-white" />
-            </button>
-          </form>
+              <div
+                onClick={() => isMinimized && inputRef.current?.focus()}
+                className={`w-full flex items-center bg-white/[0.1] hover:bg-white/[0.15] backdrop-blur-[40px] saturate-[200%] border border-white/[0.25] transition-all duration-[500ms] ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden relative shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.4),_0_8px_32px_rgba(0,0,0,0.4)] ${isMinimized ? "h-11 rounded-full justify-center px-0 cursor-pointer hover:shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:border-white/[0.4]" : "h-10 rounded-full px-4 focus-within:border-white/[0.4] focus-within:bg-white/[0.18] focus-within:ring-4 focus-within:ring-white/[0.1]"}`}
+              >
+                <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/[0.05] to-white/0 pointer-events-none" />
+                <Search className={`text-white/80 transition-all duration-300 relative z-10 shrink-0 ${isMinimized ? "w-5 h-5 group-hover:text-white group-hover:scale-110" : "w-4 h-4 mr-2.5 group-focus-within:text-white"}`} />
+                <input
+                  ref={inputRef}
+                  type="text"
+                  placeholder="Search anime, genres or studios..."
+                  value={searchVal}
+                  onChange={(e) => setSearchVal(e.target.value)}
+                  onFocus={() => setIsFocused(true)}
+                  onBlur={() => setIsFocused(false)}
+                  className={`bg-transparent border-none text-white placeholder-white/60 focus:outline-none text-sm font-medium tracking-wide relative z-10 block transition-all duration-[500ms] ease-[cubic-bezier(0.23,1,0.32,1)] ${isMinimized ? "w-0 opacity-0 px-0" : "w-full opacity-100"}`}
+                />
+                {searchVal && !isMinimized && (
+                  <button
+                    type="button"
+                    onClick={handleClear}
+                    className="p-1 hover:bg-white/20 rounded-full text-white/80 hover:text-white transition-colors cursor-pointer relative z-10 animate-fade-in shrink-0"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            </form>
+          </div>
 
           {/* Right Portion: Action Buttons */}
-          <div className="flex items-center gap-1 md:gap-3">
+          <div className="flex items-center justify-end gap-1 md:gap-3 flex-1">
             <button
               onClick={() => setShowMobileSearch(true)}
               className="p-2 hover:bg-white/[0.08] text-white rounded-full transition-colors md:hidden cursor-pointer"
@@ -141,22 +155,6 @@ export default function Header({
             >
               <Search className="w-5 h-5" />
             </button>
-            <button
-              className="p-2 hover:bg-white/[0.08] text-white rounded-full transition-colors hidden sm:inline-flex cursor-pointer relative"
-              title="Notifications"
-            >
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#ff6b35] rounded-full animate-pulse"></span>
-            </button>
-            <div
-              className="flex items-center gap-2 pl-1 pr-2 py-1 hover:bg-white/[0.08] rounded-full transition-all cursor-pointer border border-transparent hover:border-white/[0.08] ml-1 select-none"
-              title="Account"
-            >
-              <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-[#ff6b35] to-[#ffa585] flex items-center justify-center text-white font-bold text-xs shadow-sm ring-1 ring-white/10">
-                M
-              </div>
-              <span className="text-white text-xs font-medium hidden lg:inline-block">Otaku Guest</span>
-            </div>
           </div>
         </>
       )}

@@ -173,7 +173,7 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
       </div>
 
       {/* =============== TAB SELECTION NAV BAR =============== */}
-      <div className="border-b border-white/[0.08] bg-[#0a0a0c]/60 backdrop-blur-md sticky top-14 z-30 shadow-md">
+      <div className="border-b border-white/[0.08] bg-[#0c0c10] sticky top-14 z-30 shadow-md">
         <div className="max-w-6xl mx-auto px-4 md:px-6 flex gap-6 sm:gap-8 items-center h-12">
           {[
             { id: "seasons" as const, label: "Seasons", icon: Layers },
@@ -208,7 +208,7 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
         {activeTab === "all" && (
           <div className="space-y-8 animate-fade-in">
             {/* Spotlight Banner style card */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 bg-white/[0.02] border border-white/[0.06] p-5 rounded-2xl items-center backdrop-blur-md">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 bg-[#0d0d11] border border-white/[0.05] p-5 rounded-2xl items-center shadow-md">
               <div className="md:col-span-4 aspect-video bg-black rounded-xl overflow-hidden relative shadow-lg">
                 <img
                   src={banner || profileAvatar}
@@ -247,7 +247,7 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
                 {seasons.map((season, idx) => (
                   <div
                     key={season.animeId}
-                    className="flex p-3 rounded-2xl bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.04] hover:border-white/[0.1] items-center gap-3.5 transition-all cursor-pointer group backdrop-blur-sm"
+                    className="flex p-3 rounded-2xl bg-[#0d0d11] hover:bg-[#15151c] border border-white/[0.04] hover:border-white/[0.08] items-center gap-3.5 transition-all cursor-pointer group shadow"
                     onClick={() => {
                       // find this season index and set it, then switch to seasons tab
                       setActiveSeasonIndex(idx);
@@ -286,7 +286,7 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
                   { days: "2 days ago", post: `The production committee has officially confirmed we will be launching subtitles sync loops for Season ${seasons.length > 1 ? "2" : "1"} later! Standard MakiTV quality only is expected.`, hearts: "14.2K" },
                   { days: "1 week ago", post: `Thank you for supporting ${mainTitle} channel! Toggle subscriptions to get customized notification bells inside your visual drawers.`, hearts: "8.5K" }
                 ].map((post, i) => (
-                  <div key={i} className="bg-white/[0.02] border border-white/[0.06] p-4 rounded-xl space-y-2 backdrop-blur-sm">
+                  <div key={i} className="bg-[#0d0d11] border border-white/[0.05] p-4 rounded-xl space-y-2 shadow">
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 rounded-full overflow-hidden">
                         <img src={profileAvatar} className="w-full h-full object-cover" />
@@ -412,7 +412,7 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
 
         {/* TAB 3: ABOUT TAB (Descriptive fields) */}
         {activeTab === "about" && (
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 bg-white/[0.02] p-6 rounded-2xl border border-white/[0.06] animate-fade-in font-sans backdrop-blur-md shadow-lg">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 bg-[#0d0d11] p-6 rounded-2xl border border-white/[0.05] animate-fade-in font-sans shadow-lg">
             {/* Description left panel */}
             <div className="md:col-span-8 space-y-4">
               <h3 className="text-white font-extrabold text-base md:text-lg">Channel Biography</h3>

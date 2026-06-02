@@ -278,7 +278,7 @@ export default function WatchPage({
           </div>
 
           {/* ================= SERVER SELECTOR SYSTEM ================= */}
-          <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-4.5 space-y-3.5 shadow backdrop-blur-sm">
+          <div className="bg-[#0d0d11] border border-white/[0.05] rounded-2xl p-4.5 space-y-3.5 shadow">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-[#ff6b35] animate-pulse" />
               <h3 className="text-white text-xs font-bold uppercase tracking-wider text-gray-300">
@@ -325,7 +325,7 @@ export default function WatchPage({
           </div>
 
           {/* Publisher/Channel row profile connector */}
-          <div className="flex items-center gap-4 py-3 bg-white/[0.02] backdrop-blur-sm hover:bg-white/[0.06] px-4 rounded-2xl border border-white/[0.06] justify-between transition-all">
+          <div className="flex items-center gap-4 py-3 bg-[#0d0d11] hover:bg-[#15151c] px-4 rounded-2xl border border-white/[0.05] justify-between transition-all">
             <div
               onClick={() => onNavigateToChannel(anime.id)}
               className="flex gap-3 items-center cursor-pointer group min-w-0"
@@ -355,7 +355,7 @@ export default function WatchPage({
           </div>
 
           {/* Content Description Accordion */}
-          <div className="bg-white/[0.02] backdrop-blur-md rounded-2xl border border-white/[0.06] p-5 space-y-2 select-none font-sans shadow-lg">
+          <div className="bg-[#0d0d11] rounded-2xl border border-white/[0.05] p-5 space-y-2 select-none font-sans shadow-lg">
             <span className="text-white text-xs font-bold uppercase tracking-widest font-sans flex items-center gap-1.5">
               <Layers className="w-3.5 h-3.5 text-[#ff6b35]" />
               Anime Synopsis Hub
@@ -401,10 +401,10 @@ export default function WatchPage({
                 <div
                   key={epNum}
                   onClick={() => onNavigateToEpisode(anime.id, seasonNumber, epNum)}
-                  className={`flex gap-3 p-2.5 rounded-xl cursor-pointer transition-all duration-200 group relative border ${
+                  className={`flex gap-3 p-2.5 rounded-2xl cursor-pointer transition-all duration-300 group relative border ${
                     isActive
-                      ? "bg-[#ff6b35]/10 border-[#ff6b35]/40 text-white animate-fade-in"
-                      : "bg-white/[0.02] border-white/[0.04] hover:bg-white/[0.06] hover:border-white/[0.08]"
+                      ? "bg-[#ff6b35]/15 border-[#ff6b35]/30 text-white shadow-[0_8px_20px_rgba(255,107,53,0.1)]"
+                      : "bg-[#0d0d11] border-white/[0.04] hover:bg-[#15151c] hover:border-white/[0.08]"
                   }`}
                 >
                   {/* Episode Thumbnail */}

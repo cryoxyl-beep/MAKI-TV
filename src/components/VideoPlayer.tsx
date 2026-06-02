@@ -374,7 +374,7 @@ export default function VideoPlayer({
   return (
     <div
       ref={containerRef}
-      className="relative w-full aspect-video bg-[#0a0a0c] overflow-hidden group select-none shadow-2xl transition-all duration-300 rounded-2xl border border-white/[0.06]"
+      className="relative w-full aspect-video bg-[#0a0a0c] overflow-hidden group select-none shadow-2xl md:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.65)] transition-all duration-500 rounded-3xl"
     >
       {selectedProvider === "megaplay" ? (
         megaplayLoadError ? (
