@@ -11,5 +11,11 @@ service cloud.firestore {
       allow read: if true;
       allow write: if false;
     }
+
+    // Hero Trailers (Public read, admin write only - temporary open for seeding)
+    match /heroTrailers/{trailerId} {
+      allow read: if true;
+      allow write: if false;
+    }
   }
 }

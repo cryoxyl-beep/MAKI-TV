@@ -4,17 +4,14 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { fetchAnimeFeed, fetchAnimeTrailer } from "../services/anilist";
+import { fetchAnimeFeed } from "../services/anilist";
 import { AniListAnime } from "../types";
 import AnimeCard from "./AnimeCard";
 import CategoryChips from "./CategoryChips";
 import SkeletonLoader from "./SkeletonLoader";
 import DiscoveryShelf from "./DiscoveryShelf";
 import { RefreshCw, Play } from "lucide-react";
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Autoplay, EffectFade } from "swiper/modules";
-import "swiper/css";
-import "swiper/css/effect-fade";
+import PremiumHero from "./PremiumHero";
 
 interface HomeFeedProps {
   onSelectAnime: (id: number) => void;
@@ -94,250 +91,15 @@ export default function HomeFeed({
     }
   }
 
-  // Extract top 8 for the banner
-  const bannerAnimes =
-    !searchQuery && selectedCategory === "All" ? animeList.slice(0, 8) : [];
-  const feedAnimes =
-    !searchQuery && selectedCategory === "All" ? animeList.slice(8) : animeList;
-
-  const [activeSlideIndex, setActiveSlideIndex] = useState(0);
-  const [activeTrailerId, setActiveTrailerId] = useState<string | null>(null);
-  const [activeTrailerStartOffset, setActiveTrailerStartOffset] =
-    useState<number>(0);
-  const [activeIframeLoaded, setActiveIframeLoaded] = useState<boolean>(false);
-
-  const trailerCacheRef = useRef<
-    Record<
-      number,
-      {
-        trailerId: string;
-        site: string;
-        timestamp: number;
-        startOffset: number;
-      }
-    >
-  >({});
-  const abortControllerRef = useRef<AbortController | null>(null);
-
-  useEffect(() => {
-    if (typeof window !== "undefined" && !(window as any).YT) {
-      const tag = document.createElement("script");
-      tag.src = "https://www.youtube.com/iframe_api";
-      const firstScriptTag = document.getElementsByTagName("script")[0];
-      if (firstScriptTag && firstScriptTag.parentNode) {
-        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-      } else {
-        document.head.appendChild(tag);
-      }
-    }
-  }, []);
-
-  const activeAnime = bannerAnimes[activeSlideIndex] || null;
-  const activeAnimeId = activeAnime?.id || null;
-
-
-
-  useEffect(() => {
-    console.log("[Hero Trailer] useEffect started. Dependencies:", {
-      activeSlideIndex,
-      activeAnimeId,
-    });
-
-    setActiveTrailerId(null);
-    setActiveIframeLoaded(false);
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      console.log("[Hero Trailer] Fetch Aborted");
-    }
-
-    if (!activeAnimeId || !activeAnime) return;
-
-    console.log(
-      `[Hero Trailer] Anime: ${activeAnime.title.english || activeAnime.title.romaji}`,
-    );
-    console.log(`[Hero Trailer] MAL ID: ${activeAnimeId}`);
-    console.log("[Hero Trailer] Waiting 2 seconds");
-
-    const timerId = setTimeout(async () => {
-      const cached = trailerCacheRef.current[activeAnimeId];
-      if (cached && cached.site === "youtube") {
-        console.log(`[Hero Trailer] Using Cached Trailer`);
-        setActiveTrailerId(cached.trailerId);
-        setActiveTrailerStartOffset(cached.startOffset);
-        return;
-      }
-
-      console.log("[Hero Trailer] Fetching Trailer");
-      const abortController = new AbortController();
-      abortControllerRef.current = abortController;
-
-      try {
-        const trailerData = await fetchAnimeTrailer(
-          activeAnimeId,
-          abortController.signal,
-        );
-
-        if (abortController.signal.aborted) {
-          return;
-        }
-
-        if (trailerData && trailerData.site === "youtube") {
-          console.log(`[Hero Trailer] Trailer Found: ${trailerData.id}`);
-          const startOffset = Math.floor(Math.random() * (90 - 15 + 1)) + 15;
-          trailerCacheRef.current[activeAnimeId] = {
-            trailerId: trailerData.id,
-            site: trailerData.site,
-            timestamp: Date.now(),
-            startOffset: startOffset,
-          };
-          setActiveTrailerId(trailerData.id);
-          setActiveTrailerStartOffset(startOffset);
-        } else {
-          console.log("[Hero Trailer] No Trailer Available");
-        }
-      } catch (err: any) {
-        if (err.name !== "AbortError") {
-          console.log("[Hero Trailer] No Trailer Available");
-        }
-      }
-    }, 2000);
-
-    return () => {
-      clearTimeout(timerId);
-      console.log(
-        "[Hero Trailer] Timer Cancelled (useEffect cleanup executed)",
-      );
-    };
-  }, [activeSlideIndex, activeAnimeId]);
+    // All fetched animes are feedAnimes now
+  const feedAnimes = animeList;
 
   return (
     <div className="w-full min-h-screen bg-transparent pb-20">
-      {/* Hero Banner with Swiper */}
-      {!searchQuery &&
-        selectedCategory === "All" &&
-        bannerAnimes.length > 0 && (
-          <div className="px-4 md:px-6 mb-6">
-            <Swiper
-              modules={[Autoplay, EffectFade]}
-              effect="fade"
-              autoplay={{ delay: 40000, disableOnInteraction: false }}
-              loop={true}
-              onSlideChange={(swiper) => {
-                console.log("[Hero Trailer] Advance Triggered");
-                console.log("[Hero Trailer] Slide Duration: 40000ms");
-                setActiveSlideIndex(swiper.realIndex);
-              }}
-              className="w-full h-48 md:h-[400px] rounded-2xl overflow-hidden relative group border border-white/[0.08] shadow-2xl shadow-black/50"
-            >
-              {bannerAnimes.map((recommendedAnime, idx) => {
-                const animeTitle =
-                  recommendedAnime.title.english ||
-                  recommendedAnime.title.romaji;
-
-                const isActiveSlide = activeSlideIndex === idx;
-                const isTrailerActive =
-                  isActiveSlide && activeTrailerId !== null;
-
-                return (
-                  <SwiperSlide key={`${recommendedAnime.id}-${idx}`}>
-                    <div
-                      onClick={() => onSelectAnime(recommendedAnime.id)}
-                      className="w-full h-full cursor-pointer relative bg-black/20 overflow-hidden"
-                    >
-                      {/* Netflix-style Cinematic Trailer */}
-                      {isTrailerActive && (
-                        <div className="absolute inset-0 z-10 pointer-events-none">
-                          <div className="absolute inset-0 bg-black pointer-events-none" />
-                          <iframe
-                            id={`youtube-player-${activeTrailerId}`}
-                            src={`https://www.youtube-nocookie.com/embed/${activeTrailerId}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&disablekb=1&start=${activeTrailerStartOffset}&enablejsapi=1`}
-                            title="Anime Trailer"
-                            className="w-full h-[150%] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none scale-[1.05] brightness-[0.55] border-none"
-                            allow="autoplay; encrypted-media; picture-in-picture"
-                            tabIndex={-1}
-                            onLoad={(e) => {
-                              console.log("[Hero Trailer] Iframe Mounted");
-                              const iframeEl = e.currentTarget;
-                              const initYT = () => {
-                                const YT = (window as any).YT;
-                                if (YT && YT.Player) {
-                                  new YT.Player(iframeEl, {
-                                    events: {
-                                      onReady: () => {
-                                        console.log("[Hero Trailer] Player Ready");
-                                      },
-                                      onStateChange: (event: any) => {
-                                        if (event.data === 3) {
-                                          console.log("[Hero Trailer] Buffering");
-                                        } else if (event.data === 2) {
-                                          console.log("[Hero Trailer] Paused");
-                                        } else if (event.data === 1) {
-                                          console.log("[Hero Trailer] Playing");
-                                          console.log("[Hero Trailer] Revealing Trailer");
-                                          setTimeout(
-                                            () => setActiveIframeLoaded(true),
-                                            300,
-                                          );
-                                        }
-                                      },
-                                    },
-                                  });
-                                } else {
-                                  setTimeout(initYT, 100);
-                                }
-                              };
-                              initYT();
-                            }}
-                          />
-                          <div className="absolute inset-0 z-20 bg-transparent cursor-default pointer-events-auto" />
-                        </div>
-                      )}
-
-                      {/* Fallback Banner Image (always in DOM, visible originally) */}
-                      <img
-                        src={
-                          recommendedAnime.bannerImage ||
-                          recommendedAnime.coverImage.extraLarge ||
-                          recommendedAnime.coverImage.large
-                        }
-                        alt="Hero Feed Anime"
-                        className={`absolute inset-0 z-20 w-full h-full object-cover group-hover:scale-105 transition-opacity duration-500 ease-in-out brightness-75 bg-gradient-to-tr from-[#ff6b35]/20 to-[#ffa585]/1 ${
-                          isTrailerActive && activeIframeLoaded
-                            ? "opacity-0"
-                            : "opacity-100"
-                        }`}
-                        referrerPolicy="no-referrer"
-                      />
-
-                      <div className="absolute inset-0 z-30 bg-gradient-to-t from-[#09090b] via-[#09090b]/40 to-transparent flex flex-col justify-end p-6 md:p-10 pointer-events-none">
-                        <div className="pointer-events-auto">
-                          <span className="text-xs md:text-sm uppercase text-[#ff6b35] font-bold tracking-widest mb-2 flex items-center gap-1.5 leading-none">
-                            <span className="w-2 h-2 rounded-full bg-[#ff6b35] animate-ping opacity-80" />
-                            Recommended Today
-                          </span>
-
-                          <h2 className="text-white text-2xl md:text-5xl font-black tracking-tight font-sans drop-shadow leading-tight line-clamp-1 max-w-4xl group-hover:text-[#ff6b35] transition-colors mb-3">
-                            {animeTitle}
-                          </h2>
-
-                          <div className="mt-4 flex items-center gap-4">
-                            <button className="px-6 py-2 md:py-3 bg-[#ff6b35] hover:bg-[#ff7e4e] text-white text-sm md:text-base font-bold rounded-lg flex items-center gap-2 shadow-lg shadow-[#ff6b35]/20 cursor-pointer transition-all hover:scale-105">
-                              <Play className="w-4 h-4 md:w-5 md:h-5 fill-white stroke-none" />
-                              <span>Enter Channel</span>
-                            </button>
-                            <span className="text-xs md:text-sm text-gray-300 font-mono tracking-wider hidden md:block">
-                              {recommendedAnime.genres?.slice(0, 3).join(" • ")}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </SwiperSlide>
-                );
-              })}
-            </Swiper>
-          </div>
-        )}
+      {/* Premium Hero Banner */}
+      {!searchQuery && selectedCategory === "All" && (
+          <PremiumHero onSelectAnime={onSelectAnime} />
+      )}
 
       {/* Removed Category Horizontal scroll chips line entirely */}
 
