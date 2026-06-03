@@ -32,13 +32,15 @@ export default function PremiumHero({ onSelectAnime }: PremiumHeroProps) {
       try {
         const q = query(
           collection(db, "heroTrailers"),
-          where("active", "==", true),
           orderBy("order", "asc")
         );
         const snapshot = await getDocs(q);
         const data: HeroTrailer[] = [];
         snapshot.forEach((doc) => {
-          data.push(doc.data() as HeroTrailer);
+          const trailer = doc.data() as HeroTrailer;
+          if (trailer.active) {
+            data.push(trailer);
+          }
         });
         if (mounted) {
           setTrailers(data);
