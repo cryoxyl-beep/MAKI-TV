@@ -72,7 +72,7 @@ export default function Header({
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-14 flex items-center justify-between px-4 md:px-6 z-50 select-none bg-transparent transition-all duration-300">
+    <header className={`fixed top-0 left-0 right-0 h-16 z-50 select-none bg-transparent transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0 pointer-events-none"}`}>
       {/* Search Header for Mobile overlay */}
       {showMobileSearch ? (
         <form onSubmit={handleSubmit} className="absolute inset-0 bg-[#0a0a0c] flex items-center px-4 gap-2 z-50">
@@ -110,66 +110,64 @@ export default function Header({
           </button>
         </form>
       ) : (
-        <>
-          {/* Left Portion: Logo */}
-          <div className="flex items-center gap-3 md:gap-4 flex-1" />
-
-          {/* Central Portion: perfectly centered navigation & search bar header system */}
-          <div className={`absolute left-1/2 -translate-x-1/2 hidden md:flex flex-row items-center gap-3.5 z-20 pointer-events-none transition-all duration-300 ease-in-out ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-full"}`}>
-            {/* 1. Navigation Capsule */}
-            <div className="flex flex-row items-center h-10 px-2 bg-white/[0.1] hover:bg-white/[0.15] backdrop-blur-[40px] saturate-[200%] border border-white/[0.25] transition-all duration-500 shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.4),_0_8px_32px_rgba(0,0,0,0.4)] rounded-full pointer-events-auto gap-2">
-              <div className="flex flex-row items-center gap-1.5 h-full relative">
-                {[
-                  { id: "home" as const, label: "Home", icon: Home, onClick: onNavigateHome },
-                  { id: "subscriptions" as const, label: "Subscriptions", icon: Clapperboard, onClick: onNavigateSubscriptions },
-                  { id: "history" as const, label: "History", icon: History, onClick: onNavigateHistory },
-                ].map((item) => {
-                  const Icon = item.icon;
-                  const isActive = activeTab === item.id;
-                  
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={item.onClick}
-                      title={item.label}
-                      className="w-7 h-7 flex items-center justify-center rounded-full transition-all duration-300 group cursor-pointer relative z-20"
-                    >
-                      {isActive && (
-                        <motion.div
-                          layoutId="activeTabIndicatorHeader"
-                          className="absolute inset-0 bg-white/[0.2] backdrop-blur-[20px] rounded-full border border-white/[0.3] shadow-[0_0_15px_rgba(255,255,255,0.2)]"
-                          initial={false}
-                          transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                        />
-                      )}
-                      <Icon className={`w-4 h-4 transition-all duration-300 relative z-30 group-hover:scale-110 ${isActive ? "text-white" : "text-white/60 group-hover:text-white/90"}`} />
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* User Profile */}
-              <div className="pl-2.5 pr-0.5 h-5 flex items-center justify-center border-l border-white/[0.1]">
-                <div className="w-5.5 h-5.5 rounded-full bg-gradient-to-tr from-[#ff6b35] to-[#ffa585] flex items-center justify-center text-white font-bold text-[10px] shadow-sm ring-1 ring-white/10 cursor-pointer hover:scale-110 transition-transform" title="Account">
-                  O
-                </div>
-              </div>
+        <div className="w-full h-full max-w-[1440px] mx-auto flex items-center justify-between px-4 md:px-8 lg:px-10">
+          {/* Left section: Logo & Text Navigation */}
+          <div className="flex items-center gap-6 lg:gap-10">
+            <div className="flex items-center cursor-pointer group" onClick={onNavigateHome}>
+              <span className="text-xl md:text-2xl font-black tracking-wider bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-transparent hover:opacity-90 transition-all duration-300">
+                miyou
+              </span>
             </div>
 
-            {/* 2. Floating Search Bar */}
+            {/* Desktop & Tablet Text Navigation */}
+            <nav className="hidden md:flex items-center gap-1.5">
+              {[
+                { id: "home" as const, label: "Home", onClick: onNavigateHome },
+                { id: "subscriptions" as const, label: "Browse", onClick: onNavigateSubscriptions },
+                { id: "history" as const, label: "History", onClick: onNavigateHistory },
+              ].map((item) => {
+                const isActive = activeTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={item.onClick}
+                    className={`relative px-4 py-1.5 text-xs lg:text-sm font-semibold tracking-wide transition-all duration-300 rounded-full cursor-pointer ${
+                      isActive 
+                        ? "text-white font-bold" 
+                        : "text-white/60 hover:text-white"
+                    }`}
+                  >
+                    {isActive && (
+                      <motion.div
+                        layoutId="activeTabIndicatorHeader"
+                        className="absolute inset-0 bg-white/[0.08] backdrop-blur-md rounded-full border border-white/[0.1] -z-10"
+                        initial={false}
+                        transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                      />
+                    )}
+                    {item.label}
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+
+          {/* Right section: Search input & User Profile */}
+          <div className="flex items-center gap-4 lg:gap-6">
+            {/* Desktop & Tablet Search Bar */}
             <form
               onSubmit={handleSubmit}
-              className={`flex items-center justify-center group cursor-text relative transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-auto w-[280px] lg:w-[320px] ${isSubmitting ? "scale-95" : isFocused ? "scale-[1.02]" : "scale-100"}`}
+              className={`hidden md:flex items-center group cursor-text relative transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] w-[200px] lg:w-[240px] xl:w-[280px] ${isSubmitting ? "scale-95" : isFocused ? "scale-[1.02]" : "scale-100"}`}
             >
               <div
                 onClick={() => {
                   setIsFocused(true);
                   setTimeout(() => inputRef.current?.focus(), 50);
                 }}
-                className={`w-full flex items-center bg-white/[0.1] hover:bg-white/[0.15] backdrop-blur-[40px] saturate-[200%] border border-white/[0.25] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden relative shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.4),_0_8px_32px_rgba(0,0,0,0.4)] h-10 rounded-full px-4 focus-within:border-white/[0.4] focus-within:bg-white/[0.18] focus-within:ring-4 focus-within:ring-white/[0.1]`}
+                className="w-full h-10 flex items-center bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.1] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden relative shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.1),_0_4px_16px_rgba(0,0,0,0.15)] rounded-full px-4 focus-within:border-white/[0.22] focus-within:bg-white/[0.1] focus-within:ring-4 focus-within:ring-white/[0.03]"
               >
-                <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/[0.05] to-white/0 pointer-events-none" />
-                <Search className={`text-white/80 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] relative z-10 shrink-0 w-[18px] h-[18px] mr-2.5 group-focus-within:text-white`} />
+                <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/[0.03] to-white/0 pointer-events-none" />
+                <Search className="text-white/50 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] shrink-0 w-[15px] h-[15px] mr-2.5 group-focus-within:text-white" />
                 <input
                   ref={inputRef}
                   type="text"
@@ -178,32 +176,35 @@ export default function Header({
                   onChange={(e) => setSearchVal(e.target.value)}
                   onFocus={() => setIsFocused(true)}
                   onBlur={() => setIsFocused(false)}
-                  className={`bg-transparent border-none text-white focus:outline-none text-sm font-medium tracking-wide relative z-10 block transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] min-w-0 placeholder-white/60 overflow-hidden whitespace-nowrap w-full opacity-100 ml-0`}
+                  className="bg-transparent border-none text-white focus:outline-none text-sm font-medium tracking-wide w-full placeholder-white/45"
                 />
                 {searchVal && (
                   <button
                     type="button"
                     onClick={handleClear}
-                    className="p-1 hover:bg-white/20 rounded-full text-white/80 hover:text-white transition-colors cursor-pointer relative z-10 shrink-0 ml-1"
+                    className="p-1 hover:bg-white/20 rounded-full text-white/50 hover:text-white transition-colors cursor-pointer relative z-10 shrink-0 ml-1"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
                 )}
               </div>
             </form>
-          </div>
 
-          {/* Right Portion: Action Buttons */}
-          <div className="flex items-center justify-end gap-1 md:gap-3 flex-1">
+            {/* Mobile Search Toggle */}
             <button
               onClick={() => setShowMobileSearch(true)}
-              className="p-2 hover:bg-white/[0.08] text-white rounded-full transition-colors md:hidden cursor-pointer"
+              className="p-2.5 hover:bg-white/[0.08] text-white/80 hover:text-white rounded-full transition-colors md:hidden cursor-pointer"
               title="Search"
             >
               <Search className="w-5 h-5" />
             </button>
+
+            {/* User Profile Avatar with matched height/thickness */}
+            <div className="w-8.5 h-8.5 rounded-full bg-gradient-to-tr from-[#ff6b35] to-[#ffa585] flex items-center justify-center text-white font-extrabold text-xs shadow-[0_4px_12px_rgba(255,107,53,0.3)] border border-white/20 cursor-pointer hover:scale-[1.08] active:scale-95 transition-all duration-300" title="Account">
+              O
+            </div>
           </div>
-        </>
+        </div>
       )}
     </header>
   );
