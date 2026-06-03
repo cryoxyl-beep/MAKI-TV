@@ -6,6 +6,7 @@
 import { AniListAnime } from "../types";
 import { formatAiringStatus, formatViews } from "../services/anilist";
 import { Star, Play, Tv } from "lucide-react";
+import { useState } from "react";
 
 interface AnimeCardProps {
   anime: AniListAnime;

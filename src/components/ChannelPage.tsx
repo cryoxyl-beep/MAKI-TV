@@ -24,11 +24,12 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
   const [episodesPage, setEpisodesPage] = useState(1);
 
   useEffect(() => {
+    let mounted = true;
     async function loadChannel() {
       setIsLoading(true);
       try {
         const data = await fetchAnimeDetails(animeId);
-        if (data) {
+        if (data && mounted) {
           setAnime(data);
           setSubscribed(isSubscribed(data.id));
           setEpisodesPage(1); // Reset page on anime change
@@ -36,10 +37,11 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
       } catch (err) {
         console.error("Error loading channel:", err);
       } finally {
-        setIsLoading(false);
+        if (mounted) setIsLoading(false);
       }
     }
     loadChannel();
+    return () => { mounted = false; };
   }, [animeId]);
 
   const handleSubscribeToggle = () => {

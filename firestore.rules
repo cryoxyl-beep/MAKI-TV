@@ -1,0 +1,15 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    
+    // Test collection for connection checking in Phase 1
+    match /test/{documentId} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}

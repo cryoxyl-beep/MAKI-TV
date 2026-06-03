@@ -135,6 +135,8 @@ export default function HomeFeed({
   const activeAnime = bannerAnimes[activeSlideIndex] || null;
   const activeAnimeId = activeAnime?.id || null;
 
+
+
   useEffect(() => {
     console.log("[Hero Trailer] useEffect started. Dependencies:", {
       activeSlideIndex,

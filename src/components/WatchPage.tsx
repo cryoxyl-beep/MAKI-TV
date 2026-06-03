@@ -60,18 +60,21 @@ export default function WatchPage({
   const [subscribed, setSubscribed] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
     async function loadWatchAnime() {
       setIsLoading(true);
       try {
         const data = await fetchAnimeDetails(animeId);
-        if (data) {
+        if (data && mounted) {
           setAnime(data);
           setSubscribed(isSubscribed(data.id));
 
           // Load target TMDB maps
           const mapped = await getTMDBMapping(data);
-          setTmdbId(mapped.tmdbId);
-          setMediaType(mapped.type);
+          if (mounted) {
+            setTmdbId(mapped.tmdbId);
+            setMediaType(mapped.type);
+          }
 
           // Add this initial watching entry to history (0% progress initially or loaded from previous score)
           const lastPercentProgress = getEpisodeProgress(data.id, seasonNumber, episodeNumber);
@@ -104,10 +107,11 @@ export default function WatchPage({
       } catch (err) {
         console.error("Error loading watch channel:", err);
       } finally {
-        setIsLoading(false);
+        if (mounted) setIsLoading(false);
       }
     }
     loadWatchAnime();
+    return () => { mounted = false; };
   }, [animeId, seasonNumber, episodeNumber]);
 
   // Update history progress as the video moves
@@ -242,7 +246,7 @@ export default function WatchPage({
             <span className="text-xs uppercase text-[#ff6b35] font-bold tracking-widest block mb-0.5 animate-pulse">
               Playing Now: Season {seasonNumber} • Episode {episodeNumber}
             </span>
-            <h1 className="text-white text-lg sm:text-xl font-bold font-sans tracking-tight leading-tight">
+            <h1 className="text-white text-lg sm:text-xl font-bold font-sans tracking-tight leading-tight pt-1">
               {mainTitle} Episode {episodeNumber} - Official Premium Simulcast Source
             </h1>
           </div>

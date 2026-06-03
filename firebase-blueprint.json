@@ -1,0 +1,27 @@
+{
+  "entities": {
+    "ConnectionTest": {
+      "title": "ConnectionTest",
+      "description": "Entity used to validate Firebase Firestore connectivity on application boot",
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "description": "Connection status message"
+        },
+        "measuredAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the connection was verified"
+        }
+      },
+      "required": ["status", "measuredAt"]
+    }
+  },
+  "firestore": {
+    "test": {
+      "schema": "ConnectionTest",
+      "description": "Collection used for system connection checks"
+    }
+  }
+}
