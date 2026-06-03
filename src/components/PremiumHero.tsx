@@ -122,7 +122,7 @@ export default function PremiumHero({ onSelectAnime }: PremiumHeroProps) {
 
   return (
     <div className="w-full relative -mt-[56px] mb-8 group/hero">
-      <div className="absolute right-4 md:right-6 lg:right-10 top-1/2 -translate-y-1/2 z-30 flex flex-col items-center gap-2 md:gap-3 pointer-events-none opacity-100 md:opacity-0 md:group-hover/hero:opacity-100 transition-opacity duration-500">
+      <div className="absolute right-4 md:right-6 lg:right-10 top-1/2 -translate-y-1/2 z-30 flex flex-col items-center gap-2 md:gap-3 pointer-events-none opacity-100 transition-opacity duration-500">
         <button 
           onClick={() => {
             if (swiperInstance) {
@@ -275,9 +275,9 @@ function HeroSlide({ trailer, isActive, onSelect, onEnded }: { trailer: HeroTrai
       <div className="absolute inset-0 pointer-events-none z-10 bg-gradient-to-r from-black/80 via-black/30 to-transparent w-full md:w-[70%]" />
       <div className="absolute inset-0 pointer-events-none z-10 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
 
-      <div className="absolute inset-0 z-20 flex flex-col justify-end p-6 md:p-12 pb-12 md:pb-24 pointer-events-none wrapper">
+      <div className="absolute inset-0 z-20 flex flex-col justify-end p-6 md:p-12 pb-6 md:pb-12 lg:pb-14 pointer-events-none wrapper">
         <div className="max-w-7xl mx-auto w-full pointer-events-auto h-full flex flex-col justify-end">
-          <div className="max-w-2xl flex flex-col items-start gap-3 transform transition-transform duration-700 hover:translate-y-[-4px]">
+          <div className="max-w-3xl lg:max-w-4xl flex flex-col items-start gap-3 transform transition-transform duration-700 hover:translate-y-[-4px]">
             {trailer.logoUrl ? (
               <img 
                 src={trailer.logoUrl} 
@@ -313,12 +313,12 @@ function HeroSlide({ trailer, isActive, onSelect, onEnded }: { trailer: HeroTrai
             )}
 
             {cleanDescription && (
-              <p className="text-white/80 max-w-xl text-sm md:text-base line-clamp-2 lg:line-clamp-3 leading-relaxed drop-shadow-lg mix-blend-lighten px-1 mt-2">
+              <p className="text-white/80 max-w-2xl text-sm md:text-base line-clamp-2 lg:line-clamp-3 leading-relaxed drop-shadow-lg mix-blend-lighten px-1 mt-2">
                 {cleanDescription}
               </p>
             )}
 
-            <div className="flex items-center gap-4 mt-4 px-1">
+            <div className="flex items-center gap-4 mt-6 md:mt-8 px-1">
               <button 
                 className="px-6 py-2.5 md:px-8 md:py-3 bg-white hover:bg-white/90 text-black font-extrabold rounded-md flex items-center gap-2 shadow-[0_0_20px_rgba(255,255,255,0.3)] shadow-black/20 cursor-pointer transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] group"
               >
