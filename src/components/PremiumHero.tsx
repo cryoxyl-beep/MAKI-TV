@@ -33,31 +33,31 @@ const HeroNavDot: React.FC<{ isActive: boolean; onClick: () => void; }> = ({ isA
     }
   }, [isActive]);
 
-  const radius = 7;
+  const radius = 10;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = isActive ? circumference - (progress * circumference) : circumference;
 
   return (
-    <button onClick={onClick} className="relative w-8 h-8 flex items-center justify-center group flex-shrink-0 cursor-pointer pointer-events-auto">
-      <div className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${isActive ? 'bg-white scale-125 shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'bg-white/40 group-hover:bg-white/80'}`} />
+    <button onClick={onClick} className="relative w-9 h-9 flex items-center justify-center group flex-shrink-0 cursor-pointer pointer-events-auto transition-transform duration-300 hover:scale-110">
+      <div className={`w-2 h-2 rounded-full transition-all duration-300 ${isActive ? 'bg-white scale-125 shadow-[0_0_12px_rgba(255,255,255,0.6)] animate-pulse' : 'bg-white/40 group-hover:bg-white/80'}`} />
       
       {isActive && (
-        <svg className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none drop-shadow-md" viewBox="0 0 24 24">
+        <svg className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none drop-shadow-md" viewBox="0 0 32 32">
           <circle
-            cx="12"
-            cy="12"
+            cx="16"
+            cy="16"
             r={radius}
             fill="none"
             stroke="rgba(255,255,255,0.2)"
-            strokeWidth="1.5"
+            strokeWidth="2"
           />
           <circle
-            cx="12"
-            cy="12"
+            cx="16"
+            cy="16"
             r={radius}
             fill="none"
             stroke="white"
-            strokeWidth="1.5"
+            strokeWidth="2"
             strokeDasharray={circumference}
             strokeDashoffset={strokeDashoffset}
             className="transition-none"
@@ -239,10 +239,22 @@ function HeroSlide({ trailer, isActive, onSelect, onEnded }: { trailer: HeroTrai
 
   const cleanDescription = metadata?.description?.replace(/<[^>]*>?/gm, '') || "";
 
+  const handleSelectClick = (e: React.MouseEvent) => {
+    if (!isActive) return;
+    e.preventDefault();
+    console.log(
+      "Hero Click",
+      trailer.title,
+      trailer.malId,
+      trailer.anilistId
+    );
+    onSelect();
+  };
+
   return (
     <div 
-      className="w-full h-full relative cursor-pointer overflow-hidden bg-black isolation-auto"
-      onClick={onSelect}
+      className={`w-full h-full relative cursor-pointer overflow-hidden bg-black isolation-auto transition-all duration-500 ${isActive ? 'pointer-events-auto opacity-100 z-10' : 'pointer-events-none opacity-0 z-0'}`}
+      onClick={handleSelectClick}
     >
       {trailer.trailerUrl && (
         <img
@@ -320,6 +332,7 @@ function HeroSlide({ trailer, isActive, onSelect, onEnded }: { trailer: HeroTrai
 
             <div className="flex items-center gap-4 mt-6 md:mt-8 px-1">
               <button 
+                onClick={handleSelectClick}
                 className="px-6 py-2.5 md:px-8 md:py-3 bg-white hover:bg-white/90 text-black font-extrabold rounded-md flex items-center gap-2 shadow-[0_0_20px_rgba(255,255,255,0.3)] shadow-black/20 cursor-pointer transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] group"
               >
                 <Play className="w-5 h-5 fill-black stroke-none" />
