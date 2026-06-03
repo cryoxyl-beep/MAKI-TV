@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { WatchHistoryItem } from "../types";
 import { getWatchHistory, storage } from "../utils";
 import { History, Trash2, Play, CircleDot, RefreshCw, Layers } from "lucide-react";
+import LazyImage from "./LazyImage";
 
 interface HistoryPageProps {
   onWatchEpisode: (animeId: number, seasonNumber: number, episodeNumber: number) => void;
@@ -106,7 +107,7 @@ export default function HistoryPage({ onWatchEpisode, onNavigateToChannel, onHis
                     >
                       {/* Thumbnail with progress bar */}
                       <div className="relative aspect-video bg-black overflow-hidden border-b border-white/5">
-                        <img
+                        <LazyImage
                           src={item.bannerImage || item.coverImage}
                           alt={item.animeTitle}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -182,7 +183,7 @@ export default function HistoryPage({ onWatchEpisode, onNavigateToChannel, onHis
                       className="flex p-2.5 bg-[#121212] border border-white/5 hover:border-[#333] rounded-xl hover:bg-[#181818] cursor-pointer transition-all gap-4 group"
                     >
                       <div className="relative w-28 sm:w-32 aspect-video bg-black rounded-lg overflow-hidden flex-shrink-0">
-                        <img
+                        <LazyImage
                           src={item.bannerImage || item.coverImage}
                           alt={item.animeTitle}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -230,7 +231,7 @@ export default function HistoryPage({ onWatchEpisode, onNavigateToChannel, onHis
                     className="flex p-3 rounded-xl bg-[#121212] hover:bg-[#181818] border border-white/5 items-center gap-4 transition-all duration-150 cursor-pointer group"
                   >
                     <div className="w-12 h-12 rounded-full overflow-hidden bg-black flex-shrink-0 ring-1 ring-white/10 group-hover:scale-105 transition-transform">
-                      <img
+                      <LazyImage
                         src={item.coverImage}
                         alt={item.animeTitle}
                         className="w-full h-full object-cover"

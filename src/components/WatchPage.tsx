@@ -14,6 +14,7 @@ import {
   getEpisodeProgress,
   getUnifiedWatchState
 } from "../utils";
+import LazyImage from "./LazyImage";
 import VideoPlayer from "./VideoPlayer";
 import SkeletonLoader from "./SkeletonLoader";
 import { Share2, Bookmark, Layers, Play } from "lucide-react";
@@ -113,6 +114,13 @@ export default function WatchPage({
     loadWatchAnime();
     return () => { mounted = false; };
   }, [animeId, seasonNumber, episodeNumber]);
+
+  useEffect(() => {
+    if (anime) {
+      const titleVal = anime.title.english || anime.title.romaji || anime.title.userPreferred || "Untitled Series";
+      document.title = `${titleVal} • Miyoro`;
+    }
+  }, [anime]);
 
   // Update history progress as the video moves
   const handleProgressUpdate = (percent: number) => {
@@ -336,7 +344,7 @@ export default function WatchPage({
               title="Go to anime channel hub"
             >
               <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-black ring-1 ring-white/10 group-hover:scale-105 transition-transform shadow-inner">
-                <img src={avatar} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                <LazyImage src={avatar} alt="Publisher Avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
               </div>
               <div className="min-w-0">
                 <h3 className="text-white text-sm font-bold group-hover:text-[#ff6b35] transition-colors truncate">
@@ -413,7 +421,7 @@ export default function WatchPage({
                 >
                   {/* Episode Thumbnail */}
                   <div className="relative w-24 aspect-video bg-black/40 rounded-lg overflow-hidden flex-shrink-0 border border-white/5">
-                    <img
+                    <LazyImage
                       src={anime.coverImage.medium || anime.coverImage.large}
                       alt={`${mainTitle} Episode ${epNum}`}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"

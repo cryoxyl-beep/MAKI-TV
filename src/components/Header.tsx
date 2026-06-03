@@ -115,7 +115,7 @@ export default function Header({
           <div className="flex items-center gap-6 lg:gap-10">
             <div className="flex items-center cursor-pointer group" onClick={onNavigateHome}>
               <span className="text-xl md:text-2xl font-black tracking-wider bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-transparent hover:opacity-90 transition-all duration-300">
-                miyou
+                miyoro
               </span>
             </div>
 

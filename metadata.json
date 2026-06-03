@@ -1,5 +1,5 @@
 {
-  "name": "MakiTV",
+  "name": "Miyoro",
   "description": "A modern anime streaming platform inspired by YouTube, featuring AniList GraphQL API integration.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

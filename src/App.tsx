@@ -10,6 +10,7 @@ import HomeFeed from "./components/HomeFeed";
 import ChannelPage from "./components/ChannelPage";
 import WatchPage from "./components/WatchPage";
 import HistoryPage from "./components/HistoryPage";
+import LazyImage from "./components/LazyImage";
 import { getSubscriptions, isSubscribed, toggleSubscription, parseEpisodeSearch } from "./utils";
 import { fetchAnimeFeed } from "./services/anilist";
 import { SubscriptionItem } from "./types";
@@ -31,6 +32,21 @@ export default function App() {
   useEffect(() => {
     setSubscriptionsList(getSubscriptions());
   }, []);
+
+  // Update browser tab title dynamically based on activePage & searchQuery
+  useEffect(() => {
+    if (activePage === "home") {
+      if (searchQuery.trim().length > 0) {
+        document.title = "Search • Miyoro";
+      } else {
+        document.title = "Miyoro";
+      }
+    } else if (activePage === "subscriptions" || activePage === "trending") {
+      document.title = "Browse • Miyoro";
+    } else if (activePage === "history") {
+      document.title = "History • Miyoro";
+    }
+  }, [activePage, searchQuery]);
 
   const handleSyncSubscriptions = () => {
     setSubscriptionsList(getSubscriptions());
@@ -240,7 +256,7 @@ export default function App() {
                       className="flex flex-col items-center text-center p-4 bg-[#121212] hover:bg-[#181818] border border-white/5 rounded-2xl cursor-pointer transition-colors group select-none relative"
                     >
                       <div className="w-20 h-20 rounded-full overflow-hidden mb-3 shadow shadow-black ring-2 ring-white/5 group-hover:scale-105 transition-transform">
-                        <img
+                        <LazyImage
                           src={sub.coverImage}
                           alt={sub.animeTitle}
                           className="w-full h-full object-cover"

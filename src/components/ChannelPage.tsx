@@ -9,6 +9,7 @@ import { fetchAnimeDetails, formatAiringStatus, formatPopularity } from "../serv
 import { toggleSubscription, isSubscribed, getEpisodeProgress } from "../utils";
 import SkeletonLoader from "./SkeletonLoader";
 import { Check, Star, Play, Info, UserPlus, Youtube } from "lucide-react";
+import LazyImage from "./LazyImage";
 
 interface ChannelPageProps {
   animeId: number;
@@ -43,6 +44,13 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
     loadChannel();
     return () => { mounted = false; };
   }, [animeId]);
+
+  useEffect(() => {
+    if (anime) {
+      const titleVal = anime.title.english || anime.title.romaji || anime.title.userPreferred || "Untitled Series";
+      document.title = `${titleVal} • Miyoro`;
+    }
+  }, [anime]);
 
   const handleSubscribeToggle = () => {
     if (anime) {
@@ -80,7 +88,7 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
       {/* =============== TOP CHANNEL HERO BANNER =============== */}
       <div className="w-full h-40 sm:h-56 md:h-64 relative overflow-hidden bg-black/20">
         {banner ? (
-          <img
+          <LazyImage
             src={banner}
             alt={mainTitle}
             className="w-full h-full object-cover brightness-[0.75]"
@@ -96,8 +104,8 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
       <div className="max-w-6xl mx-auto px-4 md:px-6 py-4 flex flex-col md:flex-row gap-5 items-start relative -mt-6 z-10">
         
         {/* Large circular avatar */}
-        <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-black/40 ring-4 ring-white/[0.08] flex-shrink-0 shadow-2xl relative group">
-          <img
+        <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-black/40 ring-4 ring-white/[0.08] flex-shrink-0 shadow-2xl relative group animate-fade-in">
+          <LazyImage
             src={profileAvatar}
             alt={mainTitle}
             className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-200"
@@ -234,12 +242,11 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
                       className="bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.06] hover:border-white/[0.1] rounded-2xl overflow-hidden p-3 transition-all cursor-pointer group flex flex-col gap-3 min-w-0 shadow-lg"
                     >
                       <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-black/40 shadow shrink-0">
-                        <img
+                        <LazyImage
                           src={banner || profileAvatar}
                           alt={`Ep ${episodeNum}`}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none"
                           referrerPolicy="no-referrer"
-                          loading="lazy"
                         />
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all bg-opacity-70">
                           <Play className="w-8 h-8 fill-white stroke-none transform scale-90 group-hover:scale-100 transition-all duration-300" />

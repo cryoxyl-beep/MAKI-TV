@@ -7,6 +7,7 @@ import { AniListAnime } from "../types";
 import { formatAiringStatus, formatViews } from "../services/anilist";
 import { Star, Play, Tv } from "lucide-react";
 import { useState } from "react";
+import LazyImage from "./LazyImage";
 
 interface AnimeCardProps {
   anime: AniListAnime;
@@ -40,12 +41,11 @@ export default function AnimeCard({ anime, onClick, layout = "grid" }: AnimeCard
       >
         {/* Large Thumbnail left */}
         <div className="relative w-full sm:w-[280px] md:w-[320px] aspect-video flex-shrink-0 bg-black/40 rounded-xl overflow-hidden border border-white/[0.05] shadow-inner">
-          <img
+          <LazyImage
             src={thumbnail}
             alt={mainTitle}
             className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500 ease-out"
             referrerPolicy="no-referrer"
-            loading="lazy"
           />
           {/* Action indicator on hover */}
           <div className="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-300">
@@ -107,12 +107,11 @@ export default function AnimeCard({ anime, onClick, layout = "grid" }: AnimeCard
         className="flex gap-3 bg-[#0d0d11]/50 hover:bg-[#15151c] border border-transparent hover:border-white/[0.05] p-2.5 rounded-xl cursor-pointer transition-all duration-300 group hover:shadow-lg"
       >
         <div className="relative w-36 h-20 flex-shrink-0 bg-black/40 rounded-xl overflow-hidden lg:h-20 border border-white/[0.05]">
-          <img
+          <LazyImage
             src={thumbnail}
             alt={mainTitle}
             className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500 ease-out"
             referrerPolicy="no-referrer"
-            loading="lazy"
           />
           <span className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 bg-black/80 text-white text-[9px] font-bold rounded">
             {episodesCount}
@@ -146,12 +145,11 @@ export default function AnimeCard({ anime, onClick, layout = "grid" }: AnimeCard
     >
       {/* 2:3 Poster Container with Dark Liquid Glass */}
       <div className="relative w-[200px] aspect-[2/3] rounded-[20px] overflow-hidden bg-white/[0.04] backdrop-blur-[12px] border border-white/[0.08] shadow-lg sm:group-hover:shadow-[0_8px_30px_rgb(0,0,0,0.8)] sm:group-hover:border-white/[0.2] transition-all duration-250 ease-out z-10 isolate">
-        <img
+        <LazyImage
           src={poster}
           alt={mainTitle}
           className="w-full h-full object-cover transform sm:group-hover:scale-[1.03] transition-transform duration-250 ease-out"
           referrerPolicy="no-referrer"
-          loading="lazy"
         />
         
         {/* Rating Badge (Floating Glass Pill) */}
