@@ -72,7 +72,7 @@ export async function fetchAniList(query: string, variables: any = {}): Promise<
         data: json.data,
       }));
     } catch (e) {
-      console.warn("localStorage quota exceeded for AniList cache:", e);
+      // Ignore
     }
   }
 
@@ -128,7 +128,7 @@ export async function fetchAniListImagesByTitles(titles: string[]): Promise<Reco
       return json.data || {};
     }
   } catch (err) {
-    console.error("AniList fetch error:", err);
+    // Ignore
   }
   return {};
 }
@@ -232,7 +232,6 @@ export async function fetchAnimeFeed(category?: string, searchWord?: string, pag
 
     return result;
   } catch (err) {
-    console.error("fetchAnimeFeed Error:", err);
     return [];
   }
 }
@@ -266,7 +265,6 @@ export async function fetchAnimeDetails(id: number): Promise<AniListAnime | null
   }
 
   if (jikanFailed || !json || !json.data) {
-    console.log("Jikan failed, falling back to AniList for MAL ID", id);
     const fallbackQuery = `
       query ($idMal: Int) {
         Media (idMal: $idMal, type: ANIME) {
@@ -371,7 +369,6 @@ export async function fetchAnimeDetails(id: number): Promise<AniListAnime | null
          return result as AniListAnime;
       }
     } catch (fallbackErr) {
-      console.error("AniList fallback also failed:", fallbackErr);
       return null;
     }
     return null;
@@ -508,7 +505,7 @@ export async function fetchAnimeTrailer(idMal: number, signal?: AbortSignal): Pr
     }
   } catch (err: any) {
     if (err.name !== 'AbortError') {
-      console.error("[Hero Trailer] Failed to fetch trailer", err);
+      // Ignore
     }
   }
   return null;
