@@ -132,73 +132,62 @@ export default function AnimeCard({ anime, onClick, layout = "grid" }: AnimeCard
     );
   }
 
-  // Standard HOMEPAGE Grid Layout: Premium Dark Card
+  // Standard HOMEPAGE Premium Portrait Card Layout
+  const poster = anime.coverImage.extraLarge || anime.coverImage.large || anime.bannerImage || "";
+  const year = anime.seasonYear || "TBA";
+  const format = anime.format || "TV";
+
   return (
     <div
       onClick={onClick}
-      className="flex flex-col gap-3.5 group cursor-pointer transition-all duration-300 select-none p-3.5 bg-[#0d0d11]/80 hover:bg-[#15151c] border border-white/[0.04] hover:border-[#ff6b35]/30 rounded-2xl overflow-hidden shadow-md hover:shadow-xl outline-none focus-within:ring-2 focus-within:ring-[#ff6b35]/50 relative hover:scale-[1.005]"
+      className="group relative flex flex-col cursor-pointer transition-all duration-250 ease-out sm:hover:-translate-y-[6px]"
+      style={{ width: "200px" }}
     >
-      {/* 16:9 Aspect ratio video card container */}
-      <div className="relative aspect-video w-full bg-black/40 rounded-2xl overflow-hidden border border-white/[0.04]">
+      {/* 2:3 Poster Container with Dark Liquid Glass */}
+      <div className="relative w-[200px] aspect-[2/3] rounded-[20px] overflow-hidden bg-white/[0.04] backdrop-blur-[12px] border border-white/[0.08] shadow-lg sm:group-hover:shadow-[0_8px_30px_rgb(0,0,0,0.8)] sm:group-hover:border-white/[0.2] transition-all duration-250 ease-out z-10 isolate">
         <img
-          src={thumbnail}
+          src={poster}
           alt={mainTitle}
-          className="w-full h-full object-cover group-hover:scale-[1.03] duration-500 ease-out transition-transform"
+          className="w-full h-full object-cover transform sm:group-hover:scale-[1.03] transition-transform duration-250 ease-out"
           referrerPolicy="no-referrer"
           loading="lazy"
         />
-        {/* Play Icon trigger overlay */}
-        <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-350">
-          <div className="p-2.5 bg-[#ff6b35] rounded-full text-white shadow-xl shadow-[#ff6b35]/30 transform scale-90 group-hover:scale-100 transition-transform duration-300">
-            <Play className="w-4.5 h-4.5 fill-white stroke-none" />
+        
+        {/* Rating Badge (Floating Glass Pill) */}
+        {anime.averageScore && (
+          <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/10 shadow-md">
+            <Star className="w-3.5 h-3.5 fill-[#ff6b35] stroke-none drop-shadow-md" />
+            <span className="text-white text-xs font-bold tracking-tight">
+              {(anime.averageScore / 10).toFixed(1)}
+            </span>
+          </div>
+        )}
+
+        {/* Watch Now Button (Glass Pill, visible on hover) */}
+        <div className="absolute inset-0 z-30 flex items-center justify-center opacity-0 sm:group-hover:opacity-100 transition-opacity duration-250 bg-black/40 backdrop-blur-[2px]">
+          <div className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/[0.08] backdrop-blur-lg border border-white/20 shadow-[0_0_20px_rgba(255,255,255,0.1)] transform translate-y-4 sm:group-hover:translate-y-0 transition-transform duration-250 ease-out">
+            <Play className="w-4 h-4 text-white fill-white drop-shadow-lg" />
+            <span className="text-white text-sm font-bold tracking-wide drop-shadow-md lg:block hidden">Watch Now</span>
           </div>
         </div>
         
-        {/* Dynamic Duration equivalent & average score badge */}
-        <span className="absolute bottom-2.5 right-2.5 px-2 py-0.5 bg-black/85 text-white text-[10px] font-semibold rounded-md tracking-wider uppercase select-none">
-          {episodesCount}
-        </span>
-
-        {anime.averageScore && (
-          <span className="absolute top-2.5 left-2.5 px-2 py-0.5 bg-black/80 text-[#ff6b35] text-[10px] font-bold rounded-md flex items-center gap-1.5 select-none leading-none shadow">
-            <Star className="w-3 h-3 fill-[#ff6b35] stroke-none" />
-            <span>{(anime.averageScore / 10).toFixed(1)}</span>
-          </span>
-        )}
+        {/* Edge Glow / Soft Inner Highlight */}
+        <div className="absolute inset-0 rounded-[20px] border border-white/[0.06] pointer-events-none group-hover:border-white/[0.15] transition-colors duration-250" />
+        <div className="absolute inset-0 rounded-[20px] shadow-[inset_0_0_20px_rgba(255,255,255,0.02)] pointer-events-none" />
       </div>
 
-      {/* Row details with avatar & text column */}
-      <div className="flex gap-3 px-1">
-        {/* Circle avatar of the anime series channel */}
-        <div className="flex-shrink-0">
-          <div className="w-9 h-9 rounded-full ring-1 ring-white/10 overflow-hidden bg-white/[0.05] hover:scale-105 transition-all duration-300 shadow-inner">
-            <img
-              src={avatar}
-              alt={mainTitle}
-              className="w-full h-full object-cover"
-              referrerPolicy="no-referrer"
-              loading="lazy"
-            />
-          </div>
-        </div>
-
-        {/* Text descriptions */}
-        <div className="flex-1 min-w-0 flex flex-col justify-start">
-          <h3 className="text-[#f1f1f1] text-[14px] leading-tight font-bold tracking-tight line-clamp-2 font-sans group-hover:text-[#ff6b35] transition-colors">
-            {mainTitle}
-          </h3>
-          
-          <div className="text-xs text-[#aaa] mt-1.5 space-y-0.5 leading-snug">
-            {/* Displaying studio as Channel name */}
-            <span className="hover:text-white transition-colors block truncate font-medium">
-              @{channelHandle}
-            </span>
-            <div className="flex items-center text-[10px] text-[#888] gap-1 truncate font-mono">
-              <span>{formatViews(anime.popularity)}</span>
-              <span className="opacity-40">•</span>
-              <span>{anime.seasonYear || "TBA"}</span>
-            </div>
-          </div>
+      {/* Info Section */}
+      <div className="mt-3.5 flex flex-col gap-1.5 z-0">
+        <h3 className="text-[#f1f1f1] text-[15px] font-bold leading-snug tracking-tight line-clamp-2 font-sans group-hover:text-white transition-colors">
+          {mainTitle}
+        </h3>
+        
+        <div className="flex items-center text-[11px] sm:text-[12px] text-[#999] font-medium gap-2 mt-0.5">
+          <span>{year}</span>
+          <span className="w-1 h-1 rounded-full bg-white/20" />
+          <span className="uppercase tracking-wider">{format}</span>
+          <span className="w-1 h-1 rounded-full bg-white/20" />
+          <span>{episodesCount}</span>
         </div>
       </div>
     </div>

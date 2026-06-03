@@ -9,6 +9,7 @@ import { AniListAnime } from "../types";
 import AnimeCard from "./AnimeCard";
 import CategoryChips from "./CategoryChips";
 import SkeletonLoader from "./SkeletonLoader";
+import DiscoveryShelf from "./DiscoveryShelf";
 import { RefreshCw, Play } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, EffectFade } from "swiper/modules";
@@ -101,18 +102,45 @@ export default function HomeFeed({
 
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
   const [activeTrailerId, setActiveTrailerId] = useState<string | null>(null);
-  const [activeTrailerStartOffset, setActiveTrailerStartOffset] = useState<number>(0);
+  const [activeTrailerStartOffset, setActiveTrailerStartOffset] =
+    useState<number>(0);
   const [activeIframeLoaded, setActiveIframeLoaded] = useState<boolean>(false);
-  
-  const trailerCacheRef = useRef<Record<number, { trailerId: string; site: string; timestamp: number; startOffset: number }>>({});
+
+  const trailerCacheRef = useRef<
+    Record<
+      number,
+      {
+        trailerId: string;
+        site: string;
+        timestamp: number;
+        startOffset: number;
+      }
+    >
+  >({});
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && !(window as any).YT) {
+      const tag = document.createElement("script");
+      tag.src = "https://www.youtube.com/iframe_api";
+      const firstScriptTag = document.getElementsByTagName("script")[0];
+      if (firstScriptTag && firstScriptTag.parentNode) {
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+      } else {
+        document.head.appendChild(tag);
+      }
+    }
+  }, []);
 
   const activeAnime = bannerAnimes[activeSlideIndex] || null;
   const activeAnimeId = activeAnime?.id || null;
 
   useEffect(() => {
-    console.log("[Hero Trailer] useEffect started. Dependencies:", { activeSlideIndex, activeAnimeId });
-    
+    console.log("[Hero Trailer] useEffect started. Dependencies:", {
+      activeSlideIndex,
+      activeAnimeId,
+    });
+
     setActiveTrailerId(null);
     setActiveIframeLoaded(false);
     if (abortControllerRef.current) {
@@ -122,7 +150,9 @@ export default function HomeFeed({
 
     if (!activeAnimeId || !activeAnime) return;
 
-    console.log(`[Hero Trailer] Anime: ${activeAnime.title.english || activeAnime.title.romaji}`);
+    console.log(
+      `[Hero Trailer] Anime: ${activeAnime.title.english || activeAnime.title.romaji}`,
+    );
     console.log(`[Hero Trailer] MAL ID: ${activeAnimeId}`);
     console.log("[Hero Trailer] Waiting 2 seconds");
 
@@ -138,10 +168,13 @@ export default function HomeFeed({
       console.log("[Hero Trailer] Fetching Trailer");
       const abortController = new AbortController();
       abortControllerRef.current = abortController;
-      
+
       try {
-        const trailerData = await fetchAnimeTrailer(activeAnimeId, abortController.signal);
-        
+        const trailerData = await fetchAnimeTrailer(
+          activeAnimeId,
+          abortController.signal,
+        );
+
         if (abortController.signal.aborted) {
           return;
         }
@@ -153,7 +186,7 @@ export default function HomeFeed({
             trailerId: trailerData.id,
             site: trailerData.site,
             timestamp: Date.now(),
-            startOffset: startOffset
+            startOffset: startOffset,
           };
           setActiveTrailerId(trailerData.id);
           setActiveTrailerStartOffset(startOffset);
@@ -161,16 +194,17 @@ export default function HomeFeed({
           console.log("[Hero Trailer] No Trailer Available");
         }
       } catch (err: any) {
-        if (err.name !== 'AbortError') {
+        if (err.name !== "AbortError") {
           console.log("[Hero Trailer] No Trailer Available");
         }
       }
-      
     }, 2000);
 
     return () => {
       clearTimeout(timerId);
-      console.log("[Hero Trailer] Timer Cancelled (useEffect cleanup executed)");
+      console.log(
+        "[Hero Trailer] Timer Cancelled (useEffect cleanup executed)",
+      );
     };
   }, [activeSlideIndex, activeAnimeId]);
 
@@ -197,31 +231,60 @@ export default function HomeFeed({
                 const animeTitle =
                   recommendedAnime.title.english ||
                   recommendedAnime.title.romaji;
-                
+
                 const isActiveSlide = activeSlideIndex === idx;
-                const isTrailerActive = isActiveSlide && activeTrailerId !== null;
+                const isTrailerActive =
+                  isActiveSlide && activeTrailerId !== null;
 
                 return (
-                  <SwiperSlide key={recommendedAnime.id}>
+                  <SwiperSlide key={`${recommendedAnime.id}-${idx}`}>
                     <div
                       onClick={() => onSelectAnime(recommendedAnime.id)}
                       className="w-full h-full cursor-pointer relative bg-black/20 overflow-hidden"
                     >
                       {/* Netflix-style Cinematic Trailer */}
                       {isTrailerActive && (
-                        <div
-                          className="absolute inset-0 z-10 pointer-events-none"
-                        >
+                        <div className="absolute inset-0 z-10 pointer-events-none">
                           <div className="absolute inset-0 bg-black pointer-events-none" />
                           <iframe
-                            src={`https://www.youtube-nocookie.com/embed/${activeTrailerId}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&disablekb=1&start=${activeTrailerStartOffset}`}
+                            id={`youtube-player-${activeTrailerId}`}
+                            src={`https://www.youtube-nocookie.com/embed/${activeTrailerId}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&disablekb=1&start=${activeTrailerStartOffset}&enablejsapi=1`}
                             title="Anime Trailer"
                             className="w-full h-[150%] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none scale-[1.05] brightness-[0.55] border-none"
                             allow="autoplay; encrypted-media; picture-in-picture"
                             tabIndex={-1}
-                            onLoad={() => {
+                            onLoad={(e) => {
                               console.log("[Hero Trailer] Iframe Mounted");
-                              setTimeout(() => setActiveIframeLoaded(true), 2500);
+                              const iframeEl = e.currentTarget;
+                              const initYT = () => {
+                                const YT = (window as any).YT;
+                                if (YT && YT.Player) {
+                                  new YT.Player(iframeEl, {
+                                    events: {
+                                      onReady: () => {
+                                        console.log("[Hero Trailer] Player Ready");
+                                      },
+                                      onStateChange: (event: any) => {
+                                        if (event.data === 3) {
+                                          console.log("[Hero Trailer] Buffering");
+                                        } else if (event.data === 2) {
+                                          console.log("[Hero Trailer] Paused");
+                                        } else if (event.data === 1) {
+                                          console.log("[Hero Trailer] Playing");
+                                          console.log("[Hero Trailer] Revealing Trailer");
+                                          setTimeout(
+                                            () => setActiveIframeLoaded(true),
+                                            300,
+                                          );
+                                        }
+                                      },
+                                    },
+                                  });
+                                } else {
+                                  setTimeout(initYT, 100);
+                                }
+                              };
+                              initYT();
                             }}
                           />
                           <div className="absolute inset-0 z-20 bg-transparent cursor-default pointer-events-auto" />
@@ -237,7 +300,9 @@ export default function HomeFeed({
                         }
                         alt="Hero Feed Anime"
                         className={`absolute inset-0 z-20 w-full h-full object-cover group-hover:scale-105 transition-opacity duration-500 ease-in-out brightness-75 bg-gradient-to-tr from-[#ff6b35]/20 to-[#ffa585]/1 ${
-                          isTrailerActive && activeIframeLoaded ? "opacity-0" : "opacity-100"
+                          isTrailerActive && activeIframeLoaded
+                            ? "opacity-0"
+                            : "opacity-100"
                         }`}
                         referrerPolicy="no-referrer"
                       />
@@ -272,17 +337,7 @@ export default function HomeFeed({
           </div>
         )}
 
-      {/* Category Horizontal scroll chips line (moved below banner and centralized) */}
-      {!searchQuery && (
-        <div className="flex justify-center mb-6">
-          <CategoryChips
-            selectedCategory={selectedCategory}
-            onSelectCategory={(cat) => {
-              setSelectedCategory(cat);
-            }}
-          />
-        </div>
-      )}
+      {/* Removed Category Horizontal scroll chips line entirely */}
 
       {/* Dynamic Header details when query is running */}
       {searchQuery && (
@@ -305,29 +360,58 @@ export default function HomeFeed({
       )}
 
       {/* Grid or List flow for HOMEPAGE recommendations */}
-      <div
-        className={
-          searchQuery
-            ? "max-w-6xl mx-auto px-4 md:px-6 py-6 flex flex-col gap-5"
-            : "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 px-4 md:px-6"
-        }
-      >
-        {feedAnimes.map((anime, index) => {
-          const isLastElement = index === feedAnimes.length - 1;
-          return (
-            <div
-              ref={isLastElement ? lastAnimeElementRef : null}
-              key={`${anime.id}-${index}`}
-            >
-              <AnimeCard
-                anime={anime}
-                onClick={() => onSelectAnime(anime.id)}
-                layout={searchQuery ? "list" : "grid"}
-              />
+      {selectedCategory === "All" && !searchQuery ? (
+        <div className="flex flex-col gap-1 w-full bg-transparent pt-6 relative isolate">
+          {/* Trending Now shelf (using already fetched feedAnimes) */}
+          <div className="flex flex-col gap-4 relative isolate mb-8 group/shelf">
+            <div className="px-4 md:px-6 flex flex-col">
+              <h2 className="text-2xl font-bold text-[#f1f1f1] tracking-tight">Trending Now</h2>
+              <p className="text-[13px] text-gray-400 font-medium mt-0.5">Most watched this week</p>
             </div>
-          );
-        })}
-      </div>
+            <div className="flex overflow-x-auto gap-5 px-4 md:px-6 scroll-px-4 md:scroll-px-6 pb-6 pt-2 snap-x snap-mandatory scroll-smooth" style={{ scrollbarWidth: "none" }}>
+              {feedAnimes.slice(0, 15).map((anime, index) => {
+                const isLastElement = index === Math.min(feedAnimes.length - 1, 14);
+                return (
+                  <div key={`${anime.id}-${index}`} ref={isLastElement ? lastAnimeElementRef : null} className="snap-start shrink-0">
+                    <AnimeCard anime={anime} onClick={() => onSelectAnime(anime.id)} layout="grid" />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <DiscoveryShelf title="Popular This Season" subtitle="Current fan favorites" category="Currently Airing" onSelectAnime={onSelectAnime} />
+          <DiscoveryShelf title="Top Rated" subtitle="Highest rated anime of all time" category="Most Watched" onSelectAnime={onSelectAnime} />
+          <DiscoveryShelf title="Action Packed" subtitle="Adrenaline-fueled adventures" category="Action" onSelectAnime={onSelectAnime} />
+          <DiscoveryShelf title="Romance" subtitle="Heartwarming love stories" category="Romance" onSelectAnime={onSelectAnime} />
+          <DiscoveryShelf title="Fantasy Worlds" subtitle="Epic magical journeys" category="Fantasy" onSelectAnime={onSelectAnime} />
+          <DiscoveryShelf title="Drama & Suspense" subtitle="Emotional and gripping storytelling" category="Drama" onSelectAnime={onSelectAnime} />
+        </div>
+      ) : (
+        <div
+          className={
+            searchQuery
+              ? "max-w-6xl mx-auto px-4 md:px-6 py-6 flex flex-col gap-5"
+              : "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-8 px-4 md:px-6"
+          }
+        >
+          {feedAnimes.map((anime, index) => {
+            const isLastElement = index === feedAnimes.length - 1;
+            return (
+              <div
+                ref={isLastElement ? lastAnimeElementRef : null}
+                key={`${anime.id}-${index}`}
+              >
+                <AnimeCard
+                  anime={anime}
+                  onClick={() => onSelectAnime(anime.id)}
+                  layout={searchQuery ? "list" : "grid"}
+                />
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Initial load shimmer */}
       {isLoading && (
