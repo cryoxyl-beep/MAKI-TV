@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import { db } from "../lib/firebase";
-import { Play, ChevronUp, ChevronDown } from "lucide-react";
+import { Play } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { EffectFade } from "swiper/modules";
 import type { Swiper as SwiperType } from "swiper";
@@ -89,6 +89,19 @@ export default function PremiumHero({ onSelectAnime }: PremiumHeroProps) {
   const [swiperInstance, setSwiperInstance] = useState<SwiperType | null>(null);
 
   useEffect(() => {
+    if (trailers.length > 0 && trailers[activeSlideIndex]) {
+      const activeHero = trailers[activeSlideIndex];
+      console.log(
+        "Active Hero",
+        activeHero.title,
+        activeHero.malId,
+        activeHero.anilistId,
+        activeSlideIndex
+      );
+    }
+  }, [activeSlideIndex, trailers]);
+
+  useEffect(() => {
     let mounted = true;
     const fetchTrailers = async () => {
       if (!db) return;
@@ -123,18 +136,6 @@ export default function PremiumHero({ onSelectAnime }: PremiumHeroProps) {
   return (
     <div className="w-full relative -mt-[56px] mb-8 group/hero">
       <div className="absolute right-4 md:right-6 lg:right-10 top-1/2 -translate-y-1/2 z-30 flex flex-col items-center gap-2 md:gap-3 pointer-events-none opacity-100 transition-opacity duration-500">
-        <button 
-          onClick={() => {
-            if (swiperInstance) {
-              if (swiperInstance.isBeginning) swiperInstance.slideTo(trailers.length - 1);
-              else swiperInstance.slidePrev();
-            }
-          }} 
-          className="p-1 mb-2 text-white/50 hover:text-white bg-white/5 hover:bg-white/20 rounded-full backdrop-blur-sm transition-colors pointer-events-auto shadow-sm shadow-black/20"
-        >
-          <ChevronUp size={18} />
-        </button>
-        
         {trailers.map((trailer, idx) => (
           <HeroNavDot 
             key={`dot-${trailer.malId}`} 
@@ -142,18 +143,6 @@ export default function PremiumHero({ onSelectAnime }: PremiumHeroProps) {
             onClick={() => swiperInstance?.slideTo(idx)} 
           />
         ))}
-
-        <button 
-          onClick={() => {
-            if (swiperInstance) {
-              if (swiperInstance.isEnd) swiperInstance.slideTo(0);
-              else swiperInstance.slideNext();
-            }
-          }} 
-          className="p-1 mt-2 text-white/50 hover:text-white bg-white/5 hover:bg-white/20 rounded-full backdrop-blur-sm transition-colors pointer-events-auto shadow-sm shadow-black/20"
-        >
-          <ChevronDown size={18} />
-        </button>
       </div>
 
       <Swiper
@@ -253,8 +242,7 @@ function HeroSlide({ trailer, isActive, onSelect, onEnded }: { trailer: HeroTrai
 
   return (
     <div 
-      className={`w-full h-full relative cursor-pointer overflow-hidden bg-black isolation-auto transition-all duration-500 ${isActive ? 'pointer-events-auto opacity-100 z-10' : 'pointer-events-none opacity-0 z-0'}`}
-      onClick={handleSelectClick}
+      className={`w-full h-full relative overflow-hidden bg-black isolation-auto transition-all duration-500 ${isActive ? 'pointer-events-auto opacity-100 z-10' : 'pointer-events-none opacity-0 z-0'}`}
     >
       {trailer.trailerUrl && (
         <img
@@ -288,7 +276,7 @@ function HeroSlide({ trailer, isActive, onSelect, onEnded }: { trailer: HeroTrai
       <div className="absolute inset-0 pointer-events-none z-10 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
 
       <div className="absolute inset-0 z-20 flex flex-col justify-end p-6 md:p-12 pb-6 md:pb-12 lg:pb-14 pointer-events-none wrapper">
-        <div className="max-w-7xl mx-auto w-full pointer-events-auto h-full flex flex-col justify-end">
+        <div className={`max-w-7xl mx-auto w-full h-full flex flex-col justify-end ${isActive ? 'pointer-events-auto' : 'pointer-events-none'}`}>
           <div className="max-w-3xl lg:max-w-4xl flex flex-col items-start gap-3 transform transition-transform duration-700 hover:translate-y-[-4px]">
             {trailer.logoUrl ? (
               <img 
@@ -330,10 +318,11 @@ function HeroSlide({ trailer, isActive, onSelect, onEnded }: { trailer: HeroTrai
               </p>
             )}
 
-            <div className="flex items-center gap-4 mt-6 md:mt-8 px-1">
+            <div className={`flex items-center gap-4 mt-6 md:mt-8 px-1 ${isActive ? 'pointer-events-auto' : 'pointer-events-none'}`}>
               <button 
                 onClick={handleSelectClick}
-                className="px-6 py-2.5 md:px-8 md:py-3 bg-white hover:bg-white/90 text-black font-extrabold rounded-md flex items-center gap-2 shadow-[0_0_20px_rgba(255,255,255,0.3)] shadow-black/20 cursor-pointer transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] group"
+                disabled={!isActive}
+                className={`px-6 py-2.5 md:px-8 md:py-3 bg-white hover:bg-white/90 text-black font-extrabold rounded-md flex items-center gap-2 shadow-[0_0_20px_rgba(255,255,255,0.3)] shadow-black/20 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] group ${isActive ? 'pointer-events-auto cursor-pointer' : 'pointer-events-none'}`}
               >
                 <Play className="w-5 h-5 fill-black stroke-none" />
                 <span className="tracking-wide text-sm md:text-base">Play Now</span>
