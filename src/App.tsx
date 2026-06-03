@@ -154,6 +154,11 @@ export default function App() {
         onNavigateHistory={() => handleNavigate("history")}
         onNavigateSubscriptions={() => handleNavigate("subscriptions")}
         isHomeScreen={activePage === "home"}
+        activeTab={
+          activePage === "channel" || activePage === "watch"
+            ? "home" // default highlighted
+            : (activePage as any)
+        }
       />
 
       <div className="flex flex-1 pt-[56px] text-white z-10 relative">

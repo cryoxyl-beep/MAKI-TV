@@ -4,7 +4,8 @@
  */
 
 import React, { useState, useEffect, useRef } from "react";
-import { Search, X, ArrowLeft } from "lucide-react";
+import { Search, X, ArrowLeft, Home, Clapperboard, History } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface HeaderProps {
   onSearch: (query: string) => void;
@@ -13,6 +14,7 @@ interface HeaderProps {
   onNavigateHistory: () => void;
   onNavigateSubscriptions: () => void;
   isHomeScreen?: boolean;
+  activeTab?: "home" | "trending" | "subscriptions" | "history";
 }
 
 export default function Header({
@@ -22,6 +24,7 @@ export default function Header({
   onNavigateHistory,
   onNavigateSubscriptions,
   isHomeScreen = false,
+  activeTab = "home",
 }: HeaderProps) {
   const [searchVal, setSearchVal] = useState(initialSearchQuery);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
@@ -111,11 +114,52 @@ export default function Header({
           {/* Left Portion: Logo */}
           <div className="flex items-center gap-3 md:gap-4 flex-1" />
 
-          {/* Central Portion: perfectly centered search bar */}
-          <div className={`absolute left-1/2 -translate-x-1/2 hidden md:flex items-center justify-center w-[416px] z-10 pointer-events-none transition-all duration-300 ease-in-out ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-full"}`}>
+          {/* Central Portion: perfectly centered navigation & search bar header system */}
+          <div className={`absolute left-1/2 -translate-x-1/2 hidden md:flex flex-row items-center gap-3.5 z-20 pointer-events-none transition-all duration-300 ease-in-out ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-full"}`}>
+            {/* 1. Navigation Capsule */}
+            <div className="flex flex-row items-center h-10 px-2 bg-white/[0.1] hover:bg-white/[0.15] backdrop-blur-[40px] saturate-[200%] border border-white/[0.25] transition-all duration-500 shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.4),_0_8px_32px_rgba(0,0,0,0.4)] rounded-full pointer-events-auto gap-2">
+              <div className="flex flex-row items-center gap-1.5 h-full relative">
+                {[
+                  { id: "home" as const, label: "Home", icon: Home, onClick: onNavigateHome },
+                  { id: "subscriptions" as const, label: "Subscriptions", icon: Clapperboard, onClick: onNavigateSubscriptions },
+                  { id: "history" as const, label: "History", icon: History, onClick: onNavigateHistory },
+                ].map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeTab === item.id;
+                  
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={item.onClick}
+                      title={item.label}
+                      className="w-7 h-7 flex items-center justify-center rounded-full transition-all duration-300 group cursor-pointer relative z-20"
+                    >
+                      {isActive && (
+                        <motion.div
+                          layoutId="activeTabIndicatorHeader"
+                          className="absolute inset-0 bg-white/[0.2] backdrop-blur-[20px] rounded-full border border-white/[0.3] shadow-[0_0_15px_rgba(255,255,255,0.2)]"
+                          initial={false}
+                          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                        />
+                      )}
+                      <Icon className={`w-4 h-4 transition-all duration-300 relative z-30 group-hover:scale-110 ${isActive ? "text-white" : "text-white/60 group-hover:text-white/90"}`} />
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* User Profile */}
+              <div className="pl-2.5 pr-0.5 h-5 flex items-center justify-center border-l border-white/[0.1]">
+                <div className="w-5.5 h-5.5 rounded-full bg-gradient-to-tr from-[#ff6b35] to-[#ffa585] flex items-center justify-center text-white font-bold text-[10px] shadow-sm ring-1 ring-white/10 cursor-pointer hover:scale-110 transition-transform" title="Account">
+                  O
+                </div>
+              </div>
+            </div>
+
+            {/* 2. Floating Search Bar */}
             <form
               onSubmit={handleSubmit}
-              className={`flex items-center justify-center group cursor-text relative transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-auto w-full ${isSubmitting ? "scale-95" : isFocused ? "scale-[1.02]" : "scale-100"}`}
+              className={`flex items-center justify-center group cursor-text relative transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-auto w-[280px] lg:w-[320px] ${isSubmitting ? "scale-95" : isFocused ? "scale-[1.02]" : "scale-100"}`}
             >
               <div
                 onClick={() => {
