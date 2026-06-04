@@ -35,86 +35,84 @@ export default function AnimeCard({ anime, onClick, layout = "grid" }: AnimeCard
 
   // Layout specific classes
   if (layout === "list") {
-    // Search result list layout: Premium Dark Card
+    // Search result list layout: Ultra-Clean Streaming Platform Row
     return (
       <div
         onClick={onClick}
-        className="flex flex-col sm:flex-row gap-5 p-4.5 rounded-2xl bg-[#0d0d11] hover:bg-[#15151c] border border-white/[0.04] hover:border-[#ff6b35]/30 cursor-pointer transition-all duration-300 group max-w-4xl shadow-md hover:shadow-xl hover:scale-[1.005]"
+        className="flex flex-col sm:flex-row gap-5 md:gap-6 py-4 px-2 sm:px-4 rounded-xl hover:bg-white/[0.03] cursor-pointer transition-colors duration-200 group max-w-4xl"
       >
         {/* Large Thumbnail left */}
-        <div className="relative w-full sm:w-[280px] md:w-[320px] aspect-video flex-shrink-0 bg-black/40 rounded-xl overflow-hidden border border-white/[0.05] shadow-inner">
+        <div className="relative w-full sm:w-[260px] md:w-[300px] aspect-video flex-shrink-0 bg-white/[0.02] rounded-lg overflow-hidden border border-white/[0.04]">
           <LazyImage
             src={thumbnail}
             alt={mainTitle}
-            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500 ease-out"
+            className="w-full h-full object-cover transition-transform duration-500 ease-out sm:group-hover:scale-[1.02]"
             referrerPolicy="no-referrer"
             onLoadComplete={() => setIsCardReady(true)}
           />
           {/* Action indicator on hover */}
           {isCardReady && (
-            <div className="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-300">
-              <div className="p-3 bg-[#ff6b35] rounded-full text-white shadow-xl shadow-[#ff6b35]/25 transform scale-90 group-hover:scale-100 transition-transform duration-300">
+            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-300">
+              <div className="p-3 bg-white/20 backdrop-blur-md border border-white/20 rounded-full text-white shadow-lg transform scale-90 group-hover:scale-100 transition-transform duration-300">
                 <Play className="w-5 h-5 fill-white stroke-none" />
               </div>
             </div>
           )}
           {isCardReady && (
-            <span className="absolute bottom-2.5 right-2.5 px-2 py-0.5 bg-black/80 text-white text-[10px] font-semibold rounded-md tracking-wider uppercase">
+            <span className="absolute bottom-2 right-2 px-1.5 py-0.5 bg-black/80 text-white text-[10px] font-bold rounded tracking-wide">
               {episodesCount}
-            </span>
-          )}
-          {isCardReady && averageScore && (
-            <span className="absolute top-2.5 left-2.5 px-2 py-0.5 bg-black/80 text-[#ff6b35] text-[10px] font-bold rounded-md flex items-center gap-1.5 shadow-sm">
-              <Star className="w-3 h-3 fill-[#ff6b35] stroke-none" />
-              <span>{(anime.averageScore || 75) / 10}</span>
             </span>
           )}
         </div>
 
         {/* Content right */}
-        <div className="flex-1 flex flex-col pt-1 min-w-0 justify-center">
+        <div className="flex-1 flex flex-col pt-1 min-w-0 justify-start">
           {!isCardReady ? (
             <div className="space-y-4 animate-pulse">
               <div className="h-5 bg-white/[0.06] rounded-md w-3/4" />
               <div className="flex items-center gap-2 pt-0.5">
                 <div className="h-3.5 bg-white/[0.04] rounded w-24" />
-                <div className="w-1.5 h-1.5 rounded-full bg-white/[0.04]" />
                 <div className="h-3.5 bg-white/[0.04] rounded w-16" />
               </div>
               <div className="space-y-2 pt-1.5">
                 <div className="h-3 bg-white/[0.02] rounded w-full" />
                 <div className="h-3 bg-white/[0.02] rounded w-11/12" />
               </div>
-              <div className="flex gap-2 pt-2">
-                <div className="h-5 bg-white/[0.03] rounded-full w-14" />
-                <div className="h-5 bg-white/[0.03] rounded-full w-14" />
-              </div>
             </div>
           ) : (
             <div className="animate-fade-in flex flex-col min-w-0">
-              <h3 className="text-white text-base sm:text-lg font-bold leading-snug group-hover:text-[#ff6b35] transition-colors truncate font-sans">
+              <h3 className="text-white text-base md:text-xl font-bold leading-tight group-hover:text-white transition-colors truncate font-sans">
                 {mainTitle}
               </h3>
               
-              <div className="flex flex-wrap items-center text-xs text-[#aaa] gap-1.5 mt-1.5">
-                <span className="hover:text-white transition-colors">@{channelHandle}</span>
-                <span className="opacity-40">•</span>
+              <div className="flex flex-wrap items-center text-xs text-gray-400 gap-2 mt-2 font-medium">
+                <span className="text-white/60">@{channelHandle}</span>
+                <span className="opacity-40">&bull;</span>
                 <span>{formatViews(anime.popularity)}</span>
-                <span className="opacity-40">•</span>
-                <span className="text-[10px] uppercase font-bold text-gray-400 bg-white/[0.04] px-2 py-0.5 rounded border border-white/[0.05]">
+                <span className="opacity-40">&bull;</span>
+                <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400">
                   {formatAiringStatus(anime.status)}
                 </span>
+                {anime.averageScore && (
+                  <>
+                    <span className="opacity-40">&bull;</span>
+                    <span className="flex items-center gap-1">
+                      <Star className="w-3.5 h-3.5 fill-white/60 stroke-none" />
+                      {(anime.averageScore / 10).toFixed(1)}
+                    </span>
+                  </>
+                )}
               </div>
 
-              <p className="text-xs text-[#aaa] mt-3.5 line-clamp-2 md:line-clamp-3 leading-relaxed font-sans font-normal"
+              <p className="text-sm text-gray-400 mt-3 line-clamp-2 md:line-clamp-3 leading-relaxed font-normal"
                  dangerouslySetInnerHTML={{ __html: anime.description || "No description available for this anime series." }}>
               </p>
 
-              <div className="flex flex-wrap gap-1.5 mt-4">
+              <div className="flex flex-wrap gap-2 mt-4">
                 {anime.genres?.slice(0, 3).map((genre) => (
                   <span
                     key={genre}
-                    className="px-2.5 py-1 bg-white/[0.03] border border-white/[0.05] text-[10px] text-gray-400 font-medium rounded-full hover:bg-[#ff6b35]/10 hover:text-white transition-colors"
+                    className="text-[11px] text-gray-400 font-medium"
                   >
                     {genre}
                   </span>

@@ -56,30 +56,25 @@ export default function SkeletonLoader({ type = "grid" }: SkeletonLoaderProps) {
   // 3. SEARCH RESULTS LIST SKELETON (Used in search result lists)
   if (type === "list") {
     return (
-      <div className="max-w-4xl mx-auto px-4 sm:px-0 flex flex-col gap-5 select-none">
+      <div className="max-w-4xl mx-auto px-2 sm:px-4 flex flex-col gap-2 select-none">
         {[...Array(5)].map((_, i) => (
           <div
             key={i}
-            className="flex flex-col sm:flex-row gap-5 p-4.5 rounded-2xl bg-[#0d0d11]/50 border border-white/[0.04]"
+            className="flex flex-col sm:flex-row gap-5 md:gap-6 py-4 px-2 sm:px-4 rounded-xl"
           >
             {/* Left Thumbnail Aspect Video matches AnimeCard list scale */}
-            <div className="w-full sm:w-[280px] md:w-[320px] aspect-video shimmer-bone rounded-xl flex-shrink-0 border border-white/[0.05]" />
+            <div className="w-full sm:w-[260px] md:w-[300px] aspect-video shimmer-bone rounded-lg flex-shrink-0 border border-white/[0.02]" />
             
             {/* Right details placeholders */}
-            <div className="flex-1 flex flex-col pt-1 space-y-3 min-w-0 justify-center">
+            <div className="flex-1 flex flex-col pt-1 space-y-4 min-w-0 justify-start">
               <div className="h-5 shimmer-bone rounded-md w-3/4" />
-              <div className="flex items-center gap-1.5 pt-0.5">
+              <div className="flex items-center gap-2 pt-0.5">
                 <div className="h-3.5 shimmer-bone rounded w-24" />
-                <div className="w-1.5 h-1.5 rounded-full bg-white/[0.04]" />
                 <div className="h-3.5 shimmer-bone rounded w-16" />
               </div>
               <div className="space-y-2 pt-2">
-                <div className="h-3.5 shimmer-bone rounded w-full" />
-                <div className="h-3.5 shimmer-bone rounded w-11/12" />
-              </div>
-              <div className="flex gap-2 pt-3">
-                <div className="h-5 shimmer-bone rounded-full w-14" />
-                <div className="h-5 shimmer-bone rounded-full w-14" />
+                <div className="h-3 shimmer-bone rounded w-full" />
+                <div className="h-3 shimmer-bone rounded w-11/12" />
               </div>
             </div>
           </div>

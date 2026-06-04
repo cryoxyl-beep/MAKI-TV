@@ -111,25 +111,12 @@ export default function HomeFeed({
           <PremiumHero onSelectAnime={onSelectAnime} />
       )}
 
-      {/* Removed Category Horizontal scroll chips line entirely */}
-
       {/* Dynamic Header details when query is running */}
       {searchQuery && (
-        <div className="px-4 md:px-6 pt-3 pb-4 border-b border-[#222] flex items-center justify-between mt-4">
-          <div className="flex items-center gap-2">
-            <span className="text-gray-400 text-sm">Search results for</span>
-            <span className="text-white font-bold text-base bg-[#222] px-3 py-1 rounded-full">
-              "{searchQuery}"
-            </span>
-          </div>
-          {onClearSearch && (
-            <button
-              onClick={onClearSearch}
-              className="text-xs text-[#ff6b35] hover:underline cursor-pointer"
-            >
-              Clear Search
-            </button>
-          )}
+        <div className="px-4 md:px-6 pt-8 pb-4">
+          <h2 className="text-xl md:text-2xl font-bold text-white tracking-tight">
+            Results for "{searchQuery}"
+          </h2>
         </div>
       )}
 
@@ -168,11 +155,7 @@ export default function HomeFeed({
       ) : (
         feedAnimes.length > 0 && (
           <div
-            className={`${
-              searchQuery
-                ? "max-w-6xl mx-auto px-4 md:px-6 py-6 flex flex-col gap-5"
-                : "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-8 px-4 md:px-6"
-            } ${isLoading ? "opacity-30 pointer-events-none" : "animate-fade-in"} transition-opacity duration-300`}
+            className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-8 px-4 md:px-6 w-full select-none ${isLoading ? "opacity-30 pointer-events-none" : "animate-fade-in"} transition-opacity duration-300`}
           >
             {feedAnimes.map((anime, index) => {
               const isLastElement = index === feedAnimes.length - 1;
@@ -184,7 +167,7 @@ export default function HomeFeed({
                   <AnimeCard
                     anime={anime}
                     onClick={() => onSelectAnime(anime.id)}
-                    layout={searchQuery ? "list" : "grid"}
+                    layout="grid"
                   />
                 </div>
               );
@@ -196,7 +179,7 @@ export default function HomeFeed({
       {/* Initial load shimmer for non-homepage grids/lists */}
       {isLoading && feedAnimes.length === 0 && (selectedCategory !== "All" || searchQuery) && (
         <div className="mt-8 px-4 md:px-6">
-          <SkeletonLoader type={searchQuery ? "list" : "grid"} />
+          <SkeletonLoader type="grid" />
         </div>
       )}
 
