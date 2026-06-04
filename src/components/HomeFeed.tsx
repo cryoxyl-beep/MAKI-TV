@@ -12,6 +12,7 @@ import SkeletonLoader from "./SkeletonLoader";
 import DiscoveryShelf from "./DiscoveryShelf";
 import { RefreshCw, Play } from "lucide-react";
 import PremiumHero from "./PremiumHero";
+import { rankSearchMatch } from "../utils/search";
 
 interface HomeFeedProps {
   onSelectAnime: (id: number) => void;
@@ -77,10 +78,29 @@ export default function HomeFeed({
     try {
       const activeSearch = searchQuery ? searchQuery : undefined;
       const activeCategory = selectedCategory;
-      const data = await fetchAnimeFeed(activeCategory, activeSearch, pageNum);
+      let data = await fetchAnimeFeed(activeCategory, activeSearch, pageNum);
+
+      if (activeSearch) {
+        // Enforce Search Relevance Requirements
+        data = data
+          .map((anime) => ({ anime, score: rankSearchMatch(anime, activeSearch) }))
+          .filter((item) => item.score >= 50)
+          .sort((a, b) => b.score - a.score)
+          .map((item) => item.anime);
+        
+        if (isInitial) {
+          data = data.slice(0, 20); // Cap at 20
+        } else {
+          data = []; // Do not fetch more for searches
+        }
+        // Force end of pagination on search matches
+        setHasMore(false);
+      } else {
+        // If data is less than standard batch, it might be the end
+        if (data.length < 25) setHasMore(false);
+      }
 
       if (data.length === 0) {
-        setHasMore(false);
         if (isInitial) {
           setAnimeList([]); // Clear stale results if new query yields nothing
         }
@@ -90,8 +110,6 @@ export default function HomeFeed({
         } else {
           setAnimeList((prev) => [...prev, ...data]);
         }
-        // If data is less than standard batch, it might be the end
-        if (data.length < 25) setHasMore(false);
       }
     } catch (err: any) {
       setError(err.message || "Failed to load feed");
@@ -211,10 +229,9 @@ export default function HomeFeed({
       {!isLoading && !error && animeList.length === 0 && (
         <div className="w-full flex flex-col items-center justify-center py-24 px-4 text-center">
           <span className="text-2xl mb-2">🔍</span>
-          <div className="text-white font-bold text-lg">No anime found</div>
+          <div className="text-white font-bold text-lg">No matching anime found</div>
           <p className="text-gray-400 text-xs mt-1 max-w-xs">
-            We couldn't find any results matching your request. Try searching
-            another term or choosing other categories!
+            Try a different spelling or modifying your search.
           </p>
         </div>
       )}
