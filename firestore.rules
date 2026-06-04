@@ -6,16 +6,35 @@ service cloud.firestore {
       allow read, write: if false;
     }
     
-    // Test collection for connection checking in Phase 1
+    // Check helper for absolute standard auth logic
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Test collection for connection checking
     match /test/{documentId} {
       allow read: if true;
       allow write: if false;
     }
 
-    // Hero Trailers (Public read, admin write only - temporary open for seeding)
+    // Hero Trailers (Public read, admin write only)
     match /heroTrailers/{trailerId} {
       allow read: if true;
       allow write: if false;
+    }
+
+    // Account-scoped User libraries (Subscriptions list)
+    match /libraries/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Account-scoped User Data (history, watch_later lists)
+    match /userData/{userId} {
+      allow read, write: if isOwner(userId);
     }
   }
 }

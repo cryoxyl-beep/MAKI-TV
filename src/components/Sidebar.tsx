@@ -3,13 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Home, Flame, Clapperboard, History, Sparkles } from "lucide-react";
+import { Home, Flame, Clapperboard, Library, Sparkles } from "lucide-react";
 import { SubscriptionItem } from "../types";
 import { motion } from "framer-motion";
 
 interface SidebarProps {
-  activeTab: "home" | "trending" | "subscriptions" | "history";
-  onNavigate: (tab: "home" | "trending" | "subscriptions" | "history") => void;
+  activeTab: "home" | "trending" | "subscriptions" | "library";
+  onNavigate: (tab: "home" | "trending" | "subscriptions" | "library") => void;
   onChannelClick: (animeId: number) => void;
   subscriptions: SubscriptionItem[];
 }
@@ -23,7 +23,7 @@ export default function Sidebar({
   const primaryNavItems = [
     { id: "home" as const, label: "Home", icon: Home },
     { id: "subscriptions" as const, label: "Subscriptions", icon: Clapperboard },
-    { id: "history" as const, label: "History", icon: History },
+    { id: "library" as const, label: "Library", icon: Library },
   ];
 
   return (

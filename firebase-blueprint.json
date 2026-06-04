@@ -31,6 +31,33 @@
         "active": { "type": "boolean" }
       },
       "required": ["title", "malId", "anilistId", "trailerUrl", "logoUrl", "order", "active"]
+    },
+    "LibraryData": {
+      "title": "LibraryData",
+      "description": "Account-scoped subscribed anime listings for a user",
+      "type": "object",
+      "properties": {
+        "animes": {
+          "type": "array",
+          "description": "List of subscribed anime details"
+        }
+      },
+      "required": ["animes"]
+    },
+    "UserData": {
+      "title": "UserData",
+      "description": "User specific watch history, watch progress, and saved watch later lists.",
+      "type": "object",
+      "properties": {
+        "history": {
+          "type": "array",
+          "description": "Watch history and progress entries"
+        },
+        "watch_later": {
+          "type": "array",
+          "description": "Watch later episodes"
+        }
+      }
     }
   },
   "firestore": {
@@ -41,6 +68,14 @@
     "heroTrailers": {
       "schema": "HeroTrailer",
       "description": "Contains metadata for hero section premium trailers."
+    },
+    "libraries": {
+      "schema": "LibraryData",
+      "description": "Collection of user-subscribed libraries scoped by user ID"
+    },
+    "userData": {
+      "schema": "UserData",
+      "description": "Collection of user's personal private states (history and watch later lists) scoped by user ID"
     }
   }
 }

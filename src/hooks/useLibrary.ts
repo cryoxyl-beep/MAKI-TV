@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth, db } from "../lib/firebase";
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
-import { AniListAnime } from "../types";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { AniListAnime, WatchHistoryItem } from "../types";
+import { storage, WatchLaterItem } from "../utils";
 
 export interface LibraryItem {
   animeId: number;
@@ -22,7 +23,7 @@ export function useLibrary() {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
       if (user) {
-        await fetchLibrary(user.uid);
+        await fetchUserData(user.uid);
       } else {
         setLibrary([]);
         setIsLoading(false);
@@ -32,20 +33,31 @@ export function useLibrary() {
     return () => unsubscribe();
   }, []);
 
-  const fetchLibrary = async (uid: string) => {
+  const fetchUserData = async (uid: string) => {
     setIsLoading(true);
     try {
       if (!db) return;
-      const docRef = doc(db, "libraries", uid);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
+      
+      // Fetch Library (Subscriptions)
+      const libRef = doc(db, "libraries", uid);
+      const libSnap = await getDoc(libRef);
+      if (libSnap.exists()) {
+        const data = libSnap.data();
         setLibrary(data.animes || []);
       } else {
         setLibrary([]);
       }
+
+      // Fetch other user data (history, watch_later) to keep sync with local storage
+      const userRef = doc(db, "userData", uid);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists()) {
+         const data = userSnap.data();
+         if (data.history) storage.set("history", data.history);
+         if (data.watch_later) storage.set("watch_later", data.watch_later);
+      }
     } catch (err) {
-      console.error("Failed to fetch library:", err);
+      console.error("Failed to fetch user data:", err);
     } finally {
       setIsLoading(false);
     }

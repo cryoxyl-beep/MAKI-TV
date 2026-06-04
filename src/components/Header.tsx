@@ -13,17 +13,17 @@ interface HeaderProps {
   onSearch: (query: string) => void;
   initialSearchQuery?: string;
   onNavigateHome: () => void;
-  onNavigateHistory: () => void;
+  onNavigateLibrary: () => void;
   onNavigateSubscriptions: () => void;
   isHomeScreen?: boolean;
-  activeTab?: "home" | "trending" | "subscriptions" | "history";
+  activeTab?: "home" | "trending" | "subscriptions" | "library";
 }
 
 export default function Header({
   onSearch,
   initialSearchQuery = "",
   onNavigateHome,
-  onNavigateHistory,
+  onNavigateLibrary,
   onNavigateSubscriptions,
   isHomeScreen = false,
   activeTab = "home",
@@ -157,7 +157,7 @@ export default function Header({
                 {[
                   { id: "home" as const, label: "Home", onClick: onNavigateHome },
                   { id: "subscriptions" as const, label: "Browse", onClick: onNavigateSubscriptions },
-                  { id: "history" as const, label: "History", onClick: onNavigateHistory },
+                  { id: "library" as const, label: "Library", onClick: onNavigateLibrary },
                 ].map((item) => {
                   const isActive = activeTab === item.id;
                   return (

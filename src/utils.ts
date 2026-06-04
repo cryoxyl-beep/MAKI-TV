@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { auth, db } from "./lib/firebase";
+import { doc, setDoc } from "firebase/firestore";
 import { AniListAnime, SubscriptionItem, WatchHistoryItem } from "./types";
 
 export interface UnifiedWatchState {
@@ -18,6 +20,24 @@ export interface UnifiedWatchState {
   last_episode_watched: number;
   percentage: number;
   updatedAt: string;
+}
+
+export function formatRelativeDate(isoString: string): string {
+  const date = new Date(isoString);
+  const now = new Date();
+  
+  // Reset times to compare days accurately
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const targetDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  
+  const diffTime = today.getTime() - targetDate.getTime();
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+  
+  if (diffDays <= 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays > 1 && diffDays <= 7) return `${diffDays} Days Ago`;
+  
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 // Persist data in localStorage
@@ -40,6 +60,13 @@ export const storage = {
     }
   },
 };
+
+export function syncToFirebase(key: string, data: any) {
+  if (auth && auth.currentUser && db) {
+    const docRef = doc(db, "userData", auth.currentUser.uid);
+    setDoc(docRef, { [key]: data }, { merge: true }).catch((e: any) => console.error(e));
+  }
+}
 
 // Unified Watch Progress Tracking Getter/Setters
 export function getUnifiedWatchStates(): Record<number, UnifiedWatchState> {
@@ -78,7 +105,9 @@ export function addToWatchHistory(item: Omit<WatchHistoryItem, "watchedAt">): vo
   );
 
   filtered.unshift(newItem); // put on top
-  storage.set("history", filtered.slice(0, 100)); // keep last 100
+  const newHistory = filtered.slice(0, 100);
+  storage.set("history", newHistory); // keep last 100
+  syncToFirebase("history", newHistory);
 }
 
 // Get the last progress of a specific episode
@@ -124,7 +153,43 @@ export function toggleSubscription(anime: AniListAnime): boolean {
   return !alreadySubscribed;
 }
 
-// 3. Seasons builder algorithm
+// 3. Watch Later Helpers
+export interface WatchLaterItem {
+  animeId: number;
+  animeTitle: string;
+  seasonNumber: number;
+  episodeNumber: number;
+  bannerImage?: string;
+  coverImage?: string;
+  savedAt: string;
+}
+
+export function getWatchLater(): WatchLaterItem[] {
+  return storage.get<WatchLaterItem[]>("watch_later", []);
+}
+
+export function isWatchLater(animeId: number, seasonNumber: number, episodeNumber: number): boolean {
+  return getWatchLater().some((i) => i.animeId === animeId && i.seasonNumber === seasonNumber && i.episodeNumber === episodeNumber);
+}
+
+export function toggleWatchLater(item: Omit<WatchLaterItem, "savedAt">): boolean {
+  const items = getWatchLater();
+  const exists = isWatchLater(item.animeId, item.seasonNumber, item.episodeNumber);
+  
+  if (exists) {
+    const newLater = items.filter((i) => !(i.animeId === item.animeId && i.seasonNumber === item.seasonNumber && i.episodeNumber === item.episodeNumber));
+    storage.set("watch_later", newLater);
+    syncToFirebase("watch_later", newLater);
+    return false;
+  } else {
+    const newLater = [{ ...item, savedAt: new Date().toISOString() }, ...items];
+    storage.set("watch_later", newLater);
+    syncToFirebase("watch_later", newLater);
+    return true;
+  }
+}
+
+// 4. Seasons builder algorithm
 export interface SeasonInfo {
   id: number;
   seasonNumber: number;

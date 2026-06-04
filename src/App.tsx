@@ -9,7 +9,7 @@ import Sidebar from "./components/Sidebar";
 import HomeFeed from "./components/HomeFeed";
 import ChannelPage from "./components/ChannelPage";
 import WatchPage from "./components/WatchPage";
-import HistoryPage from "./components/HistoryPage";
+import LibraryPage from "./components/LibraryPage";
 import LazyImage from "./components/LazyImage";
 import { parseEpisodeSearch } from "./utils";
 import { fetchAnimeFeed } from "./services/anilist";
@@ -18,7 +18,7 @@ import { useLibrary } from "./hooks/useLibrary";
 
 export default function App() {
   // Navigation states
-  const [activePage, setActivePage] = useState<"home" | "trending" | "subscriptions" | "history" | "channel" | "watch">("home");
+  const [activePage, setActivePage] = useState<"home" | "trending" | "subscriptions" | "library" | "channel" | "watch">("home");
   const [searchQuery, setSearchQuery] = useState("");
 
   // Sub-states for specific pages
@@ -38,8 +38,8 @@ export default function App() {
       }
     } else if (activePage === "subscriptions" || activePage === "trending") {
       document.title = "Browse • Miyoro";
-    } else if (activePage === "history") {
-      document.title = "History • Miyoro";
+    } else if (activePage === "library") {
+      document.title = "Library • Miyoro";
     }
   }, [activePage, searchQuery]);
 
@@ -91,8 +91,8 @@ export default function App() {
       } else if (hash === "#/subscriptions") {
         setActivePage("subscriptions");
         setSearchQuery("");
-      } else if (hash === "#/history") {
-        setActivePage("history");
+      } else if (hash === "#/library") {
+        setActivePage("library");
         setSearchQuery("");
       } else {
         // Default to home page
@@ -110,7 +110,7 @@ export default function App() {
   }, []);
 
   // Helpers to push link state
-  const handleNavigate = (page: "home" | "trending" | "subscriptions" | "history") => {
+  const handleNavigate = (page: "home" | "trending" | "subscriptions" | "library") => {
     if (page === "home") {
       window.location.hash = "/";
     } else {
@@ -169,7 +169,7 @@ export default function App() {
         onSearch={handleSearchTrigger}
         initialSearchQuery={searchQuery}
         onNavigateHome={() => handleNavigate("home")}
-        onNavigateHistory={() => handleNavigate("history")}
+        onNavigateLibrary={() => handleNavigate("library")}
         onNavigateSubscriptions={() => handleNavigate("subscriptions")}
         isHomeScreen={activePage === "home"}
         activeTab={
@@ -280,8 +280,8 @@ export default function App() {
           )}
 
           {/* RENDER LAYER 4: Watch History Dashboard */}
-          {activePage === "history" && (
-            <HistoryPage
+          {activePage === "library" && (
+            <LibraryPage
               onWatchEpisode={handleOpenEpisode}
               onNavigateToChannel={handleOpenChannel}
               onHistoryCleared={handleSyncSubscriptions} // full status refresh

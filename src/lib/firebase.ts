@@ -1,15 +1,7 @@
 import { initializeApp, getApp, getApps, FirebaseApp } from "firebase/app";
 import { getAuth, Auth } from "firebase/auth";
 import { getFirestore, Firestore, doc, getDocFromServer } from "firebase/firestore";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyA657V4nAGpH6vpBxiiuLAs4449DVwrGBY",
-  authDomain: "mockgo-ai.firebaseapp.com",
-  projectId: "mockgo-ai",
-  storageBucket: "mockgo-ai.firebasestorage.app",
-  messagingSenderId: "1083843518105",
-  appId: "1:1083843518105:web:1e715874380a1522fee208"
-};
+import firebaseConfig from "../../firebase-applet-config.json";
 
 let app: FirebaseApp | null = null;
 let db: Firestore | null = null;
@@ -23,7 +15,7 @@ try {
   }
 
   if (app) {
-    db = getFirestore(app);
+    db = getFirestore(app, (firebaseConfig as any).firestoreDatabaseId);
     auth = getAuth(app);
     // Run connection validation in background as mandated by instructions
     testConnection(db);

@@ -10,7 +10,9 @@ import { getTMDBMapping } from "../services/mapping";
 import { 
   addToWatchHistory, 
   getEpisodeProgress,
-  getUnifiedWatchState
+  getUnifiedWatchState,
+  isWatchLater,
+  toggleWatchLater
 } from "../utils";
 import { useLibrary } from "../hooks/useLibrary";
 import LazyImage from "./LazyImage";
@@ -59,6 +61,10 @@ export default function WatchPage({
   // Likes and share interaction trackers
   const [copiedNotification, setCopiedNotification] = useState(false);
   const [savedBookmark, setSavedBookmark] = useState(false);
+
+  useEffect(() => {
+    setSavedBookmark(isWatchLater(animeId, seasonNumber, episodeNumber));
+  }, [animeId, seasonNumber, episodeNumber]);
 
   useEffect(() => {
     let mounted = true;
@@ -157,10 +163,9 @@ export default function WatchPage({
     setTimeout(() => setCopiedNotification(false), 2000);
   };
 
-  const handleChannelSubscribeToggle = () => {
+  const handleChannelSubscribeToggle = async () => {
     if (anime) {
-      const res = toggleSubscription(anime);
-      setSubscribed(res);
+      await toggleSubscription(anime);
       onSubscriptionChanged();
     }
   };
@@ -278,7 +283,22 @@ export default function WatchPage({
               </button>
 
               <button
-                onClick={() => setSavedBookmark(!savedBookmark)}
+                onClick={() => {
+                  if (anime) {
+                    const mainTitle = anime.title.english || anime.title.romaji || anime.title.userPreferred || "Untitled Anime";
+                    const banner = anime.bannerImage;
+                    const avatar = anime.coverImage.medium || anime.coverImage.large;
+                    const isNowSaved = toggleWatchLater({
+                      animeId: anime.id,
+                      animeTitle: mainTitle,
+                      seasonNumber: seasonNumber,
+                      episodeNumber: episodeNumber,
+                      bannerImage: banner,
+                      coverImage: avatar,
+                    });
+                    setSavedBookmark(isNowSaved);
+                  }
+                }}
                 className={`py-1.5 px-3.5 bg-white/[0.04] border border-white/[0.08] rounded-full hover:bg-white/[0.1] flex items-center gap-2 cursor-pointer transition-colors ${
                   savedBookmark ? "text-[#ff6b35]" : "text-white"
                 }`}
