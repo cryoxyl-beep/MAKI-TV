@@ -3,6 +3,8 @@ import {
   signInWithEmailAndPassword, 
   signOut as firebaseSignOut, 
   onAuthStateChanged as firebaseOnAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithPopup,
   User,
   NextOrObserver,
   ErrorFn,
@@ -35,6 +37,22 @@ export async function signIn(email: string, password: string): Promise<User> {
   }
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    return userCredential.user;
+  } catch (error) {
+    throw error;
+  }
+}
+
+/**
+ * Signs in utilizing Google Popup.
+ */
+export async function signInWithGoogle(): Promise<User> {
+  if (!auth) {
+    throw new Error("[Firebase Error] Auth is not initialized.");
+  }
+  try {
+    const provider = new GoogleAuthProvider();
+    const userCredential = await signInWithPopup(auth, provider);
     return userCredential.user;
   } catch (error) {
     throw error;

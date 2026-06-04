@@ -4,7 +4,7 @@
  */
 
 import { AniListAnime } from "../types";
-import { formatAiringStatus, formatViews } from "../services/anilist";
+import { formatAiringStatus } from "../services/anilist";
 import { Star, Play, Tv } from "lucide-react";
 import { useState } from "react";
 import LazyImage from "./LazyImage";
@@ -30,7 +30,7 @@ export default function AnimeCard({ anime, onClick, layout = "grid" }: AnimeCard
 
   // Dynamic status/season detail
   const episodesCount = anime.episodes ? `${anime.episodes} eps` : "Ongoing";
-  const channelHandle = mainTitle.split(" ")[0].replace(/[^a-zA-Z0-9]/g, "").toLowerCase() || "anime";
+  const studioName = anime.studios?.nodes?.[0]?.name || anime.format || "Anime Studio";
   const averageScore = anime.averageScore ? `★ ${anime.averageScore / 10}` : "★ 7.5";
 
   // Layout specific classes
@@ -86,9 +86,7 @@ export default function AnimeCard({ anime, onClick, layout = "grid" }: AnimeCard
               </h3>
               
               <div className="flex flex-wrap items-center text-xs text-gray-400 gap-2 mt-2 font-medium">
-                <span className="text-white/60">@{channelHandle}</span>
-                <span className="opacity-40">&bull;</span>
-                <span>{formatViews(anime.popularity)}</span>
+                <span className="text-white/60">{studioName}</span>
                 <span className="opacity-40">&bull;</span>
                 <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400">
                   {formatAiringStatus(anime.status)}
@@ -158,10 +156,10 @@ export default function AnimeCard({ anime, onClick, layout = "grid" }: AnimeCard
                 {mainTitle}
               </h4>
               <span className="text-[10px] text-[#aaa] truncate mt-1 block font-medium">
-                @{channelHandle}
+                {studioName}
               </span>
               <span className="text-[9px] text-[#777] truncate block mt-0.5 font-mono">
-                {formatViews(anime.popularity)} • {anime.seasonYear || "TBA"}
+                {anime.seasonYear || "TBA"}
               </span>
             </div>
           )}
@@ -181,50 +179,58 @@ export default function AnimeCard({ anime, onClick, layout = "grid" }: AnimeCard
       className="group relative flex flex-col cursor-pointer transition-all duration-250 ease-out sm:hover:-translate-y-[6px]"
       style={{ width: "200px" }}
     >
-      {/* 2:3 Poster Container with Dark Liquid Glass */}
-      <div className="relative w-[200px] aspect-[2/3] rounded-[20px] overflow-hidden bg-white/[0.04] backdrop-blur-[12px] border border-white/[0.08] shadow-lg sm:group-hover:shadow-[0_8px_30px_rgb(0,0,0,0.8)] sm:group-hover:border-white/[0.2] transition-all duration-250 ease-out z-10 isolate">
-        <LazyImage
-          src={poster}
-          alt={mainTitle}
-          className="w-full h-full object-cover transform sm:group-hover:scale-[1.03] transition-transform duration-250 ease-out"
-          referrerPolicy="no-referrer"
-          onLoadComplete={() => setIsCardReady(true)}
-        />
-        
-        {/* Rating Badge (Floating Glass Pill) */}
-        {isCardReady && anime.averageScore && (
-          <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/10 shadow-md">
-            <Star className="w-3.5 h-3.5 fill-[#ff6b35] stroke-none drop-shadow-md" />
-            <span className="text-white text-xs font-bold tracking-tight">
-              {(anime.averageScore / 10).toFixed(1)}
-            </span>
+      {/* SKELETON OVERLAY */}
+      {!isCardReady && (
+        <div className="absolute inset-0 z-50 flex flex-col pointer-events-none">
+          <div className="relative w-[200px] aspect-[2/3] rounded-[20px] shimmer-bone border border-white/[0.04] shadow-sm" />
+          <div className="mt-3.5 flex flex-col gap-1.5 z-0 px-1">
+            <div className="space-y-2">
+              <div className="h-4 bg-white/[0.06] rounded w-11/12" />
+              <div className="h-3 bg-white/[0.03] rounded w-2/3" />
+            </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Watch Now Button (Glass Pill, visible on hover) */}
-        {isCardReady && (
+      {/* ACTUAL CARD CONTENT */}
+      <div className={`flex flex-col transition-opacity duration-500 ease-out ${isCardReady ? "opacity-100" : "opacity-0 invisible"}`}>
+        {/* 2:3 Poster Container with Dark Liquid Glass */}
+        <div className="relative w-[200px] aspect-[2/3] rounded-[20px] overflow-hidden bg-white/[0.04] backdrop-blur-[12px] border border-white/[0.08] shadow-lg sm:group-hover:shadow-[0_8px_30px_rgb(0,0,0,0.8)] sm:group-hover:border-white/[0.2] transition-all duration-250 ease-out z-10 isolate">
+          {/* Note: LazyImage's internal fade is fine; it will trigger onLoadComplete, fading in this wrapper */}
+          <LazyImage
+            src={poster}
+            alt={mainTitle}
+            className="w-full h-full object-cover transform sm:group-hover:scale-[1.03] transition-transform duration-250 ease-out"
+            referrerPolicy="no-referrer"
+            onLoadComplete={() => setIsCardReady(true)}
+          />
+          
+          {/* Rating Badge (Floating Glass Pill) */}
+          {anime.averageScore && (
+            <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/10 shadow-md">
+              <Star className="w-3.5 h-3.5 fill-[#ff6b35] stroke-none drop-shadow-md" />
+              <span className="text-white text-xs font-bold tracking-tight">
+                {(anime.averageScore / 10).toFixed(1)}
+              </span>
+            </div>
+          )}
+
+          {/* Watch Now Button (Glass Pill, visible on hover) */}
           <div className="absolute inset-0 z-30 flex items-center justify-center opacity-0 sm:group-hover:opacity-100 transition-opacity duration-250 bg-black/40 backdrop-blur-[2px]">
             <div className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/[0.08] backdrop-blur-lg border border-white/20 shadow-[0_0_20px_rgba(255,255,255,0.1)] transform translate-y-4 sm:group-hover:translate-y-0 transition-transform duration-250 ease-out">
               <Play className="w-4 h-4 text-white fill-white drop-shadow-lg" />
               <span className="text-white text-sm font-bold tracking-wide drop-shadow-md lg:block hidden">Watch Now</span>
             </div>
           </div>
-        )}
-        
-        {/* Edge Glow / Soft Inner Highlight */}
-        <div className="absolute inset-0 rounded-[20px] border border-white/[0.06] pointer-events-none group-hover:border-white/[0.15] transition-colors duration-250" />
-        <div className="absolute inset-0 rounded-[20px] shadow-[inset_0_0_20px_rgba(255,255,255,0.02)] pointer-events-none" />
-      </div>
+          
+          {/* Edge Glow / Soft Inner Highlight */}
+          <div className="absolute inset-0 rounded-[20px] border border-white/[0.06] pointer-events-none group-hover:border-white/[0.15] transition-colors duration-250" />
+          <div className="absolute inset-0 rounded-[20px] shadow-[inset_0_0_20px_rgba(255,255,255,0.02)] pointer-events-none" />
+        </div>
 
-      {/* Info Section */}
-      <div className="mt-3.5 flex flex-col gap-1.5 z-0">
-        {!isCardReady ? (
-          <div className="space-y-2 px-1 animate-pulse">
-            <div className="h-4 bg-white/[0.06] rounded w-11/12" />
-            <div className="h-3 bg-white/[0.03] rounded w-2/3" />
-          </div>
-        ) : (
-          <div className="animate-fade-in flex flex-col gap-1.5 font-sans">
+        {/* Info Section */}
+        <div className="mt-3.5 flex flex-col gap-1.5 z-0">
+          <div className="flex flex-col gap-1.5 font-sans">
             <h3 className="text-[#f1f1f1] text-[15px] font-bold leading-snug tracking-tight line-clamp-2 group-hover:text-white transition-colors">
               {mainTitle}
             </h3>
@@ -237,7 +243,7 @@ export default function AnimeCard({ anime, onClick, layout = "grid" }: AnimeCard
               <span>{episodesCount}</span>
             </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

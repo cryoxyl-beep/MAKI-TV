@@ -11,10 +11,10 @@ import ChannelPage from "./components/ChannelPage";
 import WatchPage from "./components/WatchPage";
 import HistoryPage from "./components/HistoryPage";
 import LazyImage from "./components/LazyImage";
-import { getSubscriptions, isSubscribed, toggleSubscription, parseEpisodeSearch } from "./utils";
+import { parseEpisodeSearch } from "./utils";
 import { fetchAnimeFeed } from "./services/anilist";
-import { SubscriptionItem } from "./types";
 import { Tv, Flame, Play, Sparkles } from "lucide-react";
+import { useLibrary } from "./hooks/useLibrary";
 
 export default function App() {
   // Navigation states
@@ -25,13 +25,8 @@ export default function App() {
   const [selectedChannelId, setSelectedChannelId] = useState<number | null>(null);
   const [watchDetails, setWatchDetails] = useState<{ animeId: number; seasonNumber: number; episodeNumber: number } | null>(null);
 
-  // Live Subscription list to sync sidebar state instantly
-  const [subscriptionsList, setSubscriptionsList] = useState<SubscriptionItem[]>([]);
-
-  // Initialize and load persistent settings
-  useEffect(() => {
-    setSubscriptionsList(getSubscriptions());
-  }, []);
+  // Live Subscription list via useLibrary
+  const { library: subscriptionsList } = useLibrary();
 
   // Update browser tab title dynamically based on activePage & searchQuery
   useEffect(() => {
@@ -49,7 +44,7 @@ export default function App() {
   }, [activePage, searchQuery]);
 
   const handleSyncSubscriptions = () => {
-    setSubscriptionsList(getSubscriptions());
+    // Left empty for compatibility.
   };
 
   // Browser state routing via hash listeners (e.g. #/channel/32, #/watch/12/1/4)

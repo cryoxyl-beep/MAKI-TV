@@ -9,11 +9,10 @@ import { fetchAnimeDetails } from "../services/anilist";
 import { getTMDBMapping } from "../services/mapping";
 import { 
   addToWatchHistory, 
-  isSubscribed, 
-  toggleSubscription, 
   getEpisodeProgress,
   getUnifiedWatchState
 } from "../utils";
+import { useLibrary } from "../hooks/useLibrary";
 import LazyImage from "./LazyImage";
 import VideoPlayer from "./VideoPlayer";
 import SkeletonLoader from "./SkeletonLoader";
@@ -48,6 +47,8 @@ export default function WatchPage({
     return localStorage.getItem("makitv_selected_provider") || "megaplay";
   });
 
+  const { isSubscribed, toggleSubscription, currentUser } = useLibrary();
+
   // Floating continue/session resume prompt trigger
   const [resumeSession, setResumeSession] = useState<{
     season: number;
@@ -58,7 +59,6 @@ export default function WatchPage({
   // Likes and share interaction trackers
   const [copiedNotification, setCopiedNotification] = useState(false);
   const [savedBookmark, setSavedBookmark] = useState(false);
-  const [subscribed, setSubscribed] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -68,7 +68,6 @@ export default function WatchPage({
         const data = await fetchAnimeDetails(animeId);
         if (data && mounted) {
           setAnime(data);
-          setSubscribed(isSubscribed(data.id));
 
           // Load target TMDB maps
           const mapped = await getTMDBMapping(data);
@@ -183,8 +182,9 @@ export default function WatchPage({
   const mainTitle = english || romaji || anime.title.userPreferred || "Untitled Anime";
   
   const episodesCount = anime.episodes || 12;
-  const channelHandle = mainTitle.split(" ")[0].replace(/[^a-zA-Z0-9]/g, "").toLowerCase() || "anime";
   const avatar = anime.coverImage.medium || anime.coverImage.large || "";
+  const studioName = anime.studios?.nodes?.[0]?.name || anime.format || "Official Studio";
+  const subscribed = isSubscribed(anime.id);
 
   return (
     <div className="w-full bg-transparent pb-20 select-none z-10 relative animate-fade-in">
@@ -348,7 +348,7 @@ export default function WatchPage({
               </div>
               <div className="min-w-0">
                 <h3 className="text-white text-sm font-bold group-hover:text-[#ff6b35] transition-colors truncate">
-                  @{channelHandle}
+                  {studioName}
                 </h3>
                 <span className="text-[11px] text-gray-400 font-medium block">
                   Official Anime Publisher
@@ -357,12 +357,19 @@ export default function WatchPage({
             </div>
 
             <button
-              onClick={handleChannelSubscribeToggle}
+              onClick={async () => {
+                if (!currentUser) {
+                  alert("Please sign in to add to your library.");
+                  return;
+                }
+                await toggleSubscription(anime);
+                if (onSubscriptionChanged) onSubscriptionChanged();
+              }}
               className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
                 subscribed ? "bg-white/[0.08] border border-white/[0.1] text-white hover:bg-white/[0.12]" : "bg-white text-black hover:bg-[#ff6b35] hover:text-white"
               }`}
             >
-              {subscribed ? "Subscribed" : "Subscribe Channel"}
+              {subscribed ? "In Library" : "Add to Library"}
             </button>
           </div>
 

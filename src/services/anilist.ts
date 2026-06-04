@@ -450,27 +450,6 @@ export function formatAiringStatus(status?: string): string {
   }
 }
 
-export function formatPopularity(count: number): string {
-  if (count >= 1000000) {
-    return `${(count / 1000000).toFixed(1).replace(/\.0$/, "")}M subscribers`;
-  }
-  if (count >= 1000) {
-    return `${(count / 1000).toFixed(1).replace(/\.0$/, "")}K subscribers`;
-  }
-  return `${count} subscribers`;
-}
-
-export function formatViews(count: number): string {
-  const simulatedViews = Math.floor(count * 8.5);
-  if (simulatedViews >= 1000000) {
-    return `${(simulatedViews / 1000000).toFixed(1).replace(/\.0$/, "")}M views`;
-  }
-  if (simulatedViews >= 1000) {
-    return `${(simulatedViews / 1000).toFixed(1).replace(/\.0$/, "")}K views`;
-  }
-  return `${simulatedViews} views`;
-}
-
 export async function fetchAnimeTrailer(idMal: number, signal?: AbortSignal): Promise<{ id: string, site: string } | null> {
   const query = `
     query ($idMal: Int) {
