@@ -50,6 +50,13 @@ export default function App() {
   // Browser state routing via hash listeners (e.g. #/channel/32, #/watch/12/1/4)
   useEffect(() => {
     const handleHashChange = () => {
+      // Global scroll reset on every route change
+      window.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: "instant"
+      });
+
       const hash = window.location.hash || "#/";
 
       if (hash.startsWith("#/channel/")) {
