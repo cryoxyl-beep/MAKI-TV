@@ -48,7 +48,7 @@ export default function HistoryPage({ onWatchEpisode, onNavigateToChannel, onHis
   const watchedAnimeList = Object.values(watchedAnimeMap);
 
   return (
-    <div className="w-full bg-[#0f0f0f] pb-24 min-h-screen select-none px-4 md:px-6 py-6">
+    <div className="w-full bg-[#0f0f0f] pb-24 min-h-screen select-none px-4 md:px-6 py-6 animate-fade-in">
       <div className="max-w-6xl mx-auto space-y-8">
         
         {/* Page title and Clear All history helper */}

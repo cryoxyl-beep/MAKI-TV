@@ -187,7 +187,7 @@ export default function WatchPage({
   const avatar = anime.coverImage.medium || anime.coverImage.large || "";
 
   return (
-    <div className="w-full bg-transparent pb-20 select-none z-10 relative">
+    <div className="w-full bg-transparent pb-20 select-none z-10 relative animate-fade-in">
       
       {/* =============== RESUME PREVIOUS SESSION HUD ALERT =============== */}
       {resumeSession && (

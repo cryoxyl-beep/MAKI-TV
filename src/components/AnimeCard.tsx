@@ -17,6 +17,8 @@ interface AnimeCardProps {
 }
 
 export default function AnimeCard({ anime, onClick, layout = "grid" }: AnimeCardProps) {
+  const [isCardReady, setIsCardReady] = useState(false);
+
   const romaji = anime.title.romaji || "";
   const english = anime.title.english || "";
   const mainTitle = english || romaji || anime.title.userPreferred || "Untitled Anime";
@@ -46,17 +48,22 @@ export default function AnimeCard({ anime, onClick, layout = "grid" }: AnimeCard
             alt={mainTitle}
             className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500 ease-out"
             referrerPolicy="no-referrer"
+            onLoadComplete={() => setIsCardReady(true)}
           />
           {/* Action indicator on hover */}
-          <div className="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-300">
-            <div className="p-3 bg-[#ff6b35] rounded-full text-white shadow-xl shadow-[#ff6b35]/25 transform scale-90 group-hover:scale-100 transition-transform duration-300">
-              <Play className="w-5 h-5 fill-white stroke-none" />
+          {isCardReady && (
+            <div className="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-300">
+              <div className="p-3 bg-[#ff6b35] rounded-full text-white shadow-xl shadow-[#ff6b35]/25 transform scale-90 group-hover:scale-100 transition-transform duration-300">
+                <Play className="w-5 h-5 fill-white stroke-none" />
+              </div>
             </div>
-          </div>
-          <span className="absolute bottom-2.5 right-2.5 px-2 py-0.5 bg-black/80 text-white text-[10px] font-semibold rounded-md tracking-wider uppercase">
-            {episodesCount}
-          </span>
-          {averageScore && (
+          )}
+          {isCardReady && (
+            <span className="absolute bottom-2.5 right-2.5 px-2 py-0.5 bg-black/80 text-white text-[10px] font-semibold rounded-md tracking-wider uppercase">
+              {episodesCount}
+            </span>
+          )}
+          {isCardReady && averageScore && (
             <span className="absolute top-2.5 left-2.5 px-2 py-0.5 bg-black/80 text-[#ff6b35] text-[10px] font-bold rounded-md flex items-center gap-1.5 shadow-sm">
               <Star className="w-3 h-3 fill-[#ff6b35] stroke-none" />
               <span>{(anime.averageScore || 75) / 10}</span>
@@ -65,35 +72,56 @@ export default function AnimeCard({ anime, onClick, layout = "grid" }: AnimeCard
         </div>
 
         {/* Content right */}
-        <div className="flex-1 flex flex-col pt-1 min-w-0">
-          <h3 className="text-white text-base sm:text-lg font-bold leading-snug group-hover:text-[#ff6b35] transition-colors truncate font-sans">
-            {mainTitle}
-          </h3>
-          
-          <div className="flex flex-wrap items-center text-xs text-[#aaa] gap-1.5 mt-1.5">
-            <span className="hover:text-white transition-colors">@{channelHandle}</span>
-            <span className="opacity-40">•</span>
-            <span>{formatViews(anime.popularity)}</span>
-            <span className="opacity-40">•</span>
-            <span className="text-[10px] uppercase font-bold text-gray-400 bg-white/[0.04] px-2 py-0.5 rounded border border-white/[0.05]">
-              {formatAiringStatus(anime.status)}
-            </span>
-          </div>
+        <div className="flex-1 flex flex-col pt-1 min-w-0 justify-center">
+          {!isCardReady ? (
+            <div className="space-y-4 animate-pulse">
+              <div className="h-5 bg-white/[0.06] rounded-md w-3/4" />
+              <div className="flex items-center gap-2 pt-0.5">
+                <div className="h-3.5 bg-white/[0.04] rounded w-24" />
+                <div className="w-1.5 h-1.5 rounded-full bg-white/[0.04]" />
+                <div className="h-3.5 bg-white/[0.04] rounded w-16" />
+              </div>
+              <div className="space-y-2 pt-1.5">
+                <div className="h-3 bg-white/[0.02] rounded w-full" />
+                <div className="h-3 bg-white/[0.02] rounded w-11/12" />
+              </div>
+              <div className="flex gap-2 pt-2">
+                <div className="h-5 bg-white/[0.03] rounded-full w-14" />
+                <div className="h-5 bg-white/[0.03] rounded-full w-14" />
+              </div>
+            </div>
+          ) : (
+            <div className="animate-fade-in flex flex-col min-w-0">
+              <h3 className="text-white text-base sm:text-lg font-bold leading-snug group-hover:text-[#ff6b35] transition-colors truncate font-sans">
+                {mainTitle}
+              </h3>
+              
+              <div className="flex flex-wrap items-center text-xs text-[#aaa] gap-1.5 mt-1.5">
+                <span className="hover:text-white transition-colors">@{channelHandle}</span>
+                <span className="opacity-40">•</span>
+                <span>{formatViews(anime.popularity)}</span>
+                <span className="opacity-40">•</span>
+                <span className="text-[10px] uppercase font-bold text-gray-400 bg-white/[0.04] px-2 py-0.5 rounded border border-white/[0.05]">
+                  {formatAiringStatus(anime.status)}
+                </span>
+              </div>
 
-          <p className="text-xs text-[#aaa] mt-3.5 line-clamp-2 md:line-clamp-3 leading-relaxed font-sans font-normal"
-             dangerouslySetInnerHTML={{ __html: anime.description || "No description available for this anime series." }}>
-          </p>
+              <p className="text-xs text-[#aaa] mt-3.5 line-clamp-2 md:line-clamp-3 leading-relaxed font-sans font-normal"
+                 dangerouslySetInnerHTML={{ __html: anime.description || "No description available for this anime series." }}>
+              </p>
 
-          <div className="flex flex-wrap gap-1.5 mt-4">
-            {anime.genres?.slice(0, 3).map((genre) => (
-              <span
-                key={genre}
-                className="px-2.5 py-1 bg-white/[0.03] border border-white/[0.05] text-[10px] text-gray-400 font-medium rounded-full hover:bg-[#ff6b35]/10 hover:text-white transition-colors"
-              >
-                {genre}
-              </span>
-            ))}
-          </div>
+              <div className="flex flex-wrap gap-1.5 mt-4">
+                {anime.genres?.slice(0, 3).map((genre) => (
+                  <span
+                    key={genre}
+                    className="px-2.5 py-1 bg-white/[0.03] border border-white/[0.05] text-[10px] text-gray-400 font-medium rounded-full hover:bg-[#ff6b35]/10 hover:text-white transition-colors"
+                  >
+                    {genre}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -112,21 +140,33 @@ export default function AnimeCard({ anime, onClick, layout = "grid" }: AnimeCard
             alt={mainTitle}
             className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500 ease-out"
             referrerPolicy="no-referrer"
+            onLoadComplete={() => setIsCardReady(true)}
           />
-          <span className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 bg-black/80 text-white text-[9px] font-bold rounded">
-            {episodesCount}
-          </span>
+          {isCardReady && (
+            <span className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 bg-black/80 text-white text-[9px] font-bold rounded">
+              {episodesCount}
+            </span>
+          )}
         </div>
         <div className="flex-1 min-w-0 flex flex-col justify-center">
-          <h4 className="text-white text-xs sm:text-sm font-bold leading-snug tracking-tight group-hover:text-[#ff6b35] transition-colors line-clamp-2 font-sans">
-            {mainTitle}
-          </h4>
-          <span className="text-[10px] text-[#aaa] truncate mt-1 block font-medium">
-            @{channelHandle}
-          </span>
-          <span className="text-[9px] text-[#777] truncate block mt-0.5 font-mono">
-            {formatViews(anime.popularity)} • {anime.seasonYear || "TBA"}
-          </span>
+          {!isCardReady ? (
+            <div className="space-y-2 animate-pulse">
+              <div className="h-3.5 bg-white/[0.06] rounded w-11/12" />
+              <div className="h-2.5 bg-white/[0.04] rounded w-2/3" />
+            </div>
+          ) : (
+            <div className="animate-fade-in flex flex-col justify-center min-w-0">
+              <h4 className="text-white text-xs sm:text-sm font-bold leading-snug tracking-tight group-hover:text-[#ff6b35] transition-colors line-clamp-2 font-sans">
+                {mainTitle}
+              </h4>
+              <span className="text-[10px] text-[#aaa] truncate mt-1 block font-medium">
+                @{channelHandle}
+              </span>
+              <span className="text-[9px] text-[#777] truncate block mt-0.5 font-mono">
+                {formatViews(anime.popularity)} • {anime.seasonYear || "TBA"}
+              </span>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -150,10 +190,11 @@ export default function AnimeCard({ anime, onClick, layout = "grid" }: AnimeCard
           alt={mainTitle}
           className="w-full h-full object-cover transform sm:group-hover:scale-[1.03] transition-transform duration-250 ease-out"
           referrerPolicy="no-referrer"
+          onLoadComplete={() => setIsCardReady(true)}
         />
         
         {/* Rating Badge (Floating Glass Pill) */}
-        {anime.averageScore && (
+        {isCardReady && anime.averageScore && (
           <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/10 shadow-md">
             <Star className="w-3.5 h-3.5 fill-[#ff6b35] stroke-none drop-shadow-md" />
             <span className="text-white text-xs font-bold tracking-tight">
@@ -163,12 +204,14 @@ export default function AnimeCard({ anime, onClick, layout = "grid" }: AnimeCard
         )}
 
         {/* Watch Now Button (Glass Pill, visible on hover) */}
-        <div className="absolute inset-0 z-30 flex items-center justify-center opacity-0 sm:group-hover:opacity-100 transition-opacity duration-250 bg-black/40 backdrop-blur-[2px]">
-          <div className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/[0.08] backdrop-blur-lg border border-white/20 shadow-[0_0_20px_rgba(255,255,255,0.1)] transform translate-y-4 sm:group-hover:translate-y-0 transition-transform duration-250 ease-out">
-            <Play className="w-4 h-4 text-white fill-white drop-shadow-lg" />
-            <span className="text-white text-sm font-bold tracking-wide drop-shadow-md lg:block hidden">Watch Now</span>
+        {isCardReady && (
+          <div className="absolute inset-0 z-30 flex items-center justify-center opacity-0 sm:group-hover:opacity-100 transition-opacity duration-250 bg-black/40 backdrop-blur-[2px]">
+            <div className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/[0.08] backdrop-blur-lg border border-white/20 shadow-[0_0_20px_rgba(255,255,255,0.1)] transform translate-y-4 sm:group-hover:translate-y-0 transition-transform duration-250 ease-out">
+              <Play className="w-4 h-4 text-white fill-white drop-shadow-lg" />
+              <span className="text-white text-sm font-bold tracking-wide drop-shadow-md lg:block hidden">Watch Now</span>
+            </div>
           </div>
-        </div>
+        )}
         
         {/* Edge Glow / Soft Inner Highlight */}
         <div className="absolute inset-0 rounded-[20px] border border-white/[0.06] pointer-events-none group-hover:border-white/[0.15] transition-colors duration-250" />
@@ -177,17 +220,26 @@ export default function AnimeCard({ anime, onClick, layout = "grid" }: AnimeCard
 
       {/* Info Section */}
       <div className="mt-3.5 flex flex-col gap-1.5 z-0">
-        <h3 className="text-[#f1f1f1] text-[15px] font-bold leading-snug tracking-tight line-clamp-2 font-sans group-hover:text-white transition-colors">
-          {mainTitle}
-        </h3>
-        
-        <div className="flex items-center text-[11px] sm:text-[12px] text-[#999] font-medium gap-2 mt-0.5">
-          <span>{year}</span>
-          <span className="w-1 h-1 rounded-full bg-white/20" />
-          <span className="uppercase tracking-wider">{format}</span>
-          <span className="w-1 h-1 rounded-full bg-white/20" />
-          <span>{episodesCount}</span>
-        </div>
+        {!isCardReady ? (
+          <div className="space-y-2 px-1 animate-pulse">
+            <div className="h-4 bg-white/[0.06] rounded w-11/12" />
+            <div className="h-3 bg-white/[0.03] rounded w-2/3" />
+          </div>
+        ) : (
+          <div className="animate-fade-in flex flex-col gap-1.5 font-sans">
+            <h3 className="text-[#f1f1f1] text-[15px] font-bold leading-snug tracking-tight line-clamp-2 group-hover:text-white transition-colors">
+              {mainTitle}
+            </h3>
+            
+            <div className="flex items-center text-[11px] sm:text-[12px] text-[#999] font-medium gap-2 mt-0.5">
+              <span>{year}</span>
+              <span className="w-1 h-1 rounded-full bg-white/20" />
+              <span className="uppercase tracking-wider">{format}</span>
+              <span className="w-1 h-1 rounded-full bg-white/20" />
+              <span>{episodesCount}</span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

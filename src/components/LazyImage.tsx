@@ -10,6 +10,7 @@ interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   alt: string;
   className?: string;
   wrapperClassName?: string;
+  onLoadComplete?: () => void;
   referrerPolicy?: React.HTMLAttributeReferrerPolicy;
 }
 
@@ -18,6 +19,7 @@ export default function LazyImage({
   alt,
   className = "",
   wrapperClassName = "",
+  onLoadComplete,
   ...props
 }: LazyImageProps) {
   const [shouldLoad, setShouldLoad] = useState(false);
@@ -75,7 +77,10 @@ export default function LazyImage({
         <img
           src={src}
           alt={alt}
-          onLoad={() => setIsLoaded(true)}
+          onLoad={() => {
+            setIsLoaded(true);
+            if (onLoadComplete) onLoadComplete();
+          }}
           className={`transition-opacity duration-300 ${
             isLoaded ? "opacity-100" : "opacity-0"
           } ${className}`}

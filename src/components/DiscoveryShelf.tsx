@@ -36,23 +36,13 @@ export default function DiscoveryShelf({ title, subtitle, category, onSelectAnim
   }, [category]);
 
   if (loading) {
-    return (
-      <div className="flex flex-col gap-3 relative isolate mb-8">
-        <div className="px-4 md:px-6">
-          <h2 className="text-xl md:text-2xl font-bold text-white">{title}</h2>
-          <p className="text-sm text-gray-400">{subtitle}</p>
-        </div>
-        <div className="px-4 md:px-6 overflow-hidden">
-             <SkeletonLoader type="grid" />
-        </div>
-      </div>
-    );
+    return <SkeletonLoader type="shelf" />;
   }
 
   if (animes.length === 0) return null;
 
   return (
-    <div className="flex flex-col gap-4 relative isolate mb-8 group/shelf">
+    <div className="flex flex-col gap-4 relative isolate mb-8 group/shelf animate-fade-in">
       {/* Shelf Header */}
       <div className="px-4 md:px-6 flex flex-col">
         <h2 className="text-2xl font-bold text-[#f1f1f1] tracking-tight">{title}</h2>

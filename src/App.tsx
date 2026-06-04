@@ -222,7 +222,7 @@ export default function App() {
 
           {/* RENDER LAYER 3: Subscription pages displaying all subscribed series channels */}
           {activePage === "subscriptions" && (
-            <div className="w-full min-h-screen px-4 md:px-6 py-6 space-y-6">
+            <div className="w-full min-h-screen px-4 md:px-6 py-6 space-y-6 animate-fade-in">
               <div className="flex items-center gap-2.5 border-b border-[#222] pb-4">
                 <Tv className="w-6 h-6 text-[#ff6b35]" />
                 <div>

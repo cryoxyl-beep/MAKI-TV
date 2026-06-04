@@ -51,7 +51,10 @@ export default function HomeFeed({
 
   // Initial load
   useEffect(() => {
-    setAnimeList([]);
+    // Keep stale results on screen while loading to prevent flashes, only wipe if moving away completely from content
+    if (!searchQuery && selectedCategory === "All") {
+      setAnimeList([]);
+    }
     setPage(1);
     setHasMore(true);
     loadFeed(1, true);
@@ -78,8 +81,15 @@ export default function HomeFeed({
 
       if (data.length === 0) {
         setHasMore(false);
+        if (isInitial) {
+          setAnimeList([]); // Clear stale results if new query yields nothing
+        }
       } else {
-        setAnimeList((prev) => [...prev, ...data]);
+        if (isInitial) {
+          setAnimeList(data); // Overwrite stale results instantly
+        } else {
+          setAnimeList((prev) => [...prev, ...data]);
+        }
         // If data is less than standard batch, it might be the end
         if (data.length < 25) setHasMore(false);
       }
@@ -127,22 +137,26 @@ export default function HomeFeed({
       {selectedCategory === "All" && !searchQuery ? (
         <div className="flex flex-col gap-1 w-full bg-transparent pt-6 relative isolate">
           {/* Trending Now shelf (using already fetched feedAnimes) */}
-          <div className="flex flex-col gap-4 relative isolate mb-8 group/shelf">
-            <div className="px-4 md:px-6 flex flex-col">
-              <h2 className="text-2xl font-bold text-[#f1f1f1] tracking-tight">Trending Now</h2>
-              <p className="text-[13px] text-gray-400 font-medium mt-0.5">Most watched this week</p>
+          {isLoading ? (
+            <SkeletonLoader type="shelf" />
+          ) : (
+            <div className="flex flex-col gap-4 relative isolate mb-8 group/shelf animate-fade-in">
+              <div className="px-4 md:px-6 flex flex-col">
+                <h2 className="text-2xl font-bold text-[#f1f1f1] tracking-tight">Trending Now</h2>
+                <p className="text-[13px] text-gray-400 font-medium mt-0.5">Most watched this week</p>
+              </div>
+              <div className="flex overflow-x-auto gap-5 px-4 md:px-6 scroll-px-4 md:scroll-px-6 pb-6 pt-2 snap-x snap-mandatory scroll-smooth" style={{ scrollbarWidth: "none" }}>
+                {feedAnimes.slice(0, 15).map((anime, index) => {
+                  const isLastElement = index === Math.min(feedAnimes.length - 1, 14);
+                  return (
+                    <div key={`${anime.id}-${index}`} ref={isLastElement ? lastAnimeElementRef : null} className="snap-start shrink-0">
+                      <AnimeCard anime={anime} onClick={() => onSelectAnime(anime.id)} layout="grid" />
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-            <div className="flex overflow-x-auto gap-5 px-4 md:px-6 scroll-px-4 md:scroll-px-6 pb-6 pt-2 snap-x snap-mandatory scroll-smooth" style={{ scrollbarWidth: "none" }}>
-              {feedAnimes.slice(0, 15).map((anime, index) => {
-                const isLastElement = index === Math.min(feedAnimes.length - 1, 14);
-                return (
-                  <div key={`${anime.id}-${index}`} ref={isLastElement ? lastAnimeElementRef : null} className="snap-start shrink-0">
-                    <AnimeCard anime={anime} onClick={() => onSelectAnime(anime.id)} layout="grid" />
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          )}
 
           <DiscoveryShelf title="Popular This Season" subtitle="Current fan favorites" category="Currently Airing" onSelectAnime={onSelectAnime} />
           <DiscoveryShelf title="Top Rated" subtitle="Highest rated anime of all time" category="Most Watched" onSelectAnime={onSelectAnime} />
@@ -152,33 +166,35 @@ export default function HomeFeed({
           <DiscoveryShelf title="Drama & Suspense" subtitle="Emotional and gripping storytelling" category="Drama" onSelectAnime={onSelectAnime} />
         </div>
       ) : (
-        <div
-          className={
-            searchQuery
-              ? "max-w-6xl mx-auto px-4 md:px-6 py-6 flex flex-col gap-5"
-              : "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-8 px-4 md:px-6"
-          }
-        >
-          {feedAnimes.map((anime, index) => {
-            const isLastElement = index === feedAnimes.length - 1;
-            return (
-              <div
-                ref={isLastElement ? lastAnimeElementRef : null}
-                key={`${anime.id}-${index}`}
-              >
-                <AnimeCard
-                  anime={anime}
-                  onClick={() => onSelectAnime(anime.id)}
-                  layout={searchQuery ? "list" : "grid"}
-                />
-              </div>
-            );
-          })}
-        </div>
+        feedAnimes.length > 0 && (
+          <div
+            className={`${
+              searchQuery
+                ? "max-w-6xl mx-auto px-4 md:px-6 py-6 flex flex-col gap-5"
+                : "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-8 px-4 md:px-6"
+            } ${isLoading ? "opacity-30 pointer-events-none" : "animate-fade-in"} transition-opacity duration-300`}
+          >
+            {feedAnimes.map((anime, index) => {
+              const isLastElement = index === feedAnimes.length - 1;
+              return (
+                <div
+                  ref={isLastElement ? lastAnimeElementRef : null}
+                  key={`${anime.id}-${index}`}
+                >
+                  <AnimeCard
+                    anime={anime}
+                    onClick={() => onSelectAnime(anime.id)}
+                    layout={searchQuery ? "list" : "grid"}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        )
       )}
 
-      {/* Initial load shimmer */}
-      {isLoading && (
+      {/* Initial load shimmer for non-homepage grids/lists */}
+      {isLoading && feedAnimes.length === 0 && (selectedCategory !== "All" || searchQuery) && (
         <div className="mt-8 px-4 md:px-6">
           <SkeletonLoader type={searchQuery ? "list" : "grid"} />
         </div>

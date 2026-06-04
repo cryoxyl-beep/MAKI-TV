@@ -83,7 +83,7 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
   const episodesCount = anime.episodes || 12;
 
   return (
-    <div className="w-full bg-transparent pb-20 select-none z-10 relative">
+    <div className="w-full bg-transparent pb-20 select-none z-10 relative animate-fade-in">
       
       {/* =============== TOP CHANNEL HERO BANNER =============== */}
       <div className="w-full h-40 sm:h-56 md:h-64 relative overflow-hidden bg-black/20">
