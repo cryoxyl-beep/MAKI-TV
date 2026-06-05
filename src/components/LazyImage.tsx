@@ -62,15 +62,17 @@ export default function LazyImage({
       ref={containerRef}
       className={`relative overflow-hidden w-full h-full bg-[#15151c]/40 ${wrapperClassName}`}
     >
-      {/* Lightweight shimmering skeleton placeholder */}
-      {!isLoaded && (
-        <div className="absolute inset-0 bg-gradient-to-r from-white/[0.01] via-white/[0.04] to-white/[0.01] bg-[length:200%_100%] animate-[shimmer_1.5s_infinite] pointer-events-none" 
-          style={{
-            backgroundImage: "linear-gradient(90deg, rgba(255,255,255,0.01) 0%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.01) 100%)",
-            backgroundSize: "200% 100%"
-          }}
-        />
-      )}
+      {/* Lightweight shimmering skeleton placeholder - fades out when loaded */}
+      <div 
+        className={`absolute inset-0 bg-gradient-to-r from-white/[0.01] via-white/[0.04] to-white/[0.01] bg-[length:200%_100%] animate-[shimmer_1.5s_infinite] pointer-events-none transition-opacity duration-300 ease-out z-10 ${
+          isLoaded ? "opacity-0" : "opacity-100"
+        }`} 
+        style={{
+          backgroundImage: "linear-gradient(90deg, rgba(255,255,255,0.01) 0%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.01) 100%)",
+          backgroundSize: "200% 100%"
+        }}
+        aria-hidden="true"
+      />
 
       {/* The actual image */}
       {shouldLoad && (
@@ -81,7 +83,7 @@ export default function LazyImage({
             setIsLoaded(true);
             if (onLoadComplete) onLoadComplete();
           }}
-          className={`transition-opacity duration-300 ${
+          className={`transition-opacity duration-300 ease-out z-0 relative ${
             isLoaded ? "opacity-100" : "opacity-0"
           } ${className}`}
           loading="lazy"

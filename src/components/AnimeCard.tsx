@@ -66,58 +66,56 @@ export default function AnimeCard({ anime, onClick, layout = "grid" }: AnimeCard
         </div>
 
         {/* Content right */}
-        <div className="flex-1 flex flex-col pt-1 min-w-0 justify-start">
-          {!isCardReady ? (
-            <div className="space-y-4 animate-pulse">
-              <div className="h-5 bg-white/[0.06] rounded-md w-3/4" />
-              <div className="flex items-center gap-2 pt-0.5">
-                <div className="h-3.5 bg-white/[0.04] rounded w-24" />
-                <div className="h-3.5 bg-white/[0.04] rounded w-16" />
-              </div>
-              <div className="space-y-2 pt-1.5">
-                <div className="h-3 bg-white/[0.02] rounded w-full" />
-                <div className="h-3 bg-white/[0.02] rounded w-11/12" />
-              </div>
+        <div className="flex-1 flex flex-col pt-1 min-w-0 justify-start relative">
+          <div className={`absolute top-1 left-0 right-0 space-y-4 animate-pulse pointer-events-none transition-opacity duration-300 ease-out ${isCardReady ? "opacity-0" : "opacity-100"}`}>
+            <div className="h-5 bg-white/[0.06] rounded-md w-3/4" />
+            <div className="flex items-center gap-2 pt-0.5">
+              <div className="h-3.5 bg-white/[0.04] rounded w-24" />
+              <div className="h-3.5 bg-white/[0.04] rounded w-16" />
             </div>
-          ) : (
-            <div className="animate-fade-in flex flex-col min-w-0">
-              <h3 className="text-white text-base md:text-xl font-bold leading-tight group-hover:text-white transition-colors truncate font-sans">
-                {mainTitle}
-              </h3>
-              
-              <div className="flex flex-wrap items-center text-xs text-gray-400 gap-2 mt-2 font-medium">
-                <span className="text-white/60">{studioName}</span>
-                <span className="opacity-40">&bull;</span>
-                <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400">
-                  {formatAiringStatus(anime.status)}
-                </span>
-                {anime.averageScore && (
-                  <>
-                    <span className="opacity-40">&bull;</span>
-                    <span className="flex items-center gap-1">
-                      <Star className="w-3.5 h-3.5 fill-white/60 stroke-none" />
-                      {(anime.averageScore / 10).toFixed(1)}
-                    </span>
-                  </>
-                )}
-              </div>
-
-              <p className="text-sm text-gray-400 mt-3 line-clamp-2 md:line-clamp-3 leading-relaxed font-normal"
-                 dangerouslySetInnerHTML={{ __html: anime.description || "No description available for this anime series." }}>
-              </p>
-
-              <div className="flex flex-wrap gap-2 mt-4">
-                {anime.genres?.slice(0, 3).map((genre) => (
-                  <span
-                    key={genre}
-                    className="text-[11px] text-gray-400 font-medium"
-                  >
-                    {genre}
+            <div className="space-y-2 pt-1.5">
+              <div className="h-3 bg-white/[0.02] rounded w-full" />
+              <div className="h-3 bg-white/[0.02] rounded w-11/12" />
+            </div>
+          </div>
+          
+          <div className={`flex flex-col min-w-0 transition-opacity duration-300 ease-out ${isCardReady ? "opacity-100" : "opacity-0"}`}>
+            <h3 className="text-white text-base md:text-xl font-bold leading-tight group-hover:text-white transition-colors truncate font-sans">
+              {mainTitle}
+            </h3>
+            
+            <div className="flex flex-wrap items-center text-xs text-gray-400 gap-2 mt-2 font-medium">
+              <span className="text-white/60">{studioName}</span>
+              <span className="opacity-40">&bull;</span>
+              <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400">
+                {formatAiringStatus(anime.status)}
+              </span>
+              {anime.averageScore && (
+                <>
+                  <span className="opacity-40">&bull;</span>
+                  <span className="flex items-center gap-1">
+                    <Star className="w-3.5 h-3.5 fill-white/60 stroke-none" />
+                    {(anime.averageScore / 10).toFixed(1)}
                   </span>
-                ))}
-              </div>
+                </>
+              )}
             </div>
-          )}
+
+            <p className="text-sm text-gray-400 mt-3 line-clamp-2 md:line-clamp-3 leading-relaxed font-normal"
+               dangerouslySetInnerHTML={{ __html: anime.description || "No description available for this anime series." }}>
+            </p>
+
+            <div className="flex flex-wrap gap-2 mt-4">
+              {anime.genres?.slice(0, 3).map((genre) => (
+                <span
+                  key={genre}
+                  className="text-[11px] text-gray-400 font-medium"
+                >
+                  {genre}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -144,25 +142,23 @@ export default function AnimeCard({ anime, onClick, layout = "grid" }: AnimeCard
             </span>
           )}
         </div>
-        <div className="flex-1 min-w-0 flex flex-col justify-center">
-          {!isCardReady ? (
-            <div className="space-y-2 animate-pulse">
-              <div className="h-3.5 bg-white/[0.06] rounded w-11/12" />
-              <div className="h-2.5 bg-white/[0.04] rounded w-2/3" />
-            </div>
-          ) : (
-            <div className="animate-fade-in flex flex-col justify-center min-w-0">
-              <h4 className="text-white text-xs sm:text-sm font-bold leading-snug tracking-tight group-hover:text-[#ff6b35] transition-colors line-clamp-2 font-sans">
-                {mainTitle}
-              </h4>
-              <span className="text-[10px] text-[#aaa] truncate mt-1 block font-medium">
-                {studioName}
-              </span>
-              <span className="text-[9px] text-[#777] truncate block mt-0.5 font-mono">
-                {anime.seasonYear || "TBA"}
-              </span>
-            </div>
-          )}
+        <div className="flex-1 min-w-0 flex flex-col justify-center relative">
+          <div className={`absolute inset-0 flex flex-col justify-center space-y-2 animate-pulse pointer-events-none transition-opacity duration-300 ease-out z-10 ${isCardReady ? "opacity-0" : "opacity-100"}`}>
+            <div className="h-3.5 bg-white/[0.06] rounded w-11/12" />
+            <div className="h-2.5 bg-white/[0.04] rounded w-2/3" />
+          </div>
+          
+          <div className={`flex flex-col justify-center min-w-0 transition-opacity duration-300 ease-out ${isCardReady ? "opacity-100" : "opacity-0"}`}>
+            <h4 className="text-white text-xs sm:text-sm font-bold leading-snug tracking-tight group-hover:text-[#ff6b35] transition-colors line-clamp-2 font-sans">
+              {mainTitle}
+            </h4>
+            <span className="text-[10px] text-[#aaa] truncate mt-1 block font-medium">
+              {studioName}
+            </span>
+            <span className="text-[9px] text-[#777] truncate block mt-0.5 font-mono">
+              {anime.seasonYear || "TBA"}
+            </span>
+          </div>
         </div>
       </div>
     );
@@ -180,20 +176,18 @@ export default function AnimeCard({ anime, onClick, layout = "grid" }: AnimeCard
       style={{ width: "200px" }}
     >
       {/* SKELETON OVERLAY */}
-      {!isCardReady && (
-        <div className="absolute inset-0 z-50 flex flex-col pointer-events-none">
-          <div className="relative w-[200px] aspect-[2/3] rounded-[20px] shimmer-bone border border-white/[0.04] shadow-sm" />
-          <div className="mt-3.5 flex flex-col gap-1.5 z-0 px-1">
-            <div className="space-y-2">
-              <div className="h-4 bg-white/[0.06] rounded w-11/12" />
-              <div className="h-3 bg-white/[0.03] rounded w-2/3" />
-            </div>
+      <div className={`absolute inset-0 z-50 flex flex-col pointer-events-none transition-opacity duration-300 ease-out ${isCardReady ? "opacity-0" : "opacity-100"}`}>
+        <div className="relative w-[200px] flex-shrink-0 aspect-[2/3] rounded-[20px] shimmer-bone border border-white/[0.04] shadow-sm" />
+        <div className="mt-3.5 flex flex-col gap-1.5 z-0 px-1">
+          <div className="space-y-2">
+            <div className="h-4 bg-white/[0.06] rounded w-11/12" />
+            <div className="h-3 bg-white/[0.03] rounded w-2/3" />
           </div>
         </div>
-      )}
+      </div>
 
       {/* ACTUAL CARD CONTENT */}
-      <div className={`flex flex-col transition-opacity duration-500 ease-out ${isCardReady ? "opacity-100" : "opacity-0 invisible"}`}>
+      <div className={`flex flex-col transition-opacity duration-300 ease-out ${isCardReady ? "opacity-100" : "opacity-0"}`}>
         {/* 2:3 Poster Container with Dark Liquid Glass */}
         <div className="relative w-[200px] aspect-[2/3] rounded-[20px] overflow-hidden bg-white/[0.04] backdrop-blur-[12px] border border-white/[0.08] shadow-lg sm:group-hover:shadow-[0_8px_30px_rgb(0,0,0,0.8)] sm:group-hover:border-white/[0.2] transition-all duration-250 ease-out z-10 isolate">
           {/* Note: LazyImage's internal fade is fine; it will trigger onLoadComplete, fading in this wrapper */}
