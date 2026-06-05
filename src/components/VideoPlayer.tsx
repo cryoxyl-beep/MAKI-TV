@@ -139,24 +139,24 @@ export default function VideoPlayer({
     if (mediaType === "movie") {
       switch (selectedProvider) {
         case "cinesrc":
-          return `https://cinesrc.st/embed/movie/${tmdbId}?color=%23ff6b35&autoplay=true&autonext=true&autoskip=true`;
+          return `https://cinesrc.st/embed/movie/${tmdbId}?color=%23ffffff&autoplay=true&autonext=true&autoskip=true`;
         case "vidfast":
-          return `https://vidfast.pro/movie/${tmdbId}?autoPlay=true&theme=FF6B35`;
+          return `https://vidfast.pro/movie/${tmdbId}?autoPlay=true&theme=FFFFFF`;
         case "movies111":
           return `https://111movies.net/movie/${tmdbId}`;
         default:
-          return `https://cinesrc.st/embed/movie/${tmdbId}?color=%23ff6b35&autoplay=true&autonext=true&autoskip=true`;
+          return `https://cinesrc.st/embed/movie/${tmdbId}?color=%23ffffff&autoplay=true&autonext=true&autoskip=true`;
       }
     } else {
       switch (selectedProvider) {
         case "cinesrc":
-          return `https://cinesrc.st/embed/tv/${tmdbId}?s=${seasonNumber}&e=${episodeNumber}&color=%23ff6b35&autoplay=true&autonext=true&autoskip=true`;
+          return `https://cinesrc.st/embed/tv/${tmdbId}?s=${seasonNumber}&e=${episodeNumber}&color=%23ffffff&autoplay=true&autonext=true&autoskip=true`;
         case "vidfast":
-          return `https://vidfast.pro/tv/${tmdbId}/${seasonNumber}/${episodeNumber}?autoPlay=true&theme=FF6B35&nextButton=true&autoNext=true`;
+          return `https://vidfast.pro/tv/${tmdbId}/${seasonNumber}/${episodeNumber}?autoPlay=true&theme=FFFFFF&nextButton=true&autoNext=true`;
         case "movies111":
           return `https://111movies.net/tv/${tmdbId}/${seasonNumber}/${episodeNumber}`;
         default:
-          return `https://cinesrc.st/embed/tv/${tmdbId}?s=${seasonNumber}&e=${episodeNumber}&color=%23ff6b35&autoplay=true&autonext=true&autoskip=true`;
+          return `https://cinesrc.st/embed/tv/${tmdbId}?s=${seasonNumber}&e=${episodeNumber}&color=%23ffffff&autoplay=true&autonext=true&autoskip=true`;
       }
     }
   }
@@ -379,7 +379,7 @@ export default function VideoPlayer({
       {selectedProvider === "megaplay" ? (
         megaplayLoadError ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-gray-400 z-10 gap-3 bg-[#0a0a0c]">
-            <Landmark className="w-12 h-12 text-[#ff6b35]/80 mb-2" />
+            <Landmark className="w-12 h-12 text-white/50 mb-2" />
             <h4 className="text-white text-sm font-bold">MegaPlay Server Connection Timeout</h4>
             <p className="text-xs text-gray-505 max-w-sm leading-relaxed">
               Premium MegaPlay stream timed out or was blocked. Switch language above or choose a fallback server like Taberu or Matsuri below.
@@ -391,7 +391,7 @@ export default function VideoPlayer({
                   setIframeLoading(true);
                   handleLanguageChange(megaPlayLanguage);
                 }}
-                className="px-4 py-1.5 bg-[#ff6b35] hover:bg-[#ff7e4e] text-white text-xs font-bold rounded-lg cursor-pointer transition-colors"
+                className="px-4 py-1.5 bg-white text-black hover:bg-gray-200 text-xs font-bold rounded-lg cursor-pointer transition-colors"
               >
                 Retry Stream
               </button>
@@ -411,7 +411,7 @@ export default function VideoPlayer({
                 onClick={() => handleLanguageChange("sub")}
                 className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
                   megaPlayLanguage === "sub"
-                    ? "bg-[#ff6b35] text-white"
+                    ? "bg-white/20 text-white"
                     : "text-gray-400 hover:text-white"
                 }`}
               >
@@ -421,7 +421,7 @@ export default function VideoPlayer({
                 onClick={() => handleLanguageChange("dub")}
                 className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
                   megaPlayLanguage === "dub"
-                    ? "bg-[#ff6b35] text-white"
+                    ? "bg-white/20 text-white"
                     : "text-gray-400 hover:text-white"
                 }`}
               >
@@ -445,7 +445,7 @@ export default function VideoPlayer({
                 onClick={() => handleLanguageChange("sub")}
                 className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
                   megaPlayLanguage === "sub"
-                    ? "bg-[#ff6b35] text-white"
+                    ? "bg-white/20 text-white"
                     : "text-gray-400 hover:text-white"
                 }`}
               >
@@ -455,7 +455,7 @@ export default function VideoPlayer({
                 onClick={() => handleLanguageChange("dub")}
                 className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
                   megaPlayLanguage === "dub"
-                    ? "bg-[#ff6b35] text-white"
+                    ? "bg-white/20 text-white"
                     : "text-gray-400 hover:text-white"
                 }`}
               >
@@ -467,7 +467,7 @@ export default function VideoPlayer({
       ) : selectedProvider === "origami" ? (
         origamiLoadError ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-gray-400 z-10 gap-3 bg-[#0a0a0c]">
-            <Landmark className="w-12 h-12 text-[#ff6b35]/80 mb-2" />
+            <Landmark className="w-12 h-12 text-white/50 mb-2" />
             <h4 className="text-white text-sm font-bold">Origami Connection Timeout / Error</h4>
             <p className="text-xs text-gray-500 max-w-sm leading-relaxed">
               Premium Origami stream timed out or was blocked. Switch language above or choose a fallback server like Taberu or Matsuri below.
@@ -479,7 +479,7 @@ export default function VideoPlayer({
                   setIframeLoading(true);
                   handleLanguageChange(megaPlayLanguage);
                 }}
-                className="px-4 py-1.5 bg-[#ff6b35] hover:bg-[#ff7e4e] text-white text-xs font-bold rounded-lg cursor-pointer transition-colors"
+                className="px-4 py-1.5 bg-white text-black hover:bg-gray-200 text-xs font-bold rounded-lg cursor-pointer transition-colors"
               >
                 Retry Stream
               </button>
@@ -499,7 +499,7 @@ export default function VideoPlayer({
                 onClick={() => handleLanguageChange("sub")}
                 className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
                   megaPlayLanguage === "sub"
-                    ? "bg-[#ff6b35] text-white"
+                    ? "bg-white/20 text-white"
                     : "text-gray-400 hover:text-white"
                 }`}
               >
@@ -509,7 +509,7 @@ export default function VideoPlayer({
                 onClick={() => handleLanguageChange("dub")}
                 className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
                   megaPlayLanguage === "dub"
-                    ? "bg-[#ff6b35] text-white"
+                    ? "bg-white/20 text-white"
                     : "text-gray-400 hover:text-white"
                 }`}
               >
@@ -533,7 +533,7 @@ export default function VideoPlayer({
                 onClick={() => handleLanguageChange("sub")}
                 className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
                   megaPlayLanguage === "sub"
-                    ? "bg-[#ff6b35] text-white"
+                    ? "bg-white/20 text-white"
                     : "text-gray-400 hover:text-white"
                 }`}
               >
@@ -543,7 +543,7 @@ export default function VideoPlayer({
                 onClick={() => handleLanguageChange("dub")}
                 className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
                   megaPlayLanguage === "dub"
-                    ? "bg-[#ff6b35] text-white"
+                    ? "bg-white/20 text-white"
                     : "text-gray-400 hover:text-white"
                 }`}
               >
@@ -572,9 +572,9 @@ export default function VideoPlayer({
       {/* Loading Glass overlay */}
       {iframeLoading && (selectedProvider === "megaplay" ? !megaplayLoadError : selectedProvider === "origami" ? !origamiLoadError : !!embedUrl) && (
         <div className="absolute inset-0 bg-[#0a0a0c] flex flex-col items-center justify-center z-20 gap-3 pointer-events-none">
-          <RefreshCw className="w-7 h-7 text-[#ff6b35] animate-spin" />
+          <RefreshCw className="w-7 h-7 text-white/50 animate-spin" />
           <div className="text-center font-sans">
-            <span className="text-[10px] uppercase text-[#ff6b35] font-bold tracking-widest block mb-0.5">
+            <span className="text-[10px] uppercase text-white/40 font-bold tracking-widest block mb-0.5">
               Secure Proxy Stream
             </span>
             <span className="text-white text-xs font-semibold">

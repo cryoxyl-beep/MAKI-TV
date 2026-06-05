@@ -18,7 +18,7 @@ import { useLibrary } from "../hooks/useLibrary";
 import LazyImage from "./LazyImage";
 import VideoPlayer from "./VideoPlayer";
 import SkeletonLoader from "./SkeletonLoader";
-import { Share2, Bookmark, Layers, Play } from "lucide-react";
+import { Share2, Bookmark, Play, ChevronLeft, ChevronRight, CheckSquare, Square } from "lucide-react";
 
 interface WatchPageProps {
   animeId: number;
@@ -27,6 +27,19 @@ interface WatchPageProps {
   onNavigateToChannel: (id: number) => void;
   onNavigateToEpisode: (animeId: number, seasonNumber: number, episodeNumber: number) => void;
   onSubscriptionChanged: () => void;
+}
+
+interface JikanEpisode {
+  mal_id: number;
+  url: string;
+  title: string;
+  title_japanese: string;
+  title_romanji: string;
+  aired: string;
+  score: number;
+  filler: boolean;
+  recap: boolean;
+  forum_url: string;
 }
 
 export default function WatchPage({
@@ -61,6 +74,10 @@ export default function WatchPage({
   // Likes and share interaction trackers
   const [copiedNotification, setCopiedNotification] = useState(false);
   const [savedBookmark, setSavedBookmark] = useState(false);
+  
+  // Jikan State
+  const [episodesList, setEpisodesList] = useState<JikanEpisode[]>([]);
+  const [episodeDescription, setEpisodeDescription] = useState<string | null>(null);
 
   useEffect(() => {
     setSavedBookmark(isWatchLater(animeId, seasonNumber, episodeNumber));
@@ -120,6 +137,47 @@ export default function WatchPage({
     return () => { mounted = false; };
   }, [animeId, seasonNumber, episodeNumber]);
 
+  // Fetch Jikan episodes list
+  useEffect(() => {
+    let mounted = true;
+    async function fetchEpisodes() {
+      try {
+        const res = await fetch(`https://api.jikan.moe/v4/anime/${animeId}/episodes`);
+        if (res.ok) {
+          const data = await res.json();
+          if (mounted && data.data) {
+            setEpisodesList(data.data);
+          }
+        }
+      } catch (e) {
+        console.error("Failed to fetch episodes list", e);
+      }
+    }
+    fetchEpisodes();
+    return () => { mounted = false; };
+  }, [animeId]);
+
+  // Fetch Jikan episode details
+  useEffect(() => {
+    let mounted = true;
+    async function fetchEpisodeDetails() {
+      try {
+        setEpisodeDescription(null);
+        const res = await fetch(`https://api.jikan.moe/v4/anime/${animeId}/episodes/${episodeNumber}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (mounted && data.data?.synopsis) {
+            setEpisodeDescription(data.data.synopsis);
+          }
+        }
+      } catch (e) {
+        console.error("Failed to fetch episode details", e);
+      }
+    }
+    fetchEpisodeDetails();
+    return () => { mounted = false; };
+  }, [animeId, episodeNumber]);
+
   useEffect(() => {
     if (anime) {
       const titleVal = anime.title.english || anime.title.romaji || anime.title.userPreferred || "Untitled Series";
@@ -148,12 +206,17 @@ export default function WatchPage({
     localStorage.setItem("makitv_selected_provider", providerId);
   };
 
+  const episodesCount = anime?.episodes || 12;
+
   const handleNextEpisode = () => {
-    const totalEpisodes = anime?.episodes || 12;
-    if (episodeNumber < totalEpisodes) {
+    if (episodeNumber < episodesCount) {
       onNavigateToEpisode(animeId, seasonNumber, episodeNumber + 1);
-    } else {
-      onNavigateToEpisode(animeId, seasonNumber, 1);
+    }
+  };
+
+  const handlePrevEpisode = () => {
+    if (episodeNumber > 1) {
+      onNavigateToEpisode(animeId, seasonNumber, episodeNumber - 1);
     }
   };
 
@@ -163,8 +226,22 @@ export default function WatchPage({
     setTimeout(() => setCopiedNotification(false), 2000);
   };
 
-  const handleChannelSubscribeToggle = async () => {
+  const handleToggleWatchLater = async () => {
     if (anime) {
+      const mainTitle = anime.title.english || anime.title.romaji || anime.title.userPreferred || "Untitled Anime";
+      const banner = anime.bannerImage;
+      const avatar = anime.coverImage.medium || anime.coverImage.large;
+      const isNowSaved = toggleWatchLater({
+        animeId: anime.id,
+        animeTitle: mainTitle,
+        seasonNumber: seasonNumber,
+        episodeNumber: episodeNumber,
+        bannerImage: banner,
+        coverImage: avatar,
+      });
+      setSavedBookmark(isNowSaved);
+      
+      // Also sync with library hook if subscribed behavior matches
       await toggleSubscription(anime);
       onSubscriptionChanged();
     }
@@ -186,20 +263,22 @@ export default function WatchPage({
   const english = anime.title.english || "";
   const mainTitle = english || romaji || anime.title.userPreferred || "Untitled Anime";
   
-  const episodesCount = anime.episodes || 12;
   const avatar = anime.coverImage.medium || anime.coverImage.large || "";
   const studioName = anime.studios?.nodes?.[0]?.name || anime.format || "Official Studio";
-  const subscribed = isSubscribed(anime.id);
+
+  // Identify current episode metadata from Jikan
+  const currentEpData = episodesList.find(e => e.mal_id === episodeNumber);
+  const currentEpTitle = currentEpData?.title || "";
 
   return (
-    <div className="w-full bg-transparent pb-20 select-none z-10 relative animate-fade-in">
+    <div className="w-full bg-transparent pb-20 select-none z-10 relative animate-fade-in text-[#f1f1f1]">
       
       {/* =============== RESUME PREVIOUS SESSION HUD ALERT =============== */}
       {resumeSession && (
         <div className="max-w-7xl mx-auto px-4 pt-4">
-          <div className="bg-[#121214] border border-[#ff6b35]/25 hover:border-[#ff6b35]/40 px-4 py-3.5 rounded-xl flex items-center justify-between gap-4 animate-fade-in shadow-xl select-none">
+          <div className="bg-[#121214] border border-white/10 hover:border-white/20 px-4 py-3.5 rounded-xl flex items-center justify-between gap-4 animate-fade-in shadow-xl select-none">
             <div className="flex items-center gap-3">
-              <span className="flex h-2 w-2 rounded-full bg-[#ff6b35] animate-pulse" />
+              <span className="flex h-2 w-2 rounded-full bg-white animate-pulse" />
               <div className="text-xs sm:text-sm">
                 <span className="text-[#aaa]">Continue watching? </span>
                 <strong className="text-white">Season {resumeSession.season} • Episode {resumeSession.episode}</strong>
@@ -222,7 +301,7 @@ export default function WatchPage({
                   onNavigateToEpisode(anime.id, resumeSession.season, resumeSession.episode);
                   setResumeSession(null);
                 }}
-                className="px-4 py-1.5 bg-[#ff6b35] hover:bg-[#ff7e4e] text-white text-xs font-bold rounded-lg cursor-pointer transition-colors shadow-md shadow-[#ff6b35]/20"
+                className="px-4 py-1.5 bg-white text-black hover:bg-gray-200 text-xs font-bold rounded-lg cursor-pointer transition-colors shadow-md"
               >
                 Resume Play
               </button>
@@ -232,10 +311,10 @@ export default function WatchPage({
       )}
 
       {/* =============== MAIN TWO-COLUMN VIEWPORT LISTS =============== */}
-      <div className="max-w-7xl mx-auto px-4 py-5 grid grid-cols-1 lg:grid-cols-12 gap-6 leading-relaxed">
+      <div className="max-w-7xl mx-auto px-4 py-5 grid grid-cols-1 lg:grid-cols-12 gap-8 leading-relaxed">
         
         {/* LEFT COLUMN: Player, Details, and Info Panels */}
-        <div className="lg:col-span-8 flex flex-col gap-4 min-w-0">
+        <div className="lg:col-span-8 flex flex-col min-w-0">
           
           <VideoPlayer
             animeId={anime.id}
@@ -254,236 +333,218 @@ export default function WatchPage({
             onProviderChange={handleSelectProvider}
           />
 
-          {/* Episode Title Row */}
-          <div>
-            <span className="text-xs uppercase text-[#ff6b35] font-bold tracking-widest block mb-0.5 animate-pulse">
-              Playing Now: Season {seasonNumber} • Episode {episodeNumber}
-            </span>
-            <h1 className="text-white text-lg sm:text-xl font-bold font-sans tracking-tight leading-tight pt-1">
-              {mainTitle} Episode {episodeNumber} - Official Premium Simulcast Source
-            </h1>
-          </div>
-
-          {/* Interactions and metadata Row (Views, Likes, Share buttons) */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center py-2 border-b border-white/[0.08] text-[#f1f1f1] select-none">
-            <div className="text-xs sm:text-sm text-[#aaa] font-normal">
-              <span>{anime.format || "TV"}</span>
-              <span className="mx-2">•</span>
-              <span>{anime.seasonYear || "Simulcast"}</span>
-            </div>
-
-            {/* Icons row */}
-            <div className="flex items-center gap-2 text-xs sm:text-sm">
-              <button
-                onClick={handleShare}
-                className="py-1.5 px-3.5 bg-white/[0.04] border border-white/[0.08] rounded-full hover:bg-white/[0.1] flex items-center gap-2 cursor-pointer transition-colors relative"
-              >
-                <Share2 className="w-4 h-4 text-gray-400" />
-                <span className="font-semibold">{copiedNotification ? "Copied Link!" : "Share Link"}</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  if (anime) {
-                    const mainTitle = anime.title.english || anime.title.romaji || anime.title.userPreferred || "Untitled Anime";
-                    const banner = anime.bannerImage;
-                    const avatar = anime.coverImage.medium || anime.coverImage.large;
-                    const isNowSaved = toggleWatchLater({
-                      animeId: anime.id,
-                      animeTitle: mainTitle,
-                      seasonNumber: seasonNumber,
-                      episodeNumber: episodeNumber,
-                      bannerImage: banner,
-                      coverImage: avatar,
-                    });
-                    setSavedBookmark(isNowSaved);
-                  }
-                }}
-                className={`py-1.5 px-3.5 bg-white/[0.04] border border-white/[0.08] rounded-full hover:bg-white/[0.1] flex items-center gap-2 cursor-pointer transition-colors ${
-                  savedBookmark ? "text-[#ff6b35]" : "text-white"
-                }`}
-              >
-                <Bookmark className={`w-4 h-4 ${savedBookmark ? "fill-[#ff6b35]" : ""}`} />
-                <span className="font-semibold">{savedBookmark ? "Saved" : "Watch Later"}</span>
-              </button>
-            </div>
-          </div>
-
-          {/* ================= SERVER SELECTOR SYSTEM ================= */}
-          <div className="bg-[#0d0d11] border border-white/[0.05] rounded-2xl p-4.5 space-y-3.5 shadow">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#ff6b35] animate-pulse" />
-              <h3 className="text-white text-xs font-bold uppercase tracking-wider text-gray-300">
-                Primary Streaming Multiplex (Server Select)
-              </h3>
-            </div>
-            
-             <div className="grid grid-cols-1 sm:grid-cols-5 gap-2.5">
-              {[
-                { id: "megaplay", name: "MegaPlay", desc: "Native Sub & Dub" },
-                { id: "origami", name: "Origami", desc: "Direct MAL Sub & Dub" },
-                { id: "cinesrc", name: "Taberu", desc: "Sub & Dub" },
-                { id: "vidfast", name: "Matsuri", desc: "Fast Dubs/Subs" },
-                { id: "movies111", name: "Onigiri", desc: "Backup" },
-              ].map((provider) => {
-                const isActive = selectedProvider === provider.id;
-                return (
-                  <button
-                    key={provider.id}
-                    onClick={() => handleSelectProvider(provider.id)}
-                    className={`px-4 py-3 rounded-xl text-left text-xs font-bold font-sans cursor-pointer flex flex-col items-start transition-all duration-200 select-none relative overflow-hidden group/btn ${
-                      isActive
-                        ? "bg-[#ff6b35]/15 border border-[#ff6b35]/40 text-white shadow shadow-[#ff6b35]/5"
-                        : "bg-white/[0.03] border border-white/[0.07] text-gray-400 hover:text-white hover:bg-white/[0.06] hover:border-white/[0.12]"
-                    }`}
-                  >
-                    {/* Glowing active indicator dot */}
-                    {isActive && (
-                      <span className="absolute top-2.5 right-2.5 w-1.5 h-1.5 rounded-full bg-[#ff6b35]" />
-                    )}
-                    <span className={`text-[11px] uppercase tracking-wider ${isActive ? "text-[#ff6b35]" : "text-gray-300 group-hover/btn:text-white"}`}>
-                      {provider.name}
-                    </span>
-                    <span className="text-[9px] text-gray-500 mt-1.5 group-hover/btn:text-gray-400 font-normal leading-relaxed block">
-                      {provider.desc}
-                    </span>
-                    {isActive && (
-                      <span className="absolute inset-0 bg-[#ff6b35]/[0.02] border-b-2 border-[#ff6b35] pointer-events-none" />
-                    )}
+          {/* Player Navigation & Controls */}
+          <div className="flex items-center justify-between mt-4 text-sm flex-wrap gap-4 select-none pb-2">
+            {/* Left: Auto Switchers */}
+            <div className="flex items-center gap-6">
+              {(selectedProvider === "megaplay" || selectedProvider === "origami") && (
+                <>
+                  <button className="flex items-center gap-2 text-white hover:text-white transition-colors cursor-pointer group font-semibold text-xs uppercase tracking-wider">
+                    <CheckSquare className="w-4 h-4 text-white" />
+                    Auto Skip
                   </button>
-                );
-              })}
+                  <button className="flex items-center gap-2 text-white/50 hover:text-white transition-colors cursor-pointer group font-semibold text-xs uppercase tracking-wider">
+                    <Square className="w-4 h-4" />
+                    Auto Next
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Right: Prev / Next */}
+            <div className="flex items-center gap-4 ml-auto">
+              <button
+                onClick={handlePrevEpisode}
+                disabled={episodeNumber <= 1}
+                className={`text-xs font-semibold uppercase tracking-widest flex items-center gap-1 ${episodeNumber <= 1 ? "text-white/20 cursor-not-allowed" : "text-white/60 hover:text-white cursor-pointer transition-colors"}`}
+              >
+                <ChevronLeft className="w-4 h-4" /> Prev
+              </button>
+              <span className="text-white/40 text-xs font-semibold uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded">
+                Episode {episodeNumber} / {episodesCount}
+              </span>
+              <button
+                onClick={handleNextEpisode}
+                disabled={episodeNumber >= episodesCount}
+                className={`text-xs font-semibold uppercase tracking-widest flex items-center gap-1 ${episodeNumber >= episodesCount ? "text-white/20 cursor-not-allowed" : "text-white/60 hover:text-white cursor-pointer transition-colors"}`}
+              >
+                Next <ChevronRight className="w-4 h-4" />
+              </button>
             </div>
           </div>
 
-          {/* Publisher/Channel row profile connector */}
-          <div className="flex items-center gap-4 py-3 bg-[#0d0d11] hover:bg-[#15151c] px-4 rounded-2xl border border-white/[0.05] justify-between transition-all">
-            <div
-              onClick={() => onNavigateToChannel(anime.id)}
-              className="flex gap-3 items-center cursor-pointer group min-w-0"
-              title="Go to anime channel hub"
-            >
-              <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-black ring-1 ring-white/10 group-hover:scale-105 transition-transform shadow-inner">
-                <LazyImage src={avatar} alt="Publisher Avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-              </div>
-              <div className="min-w-0">
-                <h3 className="text-white text-sm font-bold group-hover:text-[#ff6b35] transition-colors truncate">
-                  {studioName}
-                </h3>
-                <span className="text-[11px] text-gray-400 font-medium block">
-                  Official Anime Publisher
-                </span>
-              </div>
-            </div>
+          {/* Episode Info */}
+          <div className="mt-4 pt-4 border-t border-white/[0.05]">
+            <h1 className="text-white text-xl sm:text-2xl font-bold font-sans tracking-tight leading-tight">
+              S{seasonNumber}E{episodeNumber}{currentEpTitle ? `: ${currentEpTitle}` : ""}
+            </h1>
+            {episodeDescription && (
+              <p className="mt-3 text-white/60 text-sm leading-relaxed font-sans font-normal max-w-4xl line-clamp-3 hover:line-clamp-none transition-all">
+                {episodeDescription}
+              </p>
+            )}
+          </div>
 
-            <button
-              onClick={async () => {
-                if (!currentUser) {
-                  alert("Please sign in to add to your library.");
-                  return;
-                }
-                await toggleSubscription(anime);
-                if (onSubscriptionChanged) onSubscriptionChanged();
-              }}
-              className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                subscribed ? "bg-white/[0.08] border border-white/[0.1] text-white hover:bg-white/[0.12]" : "bg-white text-black hover:bg-[#ff6b35] hover:text-white"
-              }`}
-            >
-              {subscribed ? "In Library" : "Add to Library"}
+          {/* Interactions: Watch Later & Share */}
+          <div className="flex items-center gap-3 mt-4 text-xs sm:text-sm">
+            <button onClick={handleToggleWatchLater} className={`px-4 py-2 border rounded-lg flex items-center gap-2 transition-colors cursor-pointer font-semibold ${savedBookmark ? "bg-white text-black border-white" : "bg-white/[0.04] text-white border-white/10 hover:bg-white/[0.08]"}`}>
+              <Bookmark className={`w-4 h-4 ${savedBookmark ? "fill-black" : ""}`} />
+              {savedBookmark ? "Saved to Library" : "Watch Later"}
+            </button>
+            <button onClick={handleShare} className="px-4 py-2 bg-white/[0.04] hover:bg-white/[0.08] text-white border border-white/10 rounded-lg flex items-center gap-2 transition-colors cursor-pointer font-semibold">
+              <Share2 className="w-4 h-4" />
+              {copiedNotification ? "Copied!" : "Share"}
             </button>
           </div>
 
-          {/* Content Description Accordion */}
-          <div className="bg-[#0d0d11] rounded-2xl border border-white/[0.05] p-5 space-y-2 select-none font-sans shadow-lg">
-            <span className="text-white text-xs font-bold uppercase tracking-widest font-sans flex items-center gap-1.5">
-              <Layers className="w-3.5 h-3.5 text-[#ff6b35]" />
-              Anime Synopsis Hub
-            </span>
-            <p
-              className="text-[#bbb] text-xs sm:text-sm leading-relaxed font-sans font-normal"
-              dangerouslySetInnerHTML={{ __html: anime.description || "No biography summary available for this item." }}
-            />
-            {anime.genres && (
-              <div className="flex flex-wrap gap-1.5 pt-2">
-                {anime.genres.slice(0, 5).map((genre) => (
-                  <span key={genre} className="px-2.5 py-0.5 bg-white/[0.04] border border-white/[0.08] text-[10px] text-gray-400 rounded-full font-medium">
-                    {genre}
-                  </span>
-                ))}
+          {/* ================= SERVER SELECTOR SYSTEM ================= */}
+          <div className="mt-8 space-y-6">
+            {/* Primary Servers */}
+            <div className="space-y-3">
+              <h3 className="text-[10px] uppercase text-white/40 font-bold tracking-widest flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-white/40" />
+                Primary Servers
+              </h3>
+              <div className="flex flex-wrap gap-2.5">
+                {[
+                  { id: "megaplay", name: "MegaPlay", tags: ["S-SUB", "DUB"] },
+                  { id: "origami", name: "Origami", tags: ["S-SUB", "DUB"] }
+                ].map(provider => {
+                  const isActive = selectedProvider === provider.id;
+                  return (
+                    <button
+                      key={provider.id}
+                      onClick={() => handleSelectProvider(provider.id)}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all cursor-pointer select-none group outline-none ${isActive ? "bg-white/10 border-white/20 shadow-lg shadow-white/5" : "bg-white/[0.02] border-white/[0.05] hover:bg-white/[0.06] hover:border-white/10"}`}
+                    >
+                       <span className={`text-sm font-bold tracking-wide transition-colors ${isActive ? "text-white" : "text-white/60 group-hover:text-white/90"}`}>
+                         {provider.name}
+                       </span>
+                       <div className="flex gap-1.5">
+                         {provider.tags.map(tag => (
+                           <span key={tag} className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${isActive ? "bg-white/20 text-white" : "bg-white/10 text-white/50"}`}>{tag}</span>
+                         ))}
+                       </div>
+                    </button>
+                  )
+                })}
               </div>
-            )}
+            </div>
+
+            {/* Fallback Servers */}
+            <div className="space-y-3 pt-2">
+              <h3 className="text-[10px] uppercase text-white/30 font-bold tracking-widest flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-white/20" />
+                Fallback Servers
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { id: "cinesrc", name: "Taberu", tags: ["EMBED", "S-SUB"] },
+                  { id: "vidfast", name: "Matsuri", tags: ["EMBED", "S-SUB"] },
+                  { id: "movies111", name: "Onigiri", tags: ["EMBED", "S-SUB"] }
+                ].map(provider => {
+                  const isActive = selectedProvider === provider.id;
+                  return (
+                    <button
+                      key={provider.id}
+                      onClick={() => handleSelectProvider(provider.id)}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all cursor-pointer select-none group outline-none ${isActive ? "bg-white/10 border-white/20 shadow-lg" : "bg-white/[0.015] border-white/[0.03] hover:bg-white/[0.04] hover:border-white/5"}`}
+                    >
+                       <span className={`text-xs font-semibold tracking-wide transition-colors ${isActive ? "text-white" : "text-white/40 group-hover:text-white/80"}`}>
+                         {provider.name}
+                       </span>
+                       <div className="flex gap-1">
+                         {provider.tags.map(tag => (
+                           <span key={tag} className={`text-[8px] px-1 py-0.5 rounded font-bold uppercase ${isActive ? "bg-white/10 text-white/70" : "bg-white/5 text-white/30"}`}>{tag}</span>
+                         ))}
+                       </div>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
           </div>
+
+          {/* Anime Information Block (Compact) */}
+          <div 
+            onClick={() => onNavigateToChannel(anime.id)}
+            className="mt-10 flex items-center gap-4 py-3 bg-white/[0.02] px-4 rounded-xl border border-white/[0.05] justify-between cursor-pointer hover:bg-white/[0.04] transition-colors group"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+               <div className="w-10 h-10 rounded-md overflow-hidden flex-shrink-0 bg-black/40 border border-white/5 shadow-inner">
+                  <LazyImage src={avatar} alt={mainTitle} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+               </div>
+               <div className="min-w-0">
+                  <h3 className="text-white text-sm font-bold truncate group-hover:text-white transition-colors">
+                    {mainTitle}
+                  </h3>
+                  <span className="text-xs text-white/40 font-medium block truncate">
+                    {studioName}
+                  </span>
+               </div>
+            </div>
+          </div>
+
         </div>
 
         {/* =============== RIGHT COLUMN: INTEGRATED EPISODE QUEUE SIDEBAR =============== */}
         <div className="lg:col-span-4 flex flex-col gap-4">
-          <div className="flex items-center justify-between pb-2 border-b border-white/[0.08]">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#ff6b35]" />
-              <h3 className="text-white text-sm font-bold font-sans tracking-tight">
-                Up Next Episodes
-              </h3>
-            </div>
-            <span className="text-xs text-gray-400 font-medium">
-              {episodeNumber} / {episodesCount}
+          <div className="flex items-center justify-between pb-3 border-b border-white/[0.05]">
+            <h3 className="text-white text-base font-bold font-sans tracking-tight">
+              Episodes
+            </h3>
+            <span className="text-xs text-white/40 font-semibold bg-white/5 px-2 py-1 rounded-md">
+              {episodesCount} available
             </span>
           </div>
 
           {/* Scrollable Playlist Queue Container */}
-          <div className="flex flex-col gap-2 max-h-[75vh] overflow-y-auto pr-1 custom-scrollbar">
+          <div className="flex flex-col gap-1 max-h-[85vh] overflow-y-auto pr-2 custom-scrollbar">
             {[...Array(episodesCount)].map((_, idx) => {
               const epNum = idx + 1;
               const isActive = epNum === episodeNumber;
               const progressVal = getEpisodeProgress(anime.id, seasonNumber, epNum);
+              
+              const epData = episodesList.find(e => e.mal_id === epNum);
+              const epTitleStr = epData?.title || "";
 
               return (
                 <div
                   key={epNum}
                   onClick={() => onNavigateToEpisode(anime.id, seasonNumber, epNum)}
-                  className={`flex gap-3 p-2.5 rounded-2xl cursor-pointer transition-all duration-300 group relative border ${
+                  className={`flex flex-col gap-2 p-3 rounded-xl cursor-pointer transition-all duration-200 group relative border ${
                     isActive
-                      ? "bg-[#ff6b35]/15 border-[#ff6b35]/30 text-white shadow-[0_8px_20px_rgba(255,107,53,0.1)]"
-                      : "bg-[#0d0d11] border-white/[0.04] hover:bg-[#15151c] hover:border-white/[0.08]"
+                      ? "bg-white/[0.08] border-white/10 shadow-lg"
+                      : "bg-transparent border-transparent hover:bg-white/[0.03] hover:border-white/[0.05]"
                   }`}
                 >
-                  {/* Episode Thumbnail */}
-                  <div className="relative w-24 aspect-video bg-black/40 rounded-lg overflow-hidden flex-shrink-0 border border-white/5">
-                    <LazyImage
-                      src={anime.coverImage.medium || anime.coverImage.large}
-                      alt={`${mainTitle} Episode ${epNum}`}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      referrerPolicy="no-referrer"
-                    />
-                    <span className="absolute bottom-1 right-1 px-1 py-0.5 bg-black/80 text-white text-[9px] font-bold rounded">
-                      EP {epNum}
-                    </span>
-                    
-                    {isActive && (
-                      <div className="absolute inset-0 bg-[#ff6b35]/20 flex items-center justify-center">
-                        <Play className="w-4 h-4 fill-white stroke-none animate-pulse" />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Episode Metadata */}
-                  <div className="flex-1 min-w-0 flex flex-col justify-center font-sans">
-                    <span className={`text-[9px] font-bold uppercase tracking-wider ${isActive ? "text-[#ff6b35]" : "text-gray-400"}`}>
-                      {isActive ? "Now Playing" : `Up Next - Episode ${epNum}`}
-                    </span>
-                    <h4 className={`text-xs font-bold truncate transition-colors leading-snug mt-0.5 ${isActive ? "text-[#ff6b35]" : "text-white group-hover:text-[#ff6b35]"}`}>
-                      Episode {epNum}
-                    </h4>
-                    <div className="flex items-center gap-2 mt-1">
-                      {progressVal > 0 ? (
-                        <div className="flex items-center gap-1.5 w-full">
-                          <div className="w-12 bg-white/10 h-1 rounded-full overflow-hidden">
-                            <div className="bg-[#ff6b35] h-full" style={{ width: `${progressVal}%` }} />
-                          </div>
-                          <span className="text-[9px] text-gray-500 font-mono">{Math.round(progressVal)}% watched</span>
+                  <div className="flex items-start gap-4">
+                    <div className="relative w-[110px] aspect-video bg-black/40 rounded-lg overflow-hidden flex-shrink-0 border border-white/5">
+                      <LazyImage
+                        src={anime.coverImage.medium || anime.coverImage.large}
+                        alt={`Episode ${epNum}`}
+                        className={`w-full h-full object-cover transition-opacity duration-300 ${isActive ? "opacity-100" : "opacity-70 group-hover:opacity-100"}`}
+                        referrerPolicy="no-referrer"
+                      />
+                      {isActive && (
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                          <Play className="w-6 h-6 fill-white stroke-none drop-shadow-md" />
                         </div>
-                      ) : (
-                        <span className="text-[10px] text-gray-500 font-sans">Ready to play</span>
                       )}
+                      {progressVal > 0 && !isActive && (
+                         <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
+                           <div className="bg-white/80 h-full" style={{ width: `${progressVal}%` }} />
+                         </div>
+                      )}
+                    </div>
+
+                    <div className="flex-1 min-w-0 flex flex-col justify-center py-0.5">
+                      <h4 className={`text-sm font-bold truncate transition-colors leading-tight ${isActive ? "text-white" : "text-white/80 group-hover:text-white"}`}>
+                         S{seasonNumber}E{epNum}{epTitleStr ? ` — ${epTitleStr}` : ""}
+                      </h4>
+                      <span className="text-[11px] text-white/40 mt-1 font-medium select-none">
+                         {isActive ? "Now Playing" : progressVal > 0 ? `${Math.round(progressVal)}% Watched` : "Not Watched"}
+                      </span>
                     </div>
                   </div>
                 </div>
