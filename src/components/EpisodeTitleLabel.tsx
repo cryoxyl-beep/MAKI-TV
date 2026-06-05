@@ -76,8 +76,13 @@ export function useEpisodeTitle(animeId: number, episodeNumber: number, fallback
 }
 
 export function EpisodeTitleLabel({ animeId, seasonNumber, episodeNumber, asFallback = false }: { animeId: number, seasonNumber: number, episodeNumber: number, asFallback?: boolean }) {
-  const defaultTitle = asFallback ? `Episode ${episodeNumber}` : `S${seasonNumber} E${episodeNumber}`;
-  const title = useEpisodeTitle(animeId, episodeNumber, defaultTitle);
+  const title = useEpisodeTitle(animeId, episodeNumber, "");
   
-  return <>{title}</>;
+  const formattedDefault = `S${seasonNumber}E${episodeNumber}`;
+  
+  if (title) {
+    return <>{formattedDefault}: {title}</>;
+  }
+  
+  return <>{formattedDefault}</>;
 }
