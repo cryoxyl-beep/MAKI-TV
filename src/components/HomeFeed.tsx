@@ -13,6 +13,7 @@ import DiscoveryShelf from "./DiscoveryShelf";
 import { RefreshCw, Play } from "lucide-react";
 import PremiumHero from "./PremiumHero";
 import { rankSearchMatch } from "../utils/search";
+import ShelfScroller from "./ShelfScroller";
 
 interface HomeFeedProps {
   onSelectAnime: (id: number) => void;
@@ -145,12 +146,12 @@ export default function HomeFeed({
           {isLoading ? (
             <SkeletonLoader type="shelf" />
           ) : (
-            <div className="flex flex-col gap-4 relative isolate mb-8 group/shelf animate-fade-in">
+            <div className="flex flex-col gap-4 relative isolate mb-8 animate-fade-in">
               <div className="px-4 md:px-6 flex flex-col">
                 <h2 className="text-2xl font-bold text-[#f1f1f1] tracking-tight">Trending Now</h2>
                 <p className="text-[13px] text-gray-400 font-medium mt-0.5">Most watched this week</p>
               </div>
-              <div className="flex overflow-x-auto gap-5 px-4 md:px-6 scroll-px-4 md:scroll-px-6 pb-6 pt-2 snap-x snap-mandatory scroll-smooth" style={{ scrollbarWidth: "none" }}>
+              <ShelfScroller>
                 {feedAnimes.slice(0, 15).map((anime, index) => {
                   const isLastElement = index === Math.min(feedAnimes.length - 1, 14);
                   return (
@@ -159,7 +160,7 @@ export default function HomeFeed({
                     </div>
                   );
                 })}
-              </div>
+              </ShelfScroller>
             </div>
           )}
 

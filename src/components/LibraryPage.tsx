@@ -62,7 +62,7 @@ export default function LibraryPage({ onWatchEpisode, onNavigateToChannel }: Lib
             Library
           </h1>
           <p className="text-sm text-gray-400">
-            Everything important to me
+            Keep Tracking everything you Love
           </p>
         </div>
 
@@ -171,15 +171,15 @@ export default function LibraryPage({ onWatchEpisode, onNavigateToChannel }: Lib
                                 {/* Info */}
                                 <div className="flex-1 min-w-0 py-1 flex flex-col justify-center h-full">
                                   <h3 className="text-white font-semibold text-sm sm:text-base leading-snug truncate group-hover:text-gray-200 transition-colors">
+                                    {episode.animeTitle}
+                                  </h3>
+                                  <h4 className="text-gray-400 text-xs sm:text-sm font-medium mt-1 truncate">
                                     <EpisodeTitleLabel 
                                       animeId={episode.animeId} 
                                       seasonNumber={episode.seasonNumber} 
                                       episodeNumber={episode.episodeNumber}
                                       asFallback 
                                     />
-                                  </h3>
-                                  <h4 className="text-gray-400 text-xs sm:text-sm font-medium mt-1 truncate">
-                                    {episode.animeTitle}
                                   </h4>
                                 </div>
                               </div>
@@ -275,15 +275,15 @@ export default function LibraryPage({ onWatchEpisode, onNavigateToChannel }: Lib
                           {/* Info */}
                           <div className="flex-1 min-w-0 py-1 flex flex-col justify-center h-full">
                             <h3 className="text-white font-semibold text-sm sm:text-base leading-snug truncate group-hover:text-gray-200 transition-colors">
+                              {item.animeTitle}
+                            </h3>
+                            <h4 className="text-gray-400 text-xs sm:text-sm font-medium mt-1 truncate">
                               <EpisodeTitleLabel 
                                 animeId={item.animeId} 
                                 seasonNumber={item.seasonNumber} 
                                 episodeNumber={item.episodeNumber}
                                 asFallback 
                               />
-                            </h3>
-                            <h4 className="text-gray-400 text-xs sm:text-sm font-medium mt-1 truncate">
-                              {item.animeTitle}
                             </h4>
                           </div>
                           {/* Remove Action */}

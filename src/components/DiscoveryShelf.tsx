@@ -3,6 +3,7 @@ import { fetchAnimeFeed } from "../services/anilist";
 import { AniListAnime } from "../types";
 import AnimeCard from "./AnimeCard";
 import SkeletonLoader from "./SkeletonLoader";
+import ShelfScroller from "./ShelfScroller";
 
 interface DiscoveryShelfProps {
   title: string;
@@ -42,21 +43,21 @@ export default function DiscoveryShelf({ title, subtitle, category, onSelectAnim
   if (animes.length === 0) return null;
 
   return (
-    <div className="flex flex-col gap-4 relative isolate mb-8 group/shelf animate-fade-in">
+    <div className="flex flex-col gap-4 relative isolate mb-8 animate-fade-in">
       {/* Shelf Header */}
       <div className="px-4 md:px-6 flex flex-col">
         <h2 className="text-2xl font-bold text-[#f1f1f1] tracking-tight">{title}</h2>
         <p className="text-[13px] text-gray-400 font-medium mt-0.5">{subtitle}</p>
       </div>
 
-      {/* Horizontal Scroll Container */}
-      <div className="flex overflow-x-auto gap-5 px-4 md:px-6 scroll-px-4 md:scroll-px-6 pb-6 pt-2 snap-x snap-mandatory scroll-smooth" style={{ scrollbarWidth: "none" }}>
+      {/* Smart Scrolling Container with Navigation Arrows */}
+      <ShelfScroller>
         {animes.map((anime, index) => (
           <div key={`${anime.id}-${index}`} className="snap-start shrink-0">
             <AnimeCard anime={anime} onClick={() => onSelectAnime(anime.id)} layout="grid" />
           </div>
         ))}
-      </div>
+      </ShelfScroller>
     </div>
   );
 }

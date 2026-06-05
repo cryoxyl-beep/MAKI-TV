@@ -13,7 +13,7 @@ import LibraryPage from "./components/LibraryPage";
 import LazyImage from "./components/LazyImage";
 import { parseEpisodeSearch } from "./utils";
 import { fetchAnimeFeed } from "./services/anilist";
-import { Tv, Flame, Play, Sparkles } from "lucide-react";
+import { Tv, Flame, Play, Sparkles, ChevronUp } from "lucide-react";
 import { useLibrary } from "./hooks/useLibrary";
 
 export default function App() {
@@ -45,6 +45,32 @@ export default function App() {
 
   const handleSyncSubscriptions = () => {
     // Left empty for compatibility.
+  };
+
+  // Floating Scroll to Top state
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      // 400px is within the requested 300px-500px range
+      if (window.scrollY > 400) {
+        setShowScrollTop(true);
+      } else {
+        setShowScrollTop(false);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
+  const handleScrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
   };
 
   // Browser state routing via hash listeners (e.g. #/channel/32, #/watch/12/1/4)
@@ -224,58 +250,10 @@ export default function App() {
 
           {/* RENDER LAYER 3: Subscription pages displaying all subscribed series channels */}
           {activePage === "subscriptions" && (
-            <div className="w-full min-h-screen px-4 md:px-6 py-6 space-y-6 animate-fade-in">
-              <div className="flex items-center gap-2.5 border-b border-[#222] pb-4">
-                <Tv className="w-6 h-6 text-[#ff6b35]" />
-                <div>
-                  <h1 className="text-white text-xl sm:text-2xl font-black font-sans tracking-tight">
-                    Subscribed Channels
-                  </h1>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    Explore videos and seasons from your subscribed anime series
-                  </p>
-                </div>
-              </div>
-
-              {subscriptionsList.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-center select-none max-w-sm mx-auto gap-4">
-                  <div className="w-16 h-16 bg-[#181818] border border-[#2d2d2d] rounded-full flex items-center justify-center text-[#ff6b35]">
-                    <Tv className="w-8 h-8" />
-                  </div>
-                  <div>
-                    <h3 className="text-white font-bold text-base leading-snug">Don't miss a season release!</h3>
-                    <p className="text-xs text-gray-500 mt-2 font-light leading-relaxed">
-                      Toggle the subscribe action inside any anime's channel page to structure your subscriptions list beautifully, just like standard YouTube!
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                  {subscriptionsList.map((sub) => (
-                    <div
-                      key={sub.animeId}
-                      onClick={() => handleOpenChannel(sub.animeId)}
-                      className="flex flex-col items-center text-center p-4 bg-[#121212] hover:bg-[#181818] border border-white/5 rounded-2xl cursor-pointer transition-colors group select-none relative"
-                    >
-                      <div className="w-20 h-20 rounded-full overflow-hidden mb-3 shadow shadow-black ring-2 ring-white/5 group-hover:scale-105 transition-transform">
-                        <LazyImage
-                          src={sub.coverImage}
-                          alt={sub.animeTitle}
-                          className="w-full h-full object-cover"
-                          referrerPolicy="no-referrer"
-                        />
-                      </div>
-                      <h3 className="text-white text-xs sm:text-sm font-bold truncate w-full group-hover:text-[#ff6b35] transition-colors">
-                        {sub.animeTitle}
-                      </h3>
-                      <span className="text-[10px] uppercase text-[#ff6b35] mt-1 bg-[#ff6b35]/10 border border-[#ff6b35]/25 px-2 py-0.5 rounded-full font-bold font-sans tracking-wider flex items-center gap-1">
-                        <Sparkles className="w-2.5 h-2.5 stroke-[2.5]" />
-                        <span>Channel</span>
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
+            <div className="w-full min-h-[70vh] flex items-center justify-center animate-fade-in">
+              <h1 className="text-white/50 text-xl font-medium tracking-wide">
+                we are cooking
+              </h1>
             </div>
           )}
 
@@ -310,6 +288,20 @@ export default function App() {
           )}
         </main>
       </div>
+
+      {/* Premium Floating Scroll to Top button */}
+      <button
+        type="button"
+        onClick={handleScrollToTop}
+        className={`fixed bottom-6 right-6 md:bottom-8 md:right-8 z-50 w-12 h-12 flex items-center justify-center rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-white shadow-[0_8px_30px_rgb(0,0,0,0.5)] transition-all duration-300 ease-out cursor-pointer ${
+          showScrollTop && (activePage === "home" || activePage === "subscriptions" || activePage === "channel")
+            ? "opacity-100 scale-100 translate-y-0"
+            : "opacity-0 scale-90 translate-y-4 pointer-events-none"
+        } hover:bg-black/80 hover:border-white/20 active:scale-95`}
+        aria-label="Scroll to top"
+      >
+        <ChevronUp className="w-6 h-6 stroke-[2.5]" />
+      </button>
     </div>
   );
 }

@@ -33,11 +33,16 @@ export function formatRelativeDate(isoString: string): string {
   const diffTime = today.getTime() - targetDate.getTime();
   const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
   
-  if (diffDays <= 0) return "Today";
-  if (diffDays === 1) return "Yesterday";
-  if (diffDays > 1 && diffDays <= 7) return `${diffDays} Days Ago`;
+  const day = targetDate.getDate();
+  const monthName = targetDate.toLocaleDateString("en-US", { month: "short" }).toUpperCase();
+  const dateFormatted = `${day} ${monthName}`;
+  const dayName = targetDate.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
   
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  if (diffDays <= 0) return `TODAY • ${dateFormatted}`;
+  if (diffDays === 1) return `YESTERDAY • ${dateFormatted}`;
+  if (diffDays > 1 && diffDays <= 6) return `${dayName} • ${dateFormatted}`;
+  
+  return dateFormatted;
 }
 
 // Persist data in localStorage
