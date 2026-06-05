@@ -31,9 +31,12 @@ export default function Header({
   const [searchVal, setSearchVal] = useState(initialSearchQuery);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
   const [isFocused, setIsFocused] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [forceCollapse, setForceCollapse] = useState(false);
+  
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const isExpanded = (isFocused || searchVal.length > 0) && !forceCollapse;
   
   // Auth state
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -55,18 +58,21 @@ export default function Header({
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-      if (isFocused) {
-        setIsVisible(true);
-      } else if (currentScrollY > 50) {
+      
+      if (currentScrollY > 50) {
         setIsVisible(false);
+        if (isExpanded) {
+          inputRef.current?.blur();
+          setForceCollapse(true);
+        }
       } else {
         setIsVisible(true);
       }
     };
     handleScroll();
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [isFocused]);
+  }, [isExpanded]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -143,17 +149,19 @@ export default function Header({
             </button>
           </form>
         ) : (
-          <div className="w-full h-full max-w-[1440px] mx-auto flex items-center justify-between px-4 md:px-8 lg:px-10">
-            {/* Left section: Logo & Text Navigation */}
-            <div className="flex items-center gap-6 lg:gap-10">
+          <div className="w-full h-full max-w-[1440px] mx-auto flex items-center justify-between px-4 md:px-8 lg:px-10 relative">
+            {/* Left section: Logo */}
+            <div className="flex-1 flex items-center">
               <div className="flex items-center cursor-pointer group" onClick={onNavigateHome}>
                 <span className="text-xl md:text-2xl font-black tracking-wider bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-transparent hover:opacity-90 transition-all duration-300">
                   miyoro
                 </span>
               </div>
+            </div>
 
-              {/* Desktop & Tablet Text Navigation */}
-              <nav className="hidden md:flex items-center gap-1.5">
+            {/* Center section: Text Navigation */}
+            <nav className="hidden md:flex items-center justify-center gap-1.5 absolute left-1/2 -translate-x-1/2 pointer-events-none">
+              <div className="flex items-center gap-1.5 pointer-events-auto">
                 {[
                   { id: "home" as const, label: "Home", onClick: onNavigateHome },
                   { id: "subscriptions" as const, label: "Browse", onClick: onNavigateSubscriptions },
@@ -182,39 +190,46 @@ export default function Header({
                     </button>
                   );
                 })}
-              </nav>
-            </div>
+              </div>
+            </nav>
 
             {/* Right section: Search input & User Profile */}
-            <div className="flex items-center gap-4 lg:gap-6">
+            <div className="flex-1 flex items-center justify-end gap-4 lg:gap-6">
               {/* Desktop & Tablet Search Bar */}
               <form
                 onSubmit={handleSubmit}
-                className={`hidden md:flex items-center group cursor-text relative transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] w-[200px] lg:w-[240px] xl:w-[280px] ${isSubmitting ? "scale-95" : isFocused ? "scale-[1.02]" : "scale-100"}`}
+                className={`hidden md:flex items-center group relative transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isExpanded ? "w-[200px] lg:w-[240px] xl:w-[280px]" : "w-10"} ${isSubmitting ? "scale-95" : isFocused ? "scale-[1.02]" : "scale-100"} ${!isExpanded ? "cursor-pointer" : "cursor-text"}`}
               >
                 <div
                   onClick={() => {
+                    setForceCollapse(false);
                     setIsFocused(true);
                     setTimeout(() => inputRef.current?.focus(), 50);
                   }}
-                  className="w-full h-10 flex items-center bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.1] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden relative shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.1),_0_4px_16px_rgba(0,0,0,0.15)] rounded-full px-4 focus-within:border-white/[0.22] focus-within:bg-white/[0.1] focus-within:ring-4 focus-within:ring-white/[0.03]"
+                  className={`w-full h-10 flex items-center bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.1] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden relative shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.1),_0_4px_16px_rgba(0,0,0,0.15)] rounded-full focus-within:border-white/[0.22] focus-within:bg-white/[0.1] focus-within:ring-4 focus-within:ring-white/[0.03] ${isExpanded ? "px-4" : "px-0 justify-center"}`}
                 >
                   <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/[0.03] to-white/0 pointer-events-none" />
-                  <Search className="text-white/50 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] shrink-0 w-[15px] h-[15px] mr-2.5 group-focus-within:text-white" />
+                  <Search className={`text-white/50 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] shrink-0 w-[15px] h-[15px] group-focus-within:text-white ${isExpanded ? "mr-2.5" : "mr-0"}`} />
                   <input
                     ref={inputRef}
                     type="text"
                     placeholder="Search anime..."
                     value={searchVal}
                     onChange={(e) => setSearchVal(e.target.value)}
-                    onFocus={() => setIsFocused(true)}
+                    onFocus={() => {
+                      setForceCollapse(false);
+                      setIsFocused(true);
+                    }}
                     onBlur={() => setIsFocused(false)}
-                    className="bg-transparent border-none text-white focus:outline-none text-sm font-medium tracking-wide w-full placeholder-white/45"
+                    className={`bg-transparent border-none text-white focus:outline-none text-sm font-medium tracking-wide placeholder-white/45 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isExpanded ? "w-full opacity-100" : "w-0 opacity-0 min-w-0 p-0"}`}
                   />
-                  {searchVal && (
+                  {isExpanded && searchVal && (
                     <button
                       type="button"
-                      onClick={handleClear}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleClear();
+                      }}
                       className="p-1 hover:bg-white/20 rounded-full text-white/50 hover:text-white transition-colors cursor-pointer relative z-10 shrink-0 ml-1"
                     >
                       <X className="w-3.5 h-3.5" />
