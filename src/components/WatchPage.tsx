@@ -19,6 +19,8 @@ import LazyImage from "./LazyImage";
 import VideoPlayer from "./VideoPlayer";
 import SkeletonLoader from "./SkeletonLoader";
 import { Share2, Bookmark, Play, ChevronLeft, ChevronRight, CheckSquare, Square, ChevronDown, Grid, List, Search } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Virtuoso, VirtuosoGrid } from "react-virtuoso";
 
 interface WatchPageProps {
   animeId: number;
@@ -515,26 +517,34 @@ export default function WatchPage({
                       className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-semibold text-white/80 transition-colors cursor-pointer"
                     >
                       {(currentRange - 1) * 100 + 1}-{Math.min(currentRange * 100, episodesCount)}
-                      <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                      <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180' : ''}`} />
                     </button>
-                    {isDropdownOpen && (
-                      <div className="absolute top-full left-0 mt-1 max-h-64 overflow-y-auto w-32 bg-[#121214] border border-white/10 rounded-xl shadow-xl z-50 custom-scrollbar">
-                        {[...Array(Math.ceil(episodesCount / 100))].map((_, idx) => {
-                          const page = idx + 1;
-                          const pStart = (page - 1) * 100 + 1;
-                          const pEnd = Math.min(page * 100, episodesCount);
-                          return (
-                            <button
-                              key={page}
-                              onClick={() => { setCurrentRange(page); setIsDropdownOpen(false); setEpisodeSearchQuery(""); }}
-                              className={`w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-white/10 transition-colors cursor-pointer ${currentRange === page ? "text-white bg-white/10" : "text-white/60"}`}
-                            >
-                              {pStart}-{pEnd}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
+                    <AnimatePresence>
+                      {isDropdownOpen && (
+                        <motion.div 
+                          initial={{ opacity: 0, y: -5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -5 }}
+                          transition={{ duration: 0.15 }}
+                          className="absolute top-full left-0 mt-2 max-h-64 overflow-y-auto w-32 bg-[#121214] border border-white/10 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] z-50 custom-scrollbar origin-top"
+                        >
+                          {[...Array(Math.ceil(episodesCount / 100))].map((_, idx) => {
+                            const page = idx + 1;
+                            const pStart = (page - 1) * 100 + 1;
+                            const pEnd = Math.min(page * 100, episodesCount);
+                            return (
+                              <button
+                                key={page}
+                                onClick={() => { setCurrentRange(page); setIsDropdownOpen(false); setEpisodeSearchQuery(""); }}
+                                className={`w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-white/10 transition-colors cursor-pointer ${currentRange === page ? "text-white bg-white/10" : "text-white/60"}`}
+                              >
+                                {pStart}-{pEnd}
+                              </button>
+                            );
+                          })}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 )}
               </div>
@@ -575,122 +585,174 @@ export default function WatchPage({
             </div>
 
           {/* Scrollable Playlist Queue Container */}
-          <div className="flex flex-col gap-1 max-h-[85vh] overflow-y-auto pr-2 custom-scrollbar">
-            {(() => {
-              const currentRangeStart = (currentRange - 1) * 100 + 1;
-              const currentRangeEnd = Math.min(currentRange * 100, episodesCount);
-              const currentRangeCount = isLongRunning ? Math.max(0, currentRangeEnd - currentRangeStart + 1) : episodesCount;
-              
-              let episodesToRender = [...Array(currentRangeCount)].map((_, idx) => isLongRunning ? currentRangeStart + idx : idx + 1);
-
-              if (episodeSearchQuery.trim() !== "") {
-                const query = episodeSearchQuery.toLowerCase();
-                episodesToRender = episodesToRender.filter((epNum) => {
-                  const epData = episodesMap[currentRange]?.find(e => e.mal_id === epNum);
-                  const epTitle = epData?.title?.toLowerCase() || "";
-                  return epNum.toString().includes(query) || epTitle.includes(query);
-                });
-              }
-
-              if (viewMode === "grid" && isLongRunning) {
-                return (
-                  <div className="grid grid-cols-5 sm:grid-cols-8 lg:grid-cols-5 gap-2">
-                     {episodesToRender.map(epNum => {
-                       const isActive = epNum === episodeNumber;
-                       const progressVal = getEpisodeProgress(anime.id, seasonNumber, epNum);
-                       const epData = episodesMap[currentRange]?.find(e => e.mal_id === epNum);
-                       
-                       let badgeClasses = "";
-                       if (epData?.filler) badgeClasses = "bg-[#9bc2e6]/20 text-[#9bc2e6] border-[#9bc2e6]/30";
-                       else if (epData?.recap) badgeClasses = "bg-[#ffb7b2]/20 text-[#ffb7b2] border-[#ffb7b2]/30";
-
-                       return (
-                         <button
-                           key={epNum}
-                           onClick={() => onNavigateToEpisode(anime.id, seasonNumber, epNum)}
-                           className={`relative flex items-center justify-center aspect-square rounded-lg text-sm font-bold transition-all border cursor-pointer ${
-                             isActive ? "bg-white text-black border-white" :
-                             badgeClasses ? `${badgeClasses} hover:bg-white/10` :
-                             "bg-white/[0.03] text-white/80 border-white/5 hover:bg-white/10"
-                           }`}
-                         >
-                           {epNum}
-                           {progressVal > 0 && !isActive && (
-                             <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20 rounded-b-lg overflow-hidden">
-                               <div className="bg-white/60 h-full" style={{ width: `${progressVal}%` }} />
-                             </div>
-                           )}
-                         </button>
-                       );
-                     })}
-                  </div>
-                );
-              }
-
-              return (
-                <div className="flex flex-col gap-1">
-                  {episodesToRender.map((epNum) => {
-                    const isActive = epNum === episodeNumber;
-                    const progressVal = getEpisodeProgress(anime.id, seasonNumber, epNum);
-                    
-                    const epData = episodesMap[currentRange]?.find(e => e.mal_id === epNum);
-                    const epTitleStr = epData?.title || "";
-                    
-                    let badge = null;
-                    if (epData?.recap) {
-                      badge = <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-[#ffb7b2]/10 text-[#ffb7b2] border border-[#ffb7b2]/20 tracking-wider">Special</span>;
-                    } else if (epData?.filler) {
-                      badge = <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-[#9bc2e6]/10 text-[#9bc2e6] border border-[#9bc2e6]/20 tracking-wider">Filler</span>;
-                    }
-
-                    return (
-                      <div
-                        key={epNum}
-                        onClick={() => onNavigateToEpisode(anime.id, seasonNumber, epNum)}
-                        className={`flex flex-col gap-2 p-3 rounded-xl cursor-pointer transition-all duration-200 group relative border ${
-                          isActive
-                            ? "bg-white/[0.08] border-white/10 shadow-lg"
-                            : "bg-transparent border-transparent hover:bg-white/[0.03] hover:border-white/[0.05]"
-                        }`}
-                      >
-                        <div className="flex items-start gap-4">
-                          <div className="relative w-[110px] aspect-video bg-black/40 rounded-lg overflow-hidden flex-shrink-0 border border-white/5">
-                            <LazyImage
-                              src={anime.coverImage.medium || anime.coverImage.large}
-                              alt={`Episode ${epNum}`}
-                              className={`w-full h-full object-cover transition-opacity duration-300 ${isActive ? "opacity-100" : "opacity-70 group-hover:opacity-100"}`}
-                              referrerPolicy="no-referrer"
-                            />
-                            {isActive && (
-                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                                <Play className="w-6 h-6 fill-white stroke-none drop-shadow-md" />
-                              </div>
-                            )}
-                            {progressVal > 0 && !isActive && (
-                               <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
-                                 <div className="bg-white/80 h-full" style={{ width: `${progressVal}%` }} />
-                               </div>
-                            )}
-                          </div>
-
-                          <div className="flex-1 min-w-0 flex flex-col justify-center py-0.5">
-                            <div className="flex items-center gap-2 mb-1">
-                              {badge}
-                              <span className="text-[11px] text-white/40 font-medium select-none">
-                                {isActive ? "Now Playing" : progressVal > 0 ? `${Math.round(progressVal)}% Watched` : "Not Watched"}
-                              </span>
-                            </div>
-                            <h4 className={`text-sm font-bold truncate transition-colors leading-tight ${isActive ? "text-white" : "text-white/80 group-hover:text-white"}`}>
-                               S{seasonNumber}E{epNum}{epTitleStr ? ` — ${epTitleStr}` : ""}
-                            </h4>
+          <div className="flex flex-col gap-1 relative h-[85vh]">
+            <AnimatePresence mode="wait">
+              {(() => {
+                if (!episodesMap[currentRange]) {
+                  return (
+                    <motion.div
+                      key="skeleton"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute inset-0 flex flex-col gap-2"
+                    >
+                      {[...Array(8)].map((_, i) => (
+                        <div key={i} className="flex items-start gap-4 p-3 rounded-xl bg-white/[0.02] border border-white/5 animate-pulse">
+                          <div className="w-[110px] aspect-video bg-white/10 rounded-lg flex-shrink-0" />
+                          <div className="flex-1 py-1">
+                            <div className="h-4 w-1/3 bg-white/10 rounded mb-3" />
+                            <div className="h-3 w-1/2 bg-white/10 rounded" />
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              );
-            })()}
+                      ))}
+                    </motion.div>
+                  );
+                }
+
+                const currentRangeStart = (currentRange - 1) * 100 + 1;
+                const currentRangeEnd = Math.min(currentRange * 100, episodesCount);
+                const currentRangeCount = isLongRunning ? Math.max(0, currentRangeEnd - currentRangeStart + 1) : episodesCount;
+                
+                let episodesToRender = [...Array(currentRangeCount)].map((_, idx) => isLongRunning ? currentRangeStart + idx : idx + 1);
+
+                if (episodeSearchQuery.trim() !== "") {
+                  const query = episodeSearchQuery.toLowerCase();
+                  episodesToRender = episodesToRender.filter((epNum) => {
+                    const epData = episodesMap[currentRange]?.find(e => e.mal_id === epNum);
+                    const epTitle = epData?.title?.toLowerCase() || "";
+                    return epNum.toString().includes(query) || epTitle.includes(query);
+                  });
+                }
+
+                if (viewMode === "grid" && isLongRunning) {
+                  return (
+                    <motion.div
+                      key="grid-view"
+                      initial={{ opacity: 0, scale: 0.98 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.98 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute inset-0 pr-2"
+                    >
+                      <VirtuosoGrid
+                        className="custom-scrollbar"
+                        style={{ height: '100%', width: '100%' }}
+                        data={episodesToRender}
+                        listClassName="grid grid-cols-5 sm:grid-cols-7 lg:grid-cols-6 xl:grid-cols-8 gap-2 pb-4 pt-1 px-1"
+                        itemContent={(index, epNum) => {
+                          const isActive = epNum === episodeNumber;
+                          const progressVal = getEpisodeProgress(anime.id, seasonNumber, epNum);
+                          const epData = episodesMap[currentRange]?.find(e => e.mal_id === epNum);
+                          
+                          let badgeClasses = "";
+                          if (epData?.filler) badgeClasses = "bg-[#9bc2e6]/10 text-[#9bc2e6] border-[#9bc2e6]/20";
+                          else if (epData?.recap) badgeClasses = "bg-[#ffb7b2]/10 text-[#ffb7b2] border-[#ffb7b2]/20";
+
+                          return (
+                            <button
+                              key={epNum}
+                              onClick={() => onNavigateToEpisode(anime.id, seasonNumber, epNum)}
+                              className={`relative flex items-center justify-center h-10 w-full rounded-md text-sm font-semibold transition-all duration-200 ease-out border cursor-pointer select-none active:scale-95 ${
+                                isActive ? "bg-[#8b5cf6] text-white border-[#8b5cf6] shadow-[0_4px_20px_rgba(139,92,246,0.4)] z-10" :
+                                badgeClasses ? `${badgeClasses} hover:bg-white/10 hover:-translate-y-0.5 hover:shadow-md hover:brightness-110` :
+                                progressVal > 0 ? "bg-white/10 text-white/90 border-white/10 hover:bg-white/[0.15] hover:-translate-y-0.5 hover:shadow-md hover:brightness-110" :
+                                "bg-white/[0.03] text-white/70 border-white/[0.05] hover:bg-white/[0.08] hover:border-white/10 hover:-translate-y-0.5 hover:shadow-md hover:brightness-110"
+                              }`}
+                            >
+                              {epNum}
+                              {progressVal > 0 && !isActive && (
+                                <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-white/20 rounded-b-md overflow-hidden opacity-80">
+                                  <div className="bg-[#8b5cf6] h-full" style={{ width: `${progressVal}%` }} />
+                                </div>
+                              )}
+                            </button>
+                          );
+                        }}
+                      />
+                    </motion.div>
+                  );
+                }
+
+                return (
+                  <motion.div
+                    key="list-view"
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.98 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute inset-0 pr-2"
+                  >
+                    <Virtuoso
+                      className="custom-scrollbar"
+                      style={{ height: '100%', width: '100%' }}
+                      data={episodesToRender}
+                      itemContent={(index, epNum) => {
+                        const isActive = epNum === episodeNumber;
+                        const progressVal = getEpisodeProgress(anime.id, seasonNumber, epNum);
+                        
+                        const epData = episodesMap[currentRange]?.find(e => e.mal_id === epNum);
+                        const epTitleStr = epData?.title || "";
+                        
+                        let badge = null;
+                        if (epData?.recap) {
+                          badge = <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-[#ffb7b2]/10 text-[#ffb7b2] border border-[#ffb7b2]/20 tracking-wider">Special</span>;
+                        } else if (epData?.filler) {
+                          badge = <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-[#9bc2e6]/10 text-[#9bc2e6] border border-[#9bc2e6]/20 tracking-wider">Filler</span>;
+                        }
+
+                        return (
+                          <div className="pb-2">
+                            <div
+                              onClick={() => onNavigateToEpisode(anime.id, seasonNumber, epNum)}
+                              className={`flex flex-col gap-2 p-3 rounded-xl cursor-pointer transition-all duration-300 ease-out group relative border active:scale-[0.99] ${
+                                isActive
+                                  ? "bg-[#8b5cf6]/10 border-[#8b5cf6]/30 shadow-[0_4px_20px_rgba(139,92,246,0.15)] transform-none"
+                                  : "bg-transparent border-transparent hover:bg-white/[0.04] hover:border-white/10 hover:-translate-y-0.5 hover:shadow-lg hover:brightness-110"
+                              }`}
+                            >
+                              <div className="flex items-start gap-4">
+                                <div className="relative w-[110px] aspect-video bg-black/40 rounded-lg overflow-hidden flex-shrink-0 border border-white/5 shadow-inner">
+                                  <LazyImage
+                                    src={anime.coverImage.medium || anime.coverImage.large}
+                                    alt={`Episode ${epNum}`}
+                                    className={`w-full h-full object-cover transition-opacity duration-300 ${isActive ? "opacity-100" : "opacity-70 group-hover:opacity-100"}`}
+                                    referrerPolicy="no-referrer"
+                                  />
+                                  {isActive && (
+                                    <div className="absolute inset-0 bg-[#8b5cf6]/20 flex items-center justify-center backdrop-blur-[1px]">
+                                      <Play className="w-6 h-6 fill-white stroke-none drop-shadow-md animate-pulse" />
+                                    </div>
+                                  )}
+                                  {progressVal > 0 && !isActive && (
+                                     <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
+                                       <div className="bg-[#8b5cf6] h-full transition-all duration-500 ease-out" style={{ width: `${progressVal}%` }} />
+                                     </div>
+                                  )}
+                                </div>
+
+                                <div className="flex-1 min-w-0 flex flex-col justify-center py-0.5">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    {badge}
+                                    <span className="text-[11px] text-white/40 font-medium select-none transition-colors group-hover:text-white/60">
+                                      {isActive ? "Now Playing" : progressVal > 0 ? `${Math.round(progressVal)}% Watched` : "Not Watched"}
+                                    </span>
+                                  </div>
+                                  <h4 className={`text-sm font-bold truncate transition-colors duration-300 leading-tight ${isActive ? "text-white" : "text-white/80 group-hover:text-white"}`}>
+                                     S{seasonNumber}E{epNum}{epTitleStr ? ` — ${epTitleStr}` : ""}
+                                  </h4>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }}
+                    />
+                  </motion.div>
+                );
+              })()}
+            </AnimatePresence>
           </div>
         </div>
 
