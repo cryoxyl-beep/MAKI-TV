@@ -15,6 +15,8 @@ interface VideoPlayerProps {
   onProgressUpdate: (percentage: number) => void;
   savedProgress?: number;
   selectedProvider: string;
+  audioLanguage?: "sub" | "dub";
+  onAudioLanguageChange?: (lang: "sub" | "dub") => void;
   tmdbId: number;
   mediaType: "tv" | "movie";
   onNextEpisode: () => void;
@@ -32,6 +34,8 @@ export default function VideoPlayer({
   onProgressUpdate,
   savedProgress,
   selectedProvider,
+  audioLanguage = "sub",
+  onAudioLanguageChange,
   tmdbId,
   mediaType,
   onNextEpisode,
@@ -43,10 +47,6 @@ export default function VideoPlayer({
   const [iframeLoading, setIframeLoading] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // MegaPlay and Origami Stream state and Language Config (sub vs dub)
-  const [megaPlayLanguage, setMegaPlayLanguage] = useState<"sub" | "dub">(() => {
-    return (localStorage.getItem("makitv_megaplay_language") as "sub" | "dub") || "sub";
-  });
   const [megaplayLoadError, setMegaplayLoadError] = useState<boolean>(false);
   const [origamiLoadError, setOrigamiLoadError] = useState<boolean>(false);
 
@@ -56,8 +56,9 @@ export default function VideoPlayer({
   const hasReceivedFirstEventRef = useRef<boolean>(false);
 
   const handleLanguageChange = (lang: "sub" | "dub") => {
-    setMegaPlayLanguage(lang);
-    localStorage.setItem("makitv_megaplay_language", lang);
+    if (onAudioLanguageChange) {
+      onAudioLanguageChange(lang);
+    }
     setIframeLoading(true);
     setMegaplayLoadError(false);
     setOrigamiLoadError(false);
@@ -130,7 +131,7 @@ export default function VideoPlayer({
         }
       };
     }
-  }, [animeId, episodeNumber, selectedProvider, megaPlayLanguage]);
+  }, [animeId, episodeNumber, selectedProvider, audioLanguage]);
 
   // Construct standard Embed URLs for backup providers
   function getEmbedUrl(): string {
@@ -347,10 +348,10 @@ export default function VideoPlayer({
   }, [animeId, episodeNumber, seasonNumber, animeTitle, selectedProvider, tmdbId, onProgressUpdate, onNextEpisode]);
  
   const megaPlayUrl = selectedProvider === "megaplay"
-    ? `https://animeplay.cfd/stream/mal/${animeId}/${episodeNumber}/${megaPlayLanguage}`
+    ? `https://animeplay.cfd/stream/mal/${animeId}/${episodeNumber}/${audioLanguage}`
     : "";
   const origamiUrl = selectedProvider === "origami"
-    ? `https://megaplay.buzz/stream/mal/${animeId}/${episodeNumber}/${megaPlayLanguage}`
+    ? `https://megaplay.buzz/stream/mal/${animeId}/${episodeNumber}/${audioLanguage}`
     : "";
   const embedUrl = getEmbedUrl();
 
@@ -360,16 +361,16 @@ export default function VideoPlayer({
       console.log(`[MegaPlay Integration Debug]`);
       console.log(`Current MAL ID: ${animeId}`);
       console.log(`Current Episode: ${episodeNumber}`);
-      console.log(`Current Language: ${megaPlayLanguage}`);
+      console.log(`Current Language: ${audioLanguage}`);
       console.log(`Generated MegaPlay URL: ${megaPlayUrl}`);
     } else if (selectedProvider === "origami") {
       console.log(`[Origami Integration Debug]`);
       console.log(`Current MAL ID: ${animeId}`);
       console.log(`Current Episode: ${episodeNumber}`);
-      console.log(`Current Language: ${megaPlayLanguage}`);
+      console.log(`Current Language: ${audioLanguage}`);
       console.log(`Generated Origami URL: ${origamiUrl}`);
     }
-  }, [selectedProvider, animeId, episodeNumber, megaPlayLanguage, megaPlayUrl, origamiUrl]);
+  }, [selectedProvider, animeId, episodeNumber, audioLanguage, megaPlayUrl, origamiUrl]);
  
   return (
     <div
@@ -389,7 +390,7 @@ export default function VideoPlayer({
                 onClick={() => {
                   setMegaplayLoadError(false);
                   setIframeLoading(true);
-                  handleLanguageChange(megaPlayLanguage);
+                  handleLanguageChange(audioLanguage);
                 }}
                 className="px-4 py-1.5 bg-white text-black hover:bg-gray-200 text-xs font-bold rounded-lg cursor-pointer transition-colors"
               >
@@ -404,30 +405,6 @@ export default function VideoPlayer({
                 </button>
               )}
             </div>
-            
-            {/* Inline Sub/Dub Switch even on Error */}
-            <div className="absolute top-4 right-4 z-30 flex items-center bg-black/60 backdrop-blur-md border border-white/10 rounded-xl p-1 shadow-lg pointer-events-auto">
-              <button
-                onClick={() => handleLanguageChange("sub")}
-                className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
-                  megaPlayLanguage === "sub"
-                    ? "bg-white/20 text-white"
-                    : "text-gray-400 hover:text-white"
-                }`}
-              >
-                SUB
-              </button>
-              <button
-                onClick={() => handleLanguageChange("dub")}
-                className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
-                  megaPlayLanguage === "dub"
-                    ? "bg-white/20 text-white"
-                    : "text-gray-400 hover:text-white"
-                }`}
-              >
-                DUB
-              </button>
-            </div>
           </div>
         ) : (
           <>
@@ -439,29 +416,6 @@ export default function VideoPlayer({
               onLoad={handleIframeLoad}
               title={`MakiTV Player: ${animeTitle}`}
             />
-            {/* Elegant Sub / Dub toggle overlay bar on top right of the player */}
-            <div className="absolute top-4 right-4 z-30 flex items-center bg-black/60 backdrop-blur-md border border-white/10 rounded-xl p-1 shadow-lg pointer-events-auto transition-opacity duration-300 opacity-80 hover:opacity-100">
-              <button
-                onClick={() => handleLanguageChange("sub")}
-                className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
-                  megaPlayLanguage === "sub"
-                    ? "bg-white/20 text-white"
-                    : "text-gray-400 hover:text-white"
-                }`}
-              >
-                SUB
-              </button>
-              <button
-                onClick={() => handleLanguageChange("dub")}
-                className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
-                  megaPlayLanguage === "dub"
-                    ? "bg-white/20 text-white"
-                    : "text-gray-400 hover:text-white"
-                }`}
-              >
-                DUB
-              </button>
-            </div>
           </>
         )
       ) : selectedProvider === "origami" ? (
@@ -477,7 +431,7 @@ export default function VideoPlayer({
                 onClick={() => {
                   setOrigamiLoadError(false);
                   setIframeLoading(true);
-                  handleLanguageChange(megaPlayLanguage);
+                  handleLanguageChange(audioLanguage);
                 }}
                 className="px-4 py-1.5 bg-white text-black hover:bg-gray-200 text-xs font-bold rounded-lg cursor-pointer transition-colors"
               >
@@ -492,30 +446,6 @@ export default function VideoPlayer({
                 </button>
               )}
             </div>
-            
-            {/* Inline Sub/Dub Switch even on Error */}
-            <div className="absolute top-4 right-4 z-30 flex items-center bg-black/60 backdrop-blur-md border border-white/10 rounded-xl p-1 shadow-lg pointer-events-auto">
-              <button
-                onClick={() => handleLanguageChange("sub")}
-                className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
-                  megaPlayLanguage === "sub"
-                    ? "bg-white/20 text-white"
-                    : "text-gray-400 hover:text-white"
-                }`}
-              >
-                SUB
-              </button>
-              <button
-                onClick={() => handleLanguageChange("dub")}
-                className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
-                  megaPlayLanguage === "dub"
-                    ? "bg-white/20 text-white"
-                    : "text-gray-400 hover:text-white"
-                }`}
-              >
-                DUB
-              </button>
-            </div>
           </div>
         ) : (
           <>
@@ -527,29 +457,6 @@ export default function VideoPlayer({
               onLoad={handleIframeLoad}
               title={`MakiTV Player: ${animeTitle}`}
             />
-            {/* Elegant Sub / Dub toggle overlay bar on top right of the player */}
-            <div className="absolute top-4 right-4 z-30 flex items-center bg-black/60 backdrop-blur-md border border-white/10 rounded-xl p-1 shadow-lg pointer-events-auto transition-opacity duration-300 opacity-80 hover:opacity-100">
-              <button
-                onClick={() => handleLanguageChange("sub")}
-                className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
-                  megaPlayLanguage === "sub"
-                    ? "bg-white/20 text-white"
-                    : "text-gray-400 hover:text-white"
-                }`}
-              >
-                SUB
-              </button>
-              <button
-                onClick={() => handleLanguageChange("dub")}
-                className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
-                  megaPlayLanguage === "dub"
-                    ? "bg-white/20 text-white"
-                    : "text-gray-400 hover:text-white"
-                }`}
-              >
-                DUB
-              </button>
-            </div>
           </>
         )
       ) : embedUrl ? (

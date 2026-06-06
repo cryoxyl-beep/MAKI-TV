@@ -63,6 +63,10 @@ export default function WatchPage({
   const [selectedProvider, setSelectedProvider] = useState<string>(() => {
     return localStorage.getItem("makitv_selected_provider") || "megaplay";
   });
+  
+  const [audioLanguage, setAudioLanguage] = useState<"sub" | "dub">(() => {
+    return (localStorage.getItem("makitv_megaplay_language") as "sub" | "dub") || "sub";
+  });
 
   const { isSubscribed, toggleSubscription, currentUser } = useLibrary();
 
@@ -82,7 +86,9 @@ export default function WatchPage({
   const [episodeDescription, setEpisodeDescription] = useState<string | null>(null);
   const [currentRange, setCurrentRange] = useState<number>(1);
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isEpisodeDropdownOpen, setIsEpisodeDropdownOpen] = useState(false);
+  const [isAudioDropdownOpen, setIsAudioDropdownOpen] = useState(false);
+  const [isServerDropdownOpen, setIsServerDropdownOpen] = useState(false);
   const [episodeSearchQuery, setEpisodeSearchQuery] = useState("");
 
   useEffect(() => {
@@ -343,6 +349,11 @@ export default function WatchPage({
             onProgressUpdate={handleProgressUpdate}
             savedProgress={getEpisodeProgress(anime.id, seasonNumber, episodeNumber)}
             selectedProvider={selectedProvider}
+            audioLanguage={audioLanguage}
+            onAudioLanguageChange={(lang) => {
+              setAudioLanguage(lang);
+              localStorage.setItem("makitv_megaplay_language", lang);
+            }}
             tmdbId={tmdbId}
             mediaType={mediaType}
             onNextEpisode={handleNextEpisode}
@@ -391,92 +402,146 @@ export default function WatchPage({
 
           {/* Episode Info */}
           <div className="mt-4 pt-4 border-t border-white/[0.05]">
-            <h1 className="text-white text-xl sm:text-2xl font-bold font-sans tracking-tight leading-tight">
-              S{seasonNumber}E{episodeNumber}{currentEpTitle ? `: ${currentEpTitle}` : ""}
-            </h1>
-            {episodeDescription && (
-              <p className="mt-3 text-white/60 text-sm leading-relaxed font-sans font-normal max-w-4xl line-clamp-3 hover:line-clamp-none transition-all">
-                {episodeDescription}
-              </p>
-            )}
-          </div>
-
-          {/* Interactions: Watch Later & Share */}
-          <div className="flex items-center gap-3 mt-4 text-xs sm:text-sm">
-            <button onClick={handleToggleWatchLater} className={`px-4 py-2 border rounded-lg flex items-center gap-2 transition-colors cursor-pointer font-semibold ${savedBookmark ? "bg-white text-black border-white" : "bg-white/[0.04] text-white border-white/10 hover:bg-white/[0.08]"}`}>
-              <Bookmark className={`w-4 h-4 ${savedBookmark ? "fill-black" : ""}`} />
-              {savedBookmark ? "Saved to Library" : "Watch Later"}
-            </button>
-            <button onClick={handleShare} className="px-4 py-2 bg-white/[0.04] hover:bg-white/[0.08] text-white border border-white/10 rounded-lg flex items-center gap-2 transition-colors cursor-pointer font-semibold">
-              <Share2 className="w-4 h-4" />
-              {copiedNotification ? "Copied!" : "Share"}
-            </button>
-          </div>
-
-          {/* ================= SERVER SELECTOR SYSTEM ================= */}
-          <div className="mt-8 space-y-6">
-            {/* Primary Servers */}
-            <div className="space-y-3">
-              <h3 className="text-[10px] uppercase text-white/40 font-bold tracking-widest flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-white/40" />
-                Primary Servers
-              </h3>
-              <div className="flex flex-wrap gap-2.5">
-                {[
-                  { id: "megaplay", name: "MegaPlay", tags: ["S-SUB", "DUB"] },
-                  { id: "origami", name: "Origami", tags: ["S-SUB", "DUB"] }
-                ].map(provider => {
-                  const isActive = selectedProvider === provider.id;
-                  return (
-                    <button
-                      key={provider.id}
-                      onClick={() => handleSelectProvider(provider.id)}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all cursor-pointer select-none group outline-none ${isActive ? "bg-white/10 border-white/20 shadow-lg shadow-white/5" : "bg-white/[0.02] border-white/[0.05] hover:bg-white/[0.06] hover:border-white/10"}`}
-                    >
-                       <span className={`text-sm font-bold tracking-wide transition-colors ${isActive ? "text-white" : "text-white/60 group-hover:text-white/90"}`}>
-                         {provider.name}
-                       </span>
-                       <div className="flex gap-1.5">
-                         {provider.tags.map(tag => (
-                           <span key={tag} className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${isActive ? "bg-white/20 text-white" : "bg-white/10 text-white/50"}`}>{tag}</span>
-                         ))}
-                       </div>
-                    </button>
-                  )
-                })}
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+              <div>
+                <h1 className="text-white text-lg sm:text-xl font-bold font-sans tracking-tight leading-tight">
+                  {currentEpTitle ? `S${seasonNumber}E${episodeNumber}: ${currentEpTitle}` : `S${seasonNumber}E${episodeNumber}`}
+                </h1>
+                <div className="flex items-center flex-wrap gap-2 mt-2.5">
+                  {currentEpData?.aired && (
+                    <span className="text-[11px] font-semibold text-white/50 bg-white/5 px-2 py-1 rounded">
+                      {new Date(currentEpData.aired).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </span>
+                  )}
+                  <span className="text-[11px] font-semibold text-white/50 bg-white/5 px-2 py-1 rounded">
+                    EP {episodeNumber}
+                  </span>
+                  {currentEpData?.filler && (
+                    <span className="text-[10px] uppercase font-bold text-[#9bc2e6] bg-[#9bc2e6]/10 px-2 py-1 rounded tracking-widest">
+                      Filler
+                    </span>
+                  )}
+                  {currentEpData?.recap && (
+                    <span className="text-[10px] uppercase font-bold text-[#ffb7b2] bg-[#ffb7b2]/10 px-2 py-1 rounded tracking-widest">
+                      Special
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {/* Audio Dropdown */}
+                <div className="relative">
+                  <button 
+                    onClick={() => {
+                      setIsAudioDropdownOpen(!isAudioDropdownOpen);
+                      setIsServerDropdownOpen(false);
+                    }}
+                    disabled={selectedProvider !== "megaplay" && selectedProvider !== "origami"}
+                    className={`px-3 py-1.5 border rounded-lg flex items-center justify-between gap-2 transition-colors font-semibold text-xs min-w-[70px] ${selectedProvider !== "megaplay" && selectedProvider !== "origami" ? "opacity-50 cursor-not-allowed bg-white/[0.02] text-white/40 border-white/[0.05]" : "bg-white/[0.04] text-white/90 border-white/10 hover:bg-white/[0.08] hover:text-white cursor-pointer"}`}
+                  >
+                    <span>{audioLanguage === "sub" ? "Sub" : "Dub"}</span>
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${isAudioDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  <AnimatePresence>
+                    {isAudioDropdownOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -5 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute right-0 top-full mt-2 w-28 bg-[#121214] border border-white/10 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] z-50 origin-top overflow-hidden"
+                      >
+                        <div className="flex flex-col py-1">
+                          <button
+                            onClick={() => {
+                              setAudioLanguage("sub");
+                              localStorage.setItem("makitv_megaplay_language", "sub");
+                              setIsAudioDropdownOpen(false);
+                            }}
+                            className={`px-4 py-2 text-xs font-semibold text-left hover:bg-white/10 transition-colors cursor-pointer ${audioLanguage === "sub" ? "text-white bg-white/5" : "text-white/60"}`}
+                          >
+                            Sub
+                          </button>
+                          <button
+                            onClick={() => {
+                              setAudioLanguage("dub");
+                              localStorage.setItem("makitv_megaplay_language", "dub");
+                              setIsAudioDropdownOpen(false);
+                            }}
+                            className={`px-4 py-2 text-xs font-semibold text-left hover:bg-white/10 transition-colors cursor-pointer ${audioLanguage === "dub" ? "text-white bg-white/5" : "text-white/60"}`}
+                          >
+                            Dub
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
 
-            {/* Fallback Servers */}
-            <div className="space-y-3 pt-2">
-              <h3 className="text-[10px] uppercase text-white/30 font-bold tracking-widest flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-white/20" />
-                Fallback Servers
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { id: "cinesrc", name: "Taberu", tags: ["EMBED", "S-SUB"] },
-                  { id: "vidfast", name: "Matsuri", tags: ["EMBED", "S-SUB"] },
-                  { id: "movies111", name: "Onigiri", tags: ["EMBED", "S-SUB"] }
-                ].map(provider => {
-                  const isActive = selectedProvider === provider.id;
-                  return (
-                    <button
-                      key={provider.id}
-                      onClick={() => handleSelectProvider(provider.id)}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all cursor-pointer select-none group outline-none ${isActive ? "bg-white/10 border-white/20 shadow-lg" : "bg-white/[0.015] border-white/[0.03] hover:bg-white/[0.04] hover:border-white/5"}`}
-                    >
-                       <span className={`text-xs font-semibold tracking-wide transition-colors ${isActive ? "text-white" : "text-white/40 group-hover:text-white/80"}`}>
-                         {provider.name}
-                       </span>
-                       <div className="flex gap-1">
-                         {provider.tags.map(tag => (
-                           <span key={tag} className={`text-[8px] px-1 py-0.5 rounded font-bold uppercase ${isActive ? "bg-white/10 text-white/70" : "bg-white/5 text-white/30"}`}>{tag}</span>
-                         ))}
-                       </div>
-                    </button>
-                  )
-                })}
+                {/* Server Dropdown */}
+                <div className="relative">
+                  <button 
+                    onClick={() => {
+                      setIsServerDropdownOpen(!isServerDropdownOpen);
+                      setIsAudioDropdownOpen(false);
+                    }}
+                    className="px-3 py-1.5 bg-white/[0.04] hover:bg-white/[0.08] text-white/90 hover:text-white border border-white/10 rounded-lg flex items-center justify-between gap-2 transition-colors cursor-pointer font-semibold text-xs min-w-[110px]"
+                  >
+                    <span>
+                      {selectedProvider === "megaplay" ? "MegaPlay" :
+                       selectedProvider === "origami" ? "Origami" :
+                       selectedProvider === "cinesrc" ? "Taberu" :
+                       selectedProvider === "vidfast" ? "Matsuri" :
+                       selectedProvider === "movies111" ? "Onigiri" : "Server"}
+                    </span>
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${isServerDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  <AnimatePresence>
+                    {isServerDropdownOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -5 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute right-0 top-full mt-2 w-36 bg-[#121214] border border-white/10 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] z-50 origin-top overflow-hidden"
+                      >
+                        <div className="flex flex-col py-1">
+                          {[
+                            { id: "megaplay", label: "MegaPlay" },
+                            { id: "origami", label: "Origami" },
+                            { id: "cinesrc", label: "Taberu" },
+                            { id: "vidfast", label: "Matsuri" },
+                            { id: "movies111", label: "Onigiri" }
+                          ].map(provider => (
+                            <button
+                              key={provider.id}
+                              onClick={() => {
+                                handleSelectProvider(provider.id);
+                                setIsServerDropdownOpen(false);
+                                if (provider.id !== "megaplay" && provider.id !== "origami") {
+                                  setAudioLanguage("sub");
+                                  localStorage.setItem("makitv_megaplay_language", "sub");
+                                }
+                              }}
+                              className={`px-4 py-2 text-xs font-semibold text-left hover:bg-white/10 transition-colors cursor-pointer ${selectedProvider === provider.id ? "text-white bg-white/5" : "text-white/60"}`}
+                            >
+                              {provider.label}
+                            </button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                <div className="w-px h-5 bg-white/10 mx-1"></div>
+
+                <button onClick={handleToggleWatchLater} className={`p-1.5 border rounded-lg flex items-center justify-center transition-colors cursor-pointer bg-transparent border-transparent hover:bg-white/[0.08] ${savedBookmark ? "text-white" : "text-white/60 hover:text-white"}`}>
+                  <Bookmark className={`w-4 h-4 ${savedBookmark ? "fill-white" : ""}`} />
+                </button>
+                <button onClick={handleShare} className="p-1.5 border rounded-lg flex items-center justify-center transition-colors cursor-pointer bg-transparent border-transparent hover:bg-white/[0.08] text-white/60 hover:text-white">
+                  <Share2 className="w-4 h-4" />
+                </button>
               </div>
             </div>
           </div>
@@ -513,14 +578,14 @@ export default function WatchPage({
                 {isLongRunning && (
                   <div className="relative">
                     <button 
-                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                      onClick={() => setIsEpisodeDropdownOpen(!isEpisodeDropdownOpen)}
                       className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-semibold text-white/80 transition-colors cursor-pointer"
                     >
                       {(currentRange - 1) * 100 + 1}-{Math.min(currentRange * 100, episodesCount)}
-                      <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                      <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${isEpisodeDropdownOpen ? 'rotate-180' : ''}`} />
                     </button>
                     <AnimatePresence>
-                      {isDropdownOpen && (
+                      {isEpisodeDropdownOpen && (
                         <motion.div 
                           initial={{ opacity: 0, y: -5 }}
                           animate={{ opacity: 1, y: 0 }}
@@ -535,7 +600,7 @@ export default function WatchPage({
                             return (
                               <button
                                 key={page}
-                                onClick={() => { setCurrentRange(page); setIsDropdownOpen(false); setEpisodeSearchQuery(""); }}
+                                onClick={() => { setCurrentRange(page); setIsEpisodeDropdownOpen(false); setEpisodeSearchQuery(""); }}
                                 className={`w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-white/10 transition-colors cursor-pointer ${currentRange === page ? "text-white bg-white/10" : "text-white/60"}`}
                               >
                                 {pStart}-{pEnd}
