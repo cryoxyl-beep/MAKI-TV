@@ -92,22 +92,37 @@ export default function SchedulePage({ onSelectAnime }: SchedulePageProps) {
       const cacheKey = `jikan_schedule_${dayIndex}`;
       const cached = sessionStorage.getItem(cacheKey);
       if (cached) {
-        setScheduleData(prev => ({ ...prev, [dayIndex]: JSON.parse(cached) }));
-        setIsLoading(false);
-        return;
+        const parsed = JSON.parse(cached);
+        if (parsed.length > 0) {
+          setScheduleData(prev => ({ ...prev, [dayIndex]: parsed }));
+          setIsLoading(false);
+          return;
+        }
       }
 
       const dayString = DAYS[dayIndex];
       const res = await fetch(`https://api.jikan.moe/v4/schedules?filter=${dayString}`);
-      const json = await res.json();
+      let json = await res.json();
+      if (!res.ok || json.error) {
+        // Wait 1 second then retry once
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const retry = await fetch(`https://api.jikan.moe/v4/schedules?filter=${dayString}`);
+        const retryJson = await retry.json();
+        if (retryJson.error) throw new Error(retryJson.error);
+        json = retryJson; // reassign so the rest of the code uses retry data
+      }
       console.log("Jikan raw response:", json);
       console.log("Data length:", json.data?.length);
       console.log("First item:", json.data?.[0]);
       
       const animes: ScheduleAnime[] = [];
       const data = json.data || [];
+      const seenIds = new Set<number>();
       
       for (const item of data) {
+        if (seenIds.has(item.mal_id)) continue;
+        seenIds.add(item.mal_id);
+        
         let broadcastTime = item.broadcast?.time;
         if (!broadcastTime || broadcastTime === "Unknown") {
           broadcastTime = "TBA";
@@ -130,7 +145,9 @@ export default function SchedulePage({ onSelectAnime }: SchedulePageProps) {
       animes.sort((a, b) => a.airingAtUnix - b.airingAtUnix);
       
       setScheduleData(prev => ({ ...prev, [dayIndex]: animes }));
-      sessionStorage.setItem(cacheKey, JSON.stringify(animes));
+      if (animes.length > 0) {
+        sessionStorage.setItem(cacheKey, JSON.stringify(animes));
+      }
     } catch (err) {
       console.error("Failed to fetch schedule", err);
     } finally {
