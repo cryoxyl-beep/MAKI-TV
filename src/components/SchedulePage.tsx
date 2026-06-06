@@ -125,7 +125,7 @@ export default function SchedulePage({ onSelectAnime }: SchedulePageProps) {
       }
 
       const dayString = DAYS[dayIndex];
-      const res = await fetch(`https://api.jikan.moe/v4/schedules?filter=${dayString}&limit=50`);
+      const res = await fetch(`https://api.jikan.moe/v4/schedules?filter=${dayString}`);
       const json = await res.json();
       console.log("Jikan raw response:", json);
       console.log("Data length:", json.data?.length);
