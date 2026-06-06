@@ -79,11 +79,11 @@ export async function fetchAniList(query: string, variables: any = {}): Promise<
   return json.data;
 }
 
-export async function fetchAniListImagesByTitles(titles: string[]): Promise<Record<string, any>> {
-  if (!titles.length) return {};
+export async function fetchAniListImagesByIds(malIds: number[]): Promise<Record<string, any>> {
+  if (!malIds.length) return {};
   
-  const queryChunks = titles.map((title, index) => {
-    return `anime_${index}: Media (search: $search_${index}, type: ANIME, sort: SEARCH_MATCH) {
+  const queryChunks = malIds.map((malId, index) => {
+    return `anime_${index}: Media (idMal: $malId_${index}, type: ANIME) {
         id
         coverImage {
           extraLarge
@@ -95,7 +95,7 @@ export async function fetchAniListImagesByTitles(titles: string[]): Promise<Reco
       }`;
   });
 
-  const variableDeclarations = titles.map((_, index) => `$search_${index}: String`).join(', ');
+  const variableDeclarations = malIds.map((_, index) => `$malId_${index}: Int`).join(', ');
 
   const query = `
     query (${variableDeclarations}) {
@@ -103,10 +103,10 @@ export async function fetchAniListImagesByTitles(titles: string[]): Promise<Reco
     }
   `;
 
-  const variables = titles.reduce((acc, title, index) => {
-    acc[`search_${index}`] = title;
+  const variables = malIds.reduce((acc, malId, index) => {
+    acc[`malId_${index}`] = malId;
     return acc;
-  }, {} as Record<string, string>);
+  }, {} as Record<string, number>);
 
   try {
     const response = await fetch("https://graphql.anilist.co", {
@@ -121,26 +121,27 @@ export async function fetchAniListImagesByTitles(titles: string[]): Promise<Reco
     if (response.status === 429) {
       const waitTime = parseInt(response.headers.get("Retry-After") || "2", 10) * 1000;
       await new Promise(r => setTimeout(r, waitTime));
-      return fetchAniListImagesByTitles(titles);
+      return fetchAniListImagesByIds(malIds);
     }
 
-    if (response.ok) {
-      const json = await response.json();
-      return json.data || {};
-    }
+    const jsonText = await response.text();
+    try {
+      const json = JSON.parse(jsonText);
+      if (json.data) return json.data;
+    } catch(e) { }
   } catch (err) {
     // Ignore
   }
   return {};
 }
 
-export async function fetchAniListImagesByTitle(title: string): Promise<{
+export async function fetchAniListImagesById(malId: number): Promise<{
     id?: number;
     coverImage?: any;
     bannerImage?: string;
     color?: string;
 }> {
-  const result = await fetchAniListImagesByTitles([title]);
+  const result = await fetchAniListImagesByIds([malId]);
   return result["anime_0"] || {};
 }
 
@@ -194,8 +195,8 @@ export async function fetchAnimeFeed(category?: string, searchWord?: string, pag
     const json = await response.json();
     const jikanData = json.data || [];
 
-    const titles = jikanData.map((item: any) => item.title);
-    const imagesBatch = await fetchAniListImagesByTitles(titles);
+    const malIds = jikanData.map((item: any) => item.mal_id);
+    const imagesBatch = await fetchAniListImagesByIds(malIds);
 
     const result: AniListAnime[] = jikanData.map((item: any, index: number) => {
       const images = imagesBatch[`anime_${index}`] || {};
@@ -382,8 +383,7 @@ export async function fetchAnimeDetails(id: number): Promise<AniListAnime | null
   const item = json.data;
   if (!item) return null;
 
-    const titleRomaji = item.title;
-    const images = await fetchAniListImagesByTitle(titleRomaji);
+    const images = await fetchAniListImagesById(item.mal_id);
 
     const result = {
         id: item.mal_id,

@@ -81,6 +81,15 @@ export default function WatchPage({
   const [copiedNotification, setCopiedNotification] = useState(false);
   const [savedBookmark, setSavedBookmark] = useState(false);
   
+  useEffect(() => {
+    if (anime) {
+      if (!anime.anilistId && ["vidnest", "animepahe"].includes(selectedProvider)) {
+        console.warn("Missing AniList mapping for MAL ID:", anime.id, "- disabling VidNest/AnimePahe");
+        setSelectedProvider("megaplay");
+      }
+    }
+  }, [anime, selectedProvider]);
+
   // Jikan State
   const [episodesMap, setEpisodesMap] = useState<Record<number, JikanEpisode[]>>({});
   const [episodeDescription, setEpisodeDescription] = useState<string | null>(null);
@@ -512,8 +521,10 @@ export default function WatchPage({
                           {[
                             { id: "megaplay", label: "MegaPlay", subtitle: "[S-SUB] [DUB]" },
                             { id: "origami", label: "Origami", subtitle: "[S-SUB] [DUB]" },
-                            { id: "vidnest", label: "VidNest", subtitle: "[S-SUB] [DUB]" },
-                            { id: "animepahe", label: "AnimePahe", subtitle: "[S-SUB] [DUB]" },
+                            ...(anime?.anilistId ? [
+                              { id: "vidnest", label: "VidNest", subtitle: "[S-SUB] [DUB]" },
+                              { id: "animepahe", label: "AnimePahe", subtitle: "[S-SUB] [DUB]" }
+                            ] : []),
                             { id: "cinesrc", label: "Taberu", subtitle: "[EMBED] [S-SUB]" },
                             { id: "vidfast", label: "Matsuri", subtitle: "[EMBED] [S-SUB]" },
                             { id: "movies111", label: "Onigiri", subtitle: "[EMBED] [S-SUB]" }

@@ -403,10 +403,10 @@ export default function VideoPlayer({
       : 0;
 
   const vidnestUrl = selectedProvider === "vidnest"
-    ? `https://vidnest.fun/anime/${anilistId || animeId}/${episodeNumber}/${audioLanguage}${startAtSeconds > 0 ? `?startAt=${startAtSeconds}` : ''}`
+    ? `https://vidnest.fun/anime/${anilistId}/${episodeNumber}/${audioLanguage}${startAtSeconds > 0 ? `?startAt=${startAtSeconds}` : ''}`
     : "";
   const animepaheUrl = selectedProvider === "animepahe"
-    ? `https://vidnest.fun/animepahe/${anilistId || animeId}/${episodeNumber}/${audioLanguage}`
+    ? `https://vidnest.fun/animepahe/${anilistId}/${episodeNumber}/${audioLanguage}`
     : "";
   const embedUrl = getEmbedUrl();
 

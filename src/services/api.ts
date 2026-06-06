@@ -5,15 +5,15 @@
 
 import { AniListAnime } from "../types";
 
-export async function fetchAniListImagesByTitle(title: string): Promise<{
+export async function fetchAniListImagesById(malId: number): Promise<{
     id?: number;
     coverImage?: any;
     bannerImage?: string;
     color?: string;
 }> {
   const query = `
-    query ($search: String) {
-      Media (search: $search, type: ANIME, sort: SEARCH_MATCH) {
+    query ($malId: Int) {
+      Media (idMal: $malId, type: ANIME) {
         id
         coverImage {
           extraLarge
@@ -35,16 +35,17 @@ export async function fetchAniListImagesByTitle(title: string): Promise<{
       },
       body: JSON.stringify({
         query,
-        variables: { search: title },
+        variables: { malId },
       }),
     });
 
-    if (response.ok) {
-      const json = await response.json();
+    const jsonText = await response.text();
+    try {
+      const json = JSON.parse(jsonText);
       if (json.data && json.data.Media) {
         return json.data.Media;
       }
-    }
+    } catch(e) {}
   } catch (err) {
     console.error("AniList fetch error:", err);
   }
@@ -78,8 +79,7 @@ export async function fetchJikanAnimeFeed(category?: string, searchWord?: string
   // Map Jikan data to AniListAnime structure
   const result: AniListAnime[] = await Promise.all(jikanData.map(async (item: any) => {
     // Determine title to search in AniList - usually romaji
-    const titleRomaji = item.title;
-    const images = await fetchAniListImagesByTitle(titleRomaji);
+    const images = await fetchAniListImagesById(item.mal_id);
 
     return {
       id: item.mal_id,
@@ -121,8 +121,7 @@ export async function fetchJikanAnimeDetails(id: number): Promise<AniListAnime |
   const item = json.data;
   if (!item) return null;
 
-  const titleRomaji = item.title;
-  const images = await fetchAniListImagesByTitle(titleRomaji);
+  const images = await fetchAniListImagesById(item.mal_id);
 
   return {
       id: item.mal_id,
