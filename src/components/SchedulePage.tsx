@@ -1,8 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Clock, Play, Calendar } from "lucide-react";
+import { motion } from "framer-motion";
+import { Calendar } from "lucide-react";
 import LazyImage from "./LazyImage";
-import { AniListAnime } from "../types";
 import { fetchAnimeFeed } from "../services/anilist";
 import { getAniListId } from "../services/fribb";
 
@@ -11,7 +10,6 @@ interface SchedulePageProps {
 }
 
 const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
-const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const FULL_DAY_LABELS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 interface ScheduleAnime {
@@ -52,16 +50,14 @@ function formatCountdown(targetUnix: number): { text: string; state: "live" | "s
   const now = Math.floor(Date.now() / 1000);
   let diff = targetUnix - now;
   
-  // If diff is negative but within 30 minutes, we consider it "Live" (assuming 30min episodes)
   if (diff <= 0 && diff >= -1800) {
     return { text: "LIVE NOW", state: "live" };
   } else if (diff < -1800) {
-    // If it's more than 30 mins past, it means the API hasn't updated to next week. Let's just say it aired.
     return { text: "Aired", state: "normal" };
   }
   
   if (diff <= 1800) {
-    return { text: `AIRS IN ${Math.floor(diff / 60)}m`, state: "soon" };
+    return { text: `Airs in ${Math.floor(diff / 60)}m`, state: "soon" };
   }
   
   const days = Math.floor(diff / 86400);
@@ -104,16 +100,12 @@ export default function SchedulePage({ onSelectAnime }: SchedulePageProps) {
       const res = await fetch(`https://api.jikan.moe/v4/schedules?filter=${dayString}`);
       let json = await res.json();
       if (!res.ok || json.error) {
-        // Wait 1 second then retry once
         await new Promise(resolve => setTimeout(resolve, 1000));
         const retry = await fetch(`https://api.jikan.moe/v4/schedules?filter=${dayString}`);
         const retryJson = await retry.json();
         if (retryJson.error) throw new Error(retryJson.error);
-        json = retryJson; // reassign so the rest of the code uses retry data
+        json = retryJson;
       }
-      console.log("Jikan raw response:", json);
-      console.log("Data length:", json.data?.length);
-      console.log("First item:", json.data?.[0]);
       
       const animes: ScheduleAnime[] = [];
       const data = json.data || [];
@@ -141,7 +133,6 @@ export default function SchedulePage({ onSelectAnime }: SchedulePageProps) {
         });
       }
       
-      // Sort by airing time
       animes.sort((a, b) => a.airingAtUnix - b.airingAtUnix);
       
       setScheduleData(prev => ({ ...prev, [dayIndex]: animes }));
@@ -158,7 +149,6 @@ export default function SchedulePage({ onSelectAnime }: SchedulePageProps) {
   useEffect(() => {
     fetchDaySchedule(selectedDay);
     
-    // Auto-refresh countdowns every minute
     const interval = setInterval(() => {
       setScheduleData(prev => ({...prev}));
     }, 60000);
@@ -167,10 +157,14 @@ export default function SchedulePage({ onSelectAnime }: SchedulePageProps) {
 
   const currentAnimes = scheduleData[selectedDay] || [];
 
-  // Group animes by formatted local hour
   const groupedAnimes = useMemo(() => {
     const groups: { label: string, animes: ScheduleAnime[], timestamp: number }[] = [];
+    const seenIds = new Set<number>();
+    
     currentAnimes.forEach(anime => {
+      if (seenIds.has(anime.mal_id)) return;
+      seenIds.add(anime.mal_id);
+      
       let label = "TBA";
       if (anime.broadcastTimeJST !== "TBA") {
         const dbDate = new Date(anime.airingAtUnix * 1000);
@@ -187,150 +181,132 @@ export default function SchedulePage({ onSelectAnime }: SchedulePageProps) {
     return groups.sort((a, b) => a.timestamp - b.timestamp);
   }, [currentAnimes]);
 
-  const todayStr = new Date().toLocaleDateString("en-US", { weekday: 'long', month: 'short', day: 'numeric' });
+  const todayStr = new Date().toLocaleDateString("en-US", { month: 'short', day: 'numeric' });
   const activeDayLabel = FULL_DAY_LABELS[selectedDay];
   const isToday = (new Date().getDay() + 6) % 7 === selectedDay;
 
   return (
-    <div className="w-full min-h-screen px-4 md:px-8 pt-6 pb-20 animate-fade-in relative z-10 max-w-[1440px] mx-auto">
+    <div className="w-full min-h-screen px-4 md:px-8 pt-6 pb-20 animate-fade-in relative z-10 max-w-[1600px] mx-auto">
       
-      {/* 1. Header Section */}
-      <div className="flex flex-col gap-1.5 mb-8">
-        <h1 className="text-white text-3xl font-black tracking-tight flex items-center gap-3">
-          <Calendar className="w-7 h-7 text-[#ff6b35]" />
-          Anime Schedule
-        </h1>
-        <div className="flex items-center gap-3 text-sm font-medium">
-          <span className="text-white/90 bg-white/10 px-3 py-1 rounded-full shadow-sm">
-            {isToday ? "Today" : activeDayLabel} &bull; {isToday ? todayStr : activeDayLabel}
-          </span>
-          {!isLoading && currentAnimes.length > 0 && (
-            <span className="text-white/50">
-              {currentAnimes.length} Episodes Airing {isToday ? "Today" : activeDayLabel}
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* 2. Day Navigation */}
-      <div className="sticky top-16 z-40 bg-[#09090b]/90 backdrop-blur-xl border-b border-white/[0.08] mb-8 pb-4 pt-2 -mx-4 px-4 md:-mx-8 md:px-8">
-        <div className="flex overflow-x-auto gap-2 md:gap-4 scrollbar-hide py-1 snap-x">
-          {DAY_LABELS.map((label, index) => {
-            const isActive = selectedDay === index;
-            return (
-              <button
-                key={label}
-                onClick={() => setSelectedDay(index)}
-                className={`relative px-5 py-2.5 rounded-full text-sm font-bold transition-colors cursor-pointer snap-start whitespace-nowrap ${
-                  isActive ? "text-white" : "text-white/60 hover:text-white/90 bg-white/[0.04] hover:bg-white/[0.08]"
-                }`}
-              >
-                {isActive && (
-                  <motion.div
-                    layoutId="scheduleDayIndicator"
-                    className="absolute inset-0 bg-gradient-to-r from-[#ff6b35] to-[#ffa585] rounded-full shadow-[0_4px_12px_rgba(255,107,53,0.3)] -z-10"
-                    initial={false}
-                    transition={{ type: "spring", stiffness: 350, damping: 25 }}
-                  />
-                )}
-                {label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* 3 & 4. Time Grouping & Schedule Cards */}
-      <div className="flex flex-col gap-12">
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3, 4, 5, 6].map(i => (
-              <div key={i} className="flex gap-4 p-3 rounded-2xl bg-white/[0.03] border border-white/[0.05] relative overflow-hidden">
-                <div className="w-[100px] aspect-[2/3] rounded-xl shimmer-bone shrink-0" />
-                <div className="flex flex-col justify-center gap-3 flex-1 px-2">
-                  <div className="h-5 shimmer-bone rounded w-3/4" />
-                  <div className="h-4 shimmer-bone rounded w-1/2" />
-                  <div className="h-6 shimmer-bone rounded-full w-24 mt-2" />
+      {/* Header & Navigation */}
+      <div className="mb-8 md:mb-10">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-baseline gap-2 md:gap-3 overflow-x-auto scrollbar-hide pb-2 mask-linear-fade">
+            {FULL_DAY_LABELS.map((label, index) => {
+              const isActive = selectedDay === index;
+              return (
+                <div key={label} className="flex items-center gap-2 md:gap-3 shrink-0">
+                  <button
+                    onClick={() => setSelectedDay(index)}
+                    className={`text-3xl md:text-[40px] font-bold tracking-tight transition-all duration-200 ${
+                      isActive ? "text-white" : "text-white/20 hover:text-white/40"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                  {index < FULL_DAY_LABELS.length - 1 && (
+                    <span className="text-white/10 text-3xl md:text-[40px] font-bold pointer-events-none">/</span>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
+          </div>
+          
+          <div className="text-white/40 text-sm md:text-sm font-medium h-6 flex items-center gap-2">
+            <span className={isToday ? "text-white/80" : ""}>{activeDayLabel}</span>
+            {isToday && <span>• {todayStr}</span>}
+            {!isLoading && currentAnimes.length > 0 && <span>• {currentAnimes.length} Episodes Airing {isToday ? "Today" : "This Day"}</span>}
+          </div>
+        </div>
+      </div>
+
+      {/* Timeline Layout */}
+      <div className="flex flex-col gap-6 md:gap-8">
+        {isLoading ? (
+          <div className="flex flex-col md:flex-row gap-3 md:gap-8">
+            <div className="opacity-0 md:opacity-100 md:w-32 shrink-0 pt-2 flex items-center gap-2 text-white/20 font-bold">
+              <span>{'>'}</span> <span className="w-16 h-4 bg-white/5 rounded block"></span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 flex-1">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="h-[72px] bg-[#121214] border border-white/[0.05] rounded-lg animate-pulse" />
+              ))}
+            </div>
           </div>
         ) : groupedAnimes.length === 0 ? (
-          <div className="flex flex-col items-center justify-center p-12 text-white/40">
-            <Calendar className="w-12 h-12 mb-4 opacity-50" />
-            <p>No anime airing on this day.</p>
+          <div className="flex flex-col items-center justify-center p-12 text-white/30 border border-white/5 rounded-xl bg-[#09090b]">
+            <Calendar className="w-10 h-10 mb-3 opacity-50" />
+            <p className="text-sm">No anime scheduled for this day.</p>
           </div>
         ) : (
-          groupedAnimes.map((group, groupIndex) => (
-            <div key={group.label} className="flex flex-col gap-5">
+          groupedAnimes.map((group) => (
+            <div key={group.label} className="flex flex-col md:flex-row gap-2 md:gap-8 relative">
               
-              <div className="flex items-center gap-4">
-                <div className="h-[1px] flex-1 bg-white/[0.08]" />
-                <span className="text-white/80 font-bold tracking-widest text-sm bg-white/5 py-1 px-4 rounded-full border border-white/10">
-                  {group.label}
-                </span>
-                <div className="h-[1px] flex-1 bg-white/[0.08]" />
+              {/* Timeline Time Rail */}
+              <div className="md:w-32 shrink-0 pt-0 md:pt-1.5 flex items-center md:items-start gap-2 text-white/80 font-bold text-sm md:text-[15px]">
+                <span className="text-white/30 font-black">{'>'}</span> {group.label}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 group/row">
-                {group.animes.map((anime, index) => {
+              {/* Cards Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 flex-1">
+                {group.animes.map((anime) => {
                   const countdown = formatCountdown(anime.airingAtUnix);
                   
                   return (
                     <div
                       key={anime.mal_id}
-                      onClick={() => {
-                        onSelectAnime(anime.mal_id);
-                      }}
-                      className={`group/card relative flex gap-4 p-3 rounded-2xl bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.06] hover:border-white/[0.1] hover:shadow-[0_8px_24px_rgba(0,0,0,0.3)] transition-all duration-300 ease-out cursor-pointer hover:-translate-y-1 sm:group-hover/row:opacity-50 sm:hover:!opacity-100 animate-fade-in`}
-                      style={{ animationDelay: `${(index % 10) * 50}ms`, animationFillMode: "both" }}
+                      onClick={() => onSelectAnime(anime.mal_id)}
+                      className="group relative flex gap-3 p-1.5 bg-[#121214] hover:bg-[#1a1a1d] border border-white/[0.05] hover:border-white/[0.12] transition-all duration-200 cursor-pointer overflow-hidden rounded-lg hover:-translate-y-[1px]"
                     >
-                      {/* Poster */}
-                      <div className="relative w-[90px] md:w-[100px] aspect-[2/3] rounded-xl overflow-hidden shadow-md shrink-0 bg-black/50">
+                      {/* Faded right-aligned background */}
+                      <div className="absolute right-0 top-0 bottom-0 w-2/3 pointer-events-none opacity-[0.02] group-hover:opacity-[0.05] transition-opacity duration-200">
+                        <LazyImage src={anime.image} alt="" className="w-full h-full object-cover [mask-image:linear-gradient(to_right,transparent,black)]" />
+                      </div>
+
+                      {/* Compact Poster */}
+                      <div className="relative w-[52px] md:w-[60px] aspect-[4/5] shrink-0 overflow-hidden rounded border border-white/[0.05] z-10 bg-black/50">
                         <LazyImage
                           src={anime.image}
                           alt={anime.title}
-                          className="w-full h-full object-cover transform scale-100 group-hover/card:scale-[1.04] transition-transform duration-300 ease-out"
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                         />
-                        <div className="absolute inset-0 shadow-[inset_0_0_10px_rgba(255,255,255,0.05)] pointer-events-none rounded-xl border border-white/[0.05]" />
                       </div>
 
-                      {/* Details */}
-                      <div className="flex flex-col flex-1 py-1 pr-2 min-w-0">
-                        <h3 className="text-white font-bold text-sm md:text-base leading-tight line-clamp-2 mb-1 group-hover/card:text-[#ff6b35] transition-colors duration-300">
+                      {/* Content */}
+                      <div className="flex flex-col flex-1 py-0.5 justify-between min-w-0 pr-2 z-10">
+                        <h3 className="text-white/90 font-medium text-[13px] md:text-sm leading-snug line-clamp-2 group-hover:text-white transition-colors">
                           {anime.title}
                         </h3>
-                        
-                        <div className="flex items-center gap-2 text-white/50 text-xs font-semibold mb-auto">
-                          <span className="bg-white/[0.08] px-1.5 py-0.5 rounded text-[10px] tracking-wider relative overflow-hidden transition-all duration-300 group-hover/card:bg-white/[0.12] group-hover/card:text-white/80 opacity-80 group-hover/card:opacity-100 transform group-hover/card:-translate-y-[2px]">
-                            {anime.format}
-                          </span>
-                        </div>
 
-                        {/* Metadata Bottom cluster */}
-                        <div className="flex flex-col mt-3 gap-1.5 transform translate-y-2 group-hover/card:-translate-y-[4px] opacity-80 group-hover/card:opacity-100 transition-all duration-300 ease-out">
-                          
-                          {/* Countdown Badge */}
-                          <div className={`self-start px-2.5 py-1 rounded-full text-xs font-bold tracking-wide flex items-center gap-1.5 border shadow-sm transition-transform duration-300 group-hover/card:scale-[1.05] ${
-                            countdown.state === "live" 
-                              ? "bg-red-500/20 text-red-400 border-red-500/30 animate-pulse"
-                              : countdown.state === "soon"
-                                ? "bg-[#ff6b35]/20 text-[#ff6b35] border-[#ff6b35]/30"
-                                : "bg-white/[0.06] text-white/80 border-white/[0.1]"
-                          }`}>
-                            <Clock className={`w-3.5 h-3.5 ${countdown.state === "live" ? "animate-spin-slow" : ""}`} />
-                            {countdown.text}
+                        <div className="flex items-center justify-between mt-1 mb-0.5">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 bg-white/10 text-white/80 rounded-sm leading-none">
+                              {anime.format}
+                            </span>
+                            {countdown.state === 'live' && (
+                              <span className="text-[10px] font-bold text-red-400 uppercase leading-none">
+                                Live Now
+                              </span>
+                            )}
+                            {countdown.state === 'soon' && (
+                              <span className="text-[10px] font-medium text-[#ff6b35] leading-none">
+                                {countdown.text}
+                              </span>
+                            )}
+                            {countdown.state === 'normal' && countdown.text !== 'Aired' && countdown.text !== 'TBA' && (
+                              <span className="text-[10px] font-medium text-white/40 leading-none">
+                                {countdown.text}
+                              </span>
+                            )}
                           </div>
-
-                          <span className="text-white/40 text-[11px] font-medium tracking-wide translate-x-1">
-                            {group.label}
-                          </span>
                           
+                          <span className="text-[10px] font-bold text-white/50 bg-black/40 px-1.5 py-0.5 rounded leading-none shrink-0 border border-white/[0.05]">
+                            {anime.broadcastTimeJST !== "TBA" ? (
+                              new Date(anime.airingAtUnix * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                            ) : 'TBA'}
+                          </span>
                         </div>
                       </div>
-
-                      {/* Premium Glow effect on hover */}
-                      <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-white/0 via-white/[0.04] to-white/0 opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 pointer-events-none" />
                     </div>
                   );
                 })}
@@ -342,3 +318,4 @@ export default function SchedulePage({ onSelectAnime }: SchedulePageProps) {
     </div>
   );
 }
+
