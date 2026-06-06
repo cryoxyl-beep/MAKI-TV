@@ -54,7 +54,7 @@ export default function DiscoveryShelf({ title, subtitle, category, onSelectAnim
       <ShelfScroller>
         {animes.map((anime, index) => (
           <div key={`${anime.id}-${index}`} className="snap-start shrink-0">
-            <AnimeCard anime={anime} onClick={() => onSelectAnime(anime.id)} layout="grid" />
+            <AnimeCard anime={anime} onClick={() => onSelectAnime(anime.id)} layout="grid" index={index} />
           </div>
         ))}
       </ShelfScroller>

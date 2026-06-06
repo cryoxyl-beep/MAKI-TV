@@ -10,6 +10,7 @@ import HomeFeed from "./components/HomeFeed";
 import ChannelPage from "./components/ChannelPage";
 import WatchPage from "./components/WatchPage";
 import LibraryPage from "./components/LibraryPage";
+import SchedulePage from "./components/SchedulePage";
 import LazyImage from "./components/LazyImage";
 import { parseEpisodeSearch } from "./utils";
 import { fetchAnimeFeed } from "./services/anilist";
@@ -19,7 +20,7 @@ import { initializeFribbMapping } from "./services/fribb";
 
 export default function App() {
   // Navigation states
-  const [activePage, setActivePage] = useState<"home" | "trending" | "subscriptions" | "library" | "channel" | "watch">("home");
+  const [activePage, setActivePage] = useState<"home" | "trending" | "subscriptions" | "library" | "channel" | "watch" | "schedule">("home");
   const [searchQuery, setSearchQuery] = useState("");
 
   // Initialize Fribb Mapping on startup
@@ -46,6 +47,8 @@ export default function App() {
       document.title = "Browse • Miyoro";
     } else if (activePage === "library") {
       document.title = "Library • Miyoro";
+    } else if (activePage === "schedule") {
+      document.title = "Schedule • Miyoro";
     }
   }, [activePage, searchQuery]);
 
@@ -126,6 +129,9 @@ export default function App() {
       } else if (hash === "#/library") {
         setActivePage("library");
         setSearchQuery("");
+      } else if (hash === "#/schedule") {
+        setActivePage("schedule");
+        setSearchQuery("");
       } else {
         // Default to home page
         setActivePage("home");
@@ -142,7 +148,7 @@ export default function App() {
   }, []);
 
   // Helpers to push link state
-  const handleNavigate = (page: "home" | "trending" | "subscriptions" | "library") => {
+  const handleNavigate = (page: "home" | "trending" | "subscriptions" | "library" | "schedule") => {
     if (page === "home") {
       window.location.hash = "/";
     } else {
@@ -201,6 +207,7 @@ export default function App() {
         onSearch={handleSearchTrigger}
         initialSearchQuery={searchQuery}
         onNavigateHome={() => handleNavigate("home")}
+        onNavigateSchedule={() => handleNavigate("schedule")}
         onNavigateLibrary={() => handleNavigate("library")}
         onNavigateSubscriptions={() => handleNavigate("subscriptions")}
         isHomeScreen={activePage === "home"}
@@ -270,6 +277,11 @@ export default function App() {
               onNavigateToChannel={handleOpenChannel}
               onHistoryCleared={handleSyncSubscriptions} // full status refresh
             />
+          )}
+
+          {/* RENDER LAYER 7: Schedule Page */}
+          {activePage === "schedule" && (
+            <SchedulePage onSelectAnime={handleOpenChannel} />
           )}
 
           {/* RENDER LAYER 5: Specific Hub Anime channel System Dashboard */}

@@ -16,7 +16,7 @@ interface HeaderProps {
   onNavigateLibrary: () => void;
   onNavigateSubscriptions: () => void;
   isHomeScreen?: boolean;
-  activeTab?: "home" | "trending" | "subscriptions" | "library";
+  activeTab?: "home" | "trending" | "subscriptions" | "library" | "schedule";
 }
 
 export default function Header({
@@ -25,9 +25,10 @@ export default function Header({
   onNavigateHome,
   onNavigateLibrary,
   onNavigateSubscriptions,
+  onNavigateSchedule,
   isHomeScreen = false,
   activeTab = "home",
-}: HeaderProps) {
+}: HeaderProps & { onNavigateSchedule?: () => void }) {
   const [searchVal, setSearchVal] = useState(initialSearchQuery);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
@@ -164,9 +165,10 @@ export default function Header({
               <div className="flex items-center gap-1.5 pointer-events-auto">
                 {[
                   { id: "home" as const, label: "Home", onClick: onNavigateHome },
+                  { id: "schedule" as const, label: "Schedule", onClick: onNavigateSchedule },
                   { id: "subscriptions" as const, label: "Browse", onClick: onNavigateSubscriptions },
                   { id: "library" as const, label: "Library", onClick: onNavigateLibrary },
-                ].map((item) => {
+                ].filter(item => item.onClick).map((item) => {
                   const isActive = activeTab === item.id;
                   return (
                     <button

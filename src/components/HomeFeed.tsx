@@ -156,7 +156,7 @@ export default function HomeFeed({
                   const isLastElement = index === Math.min(feedAnimes.length - 1, 14);
                   return (
                     <div key={`${anime.id}-${index}`} ref={isLastElement ? lastAnimeElementRef : null} className="snap-start shrink-0">
-                      <AnimeCard anime={anime} onClick={() => onSelectAnime(anime.id)} layout="grid" />
+                      <AnimeCard anime={anime} onClick={() => onSelectAnime(anime.id)} layout="grid" index={index} />
                     </div>
                   );
                 })}
@@ -174,7 +174,7 @@ export default function HomeFeed({
       ) : (
         feedAnimes.length > 0 && (
           <div
-            className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-8 px-4 md:px-6 w-full select-none ${isLoading ? "opacity-30 pointer-events-none" : "animate-fade-in"} transition-opacity duration-300`}
+            className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-8 px-4 md:px-6 w-full select-none group/row ${isLoading ? "opacity-30 pointer-events-none" : "animate-fade-in"} transition-opacity duration-300`}
           >
             {feedAnimes.map((anime, index) => {
               const isLastElement = index === feedAnimes.length - 1;
@@ -187,6 +187,7 @@ export default function HomeFeed({
                     anime={anime}
                     onClick={() => onSelectAnime(anime.id)}
                     layout="grid"
+                    index={index}
                   />
                 </div>
               );

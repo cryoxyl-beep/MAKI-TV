@@ -217,7 +217,7 @@ export default function ShelfScroller({ children }: ShelfScrollerProps) {
         ref={listRef}
         onClickCapture={handleCaptureClick}
         onDragStart={(e) => e.preventDefault()}
-        className="flex overflow-x-auto gap-5 px-4 md:px-6 scroll-px-4 md:scroll-px-6 pb-6 pt-2 snap-x snap-mandatory cursor-grab relative"
+        className="flex overflow-x-auto gap-5 px-4 md:px-6 scroll-px-4 md:scroll-px-6 pb-6 pt-2 snap-x snap-mandatory cursor-grab relative group/row"
         style={{ 
           scrollbarWidth: "none", 
           WebkitUserSelect: "none", 
