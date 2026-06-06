@@ -4,6 +4,7 @@
  */
 
 import { AniListAnime } from "../types";
+import { getAniListId } from "./fribb";
 
 const ANILIST_API_URL = "https://graphql.anilist.co";
 
@@ -85,116 +86,6 @@ export async function fetchAniList(query: string, variables: any = {}): Promise<
   return json.data;
 }
 
-export async function fetchAniListImagesByIds(malIds: number[]): Promise<Record<string, any>> {
-  if (!malIds.length) return {};
-  
-  const queryChunks = malIds.map((malId, index) => {
-    return `anime_${index}: Media (idMal: $malId_${index}, type: ANIME) {
-        id
-        coverImage {
-          extraLarge
-          large
-          medium
-          color
-        }
-        bannerImage
-      }`;
-  });
-
-  const variableDeclarations = malIds.map((_, index) => `$malId_${index}: Int`).join(', ');
-
-  const query = `
-    query (${variableDeclarations}) {
-      ${queryChunks.join('\n')}
-    }
-  `;
-
-  const variables = malIds.reduce((acc, malId, index) => {
-    acc[`malId_${index}`] = malId;
-    return acc;
-  }, {} as Record<string, number>);
-
-  try {
-    const response = await fetch("https://graphql.anilist.co", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-      },
-      body: JSON.stringify({ query, variables }),
-    });
-
-    if (response.status === 429) {
-      const waitTime = parseInt(response.headers.get("Retry-After") || "2", 10) * 1000;
-      await new Promise(r => setTimeout(r, waitTime));
-      return fetchAniListImagesByIds(malIds);
-    }
-
-    const jsonText = await response.text();
-    try {
-      const json = JSON.parse(jsonText);
-      if (json.data) return json.data;
-    } catch(e) { }
-  } catch (err) {
-    // Ignore
-  }
-  return {};
-}
-
-export async function fetchAniListImagesById(malId: number): Promise<{
-    id?: number;
-    coverImage?: any;
-    bannerImage?: string;
-    color?: string;
-}> {
-  const query = `
-    query ($malId: Int) {
-      Media (idMal: $malId, type: ANIME) {
-        id
-        coverImage {
-          extraLarge
-          large
-          medium
-          color
-        }
-        bannerImage
-      }
-    }
-  `;
-
-  try {
-    const response = await fetch("https://graphql.anilist.co", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-      },
-      body: JSON.stringify({
-        query,
-        variables: { malId },
-      }),
-    });
-
-    const jsonText = await response.text();
-    try {
-      const json = JSON.parse(jsonText);
-      if (malId === 57555) {
-        console.log("[AniList Debug]");
-        console.log("Requested MAL ID:", malId);
-        console.log("Raw AniList Response:", json);
-        console.log("Media Object:", json?.data?.Media);
-        console.log("Returned AniList ID:", json?.data?.Media?.id);
-      }
-      if (json.data && json.data.Media) {
-        return json.data.Media;
-      }
-    } catch(e) {}
-  } catch (err) {
-    console.error("AniList fetch error:", err);
-  }
-  return {};
-}
-
 export async function fetchAnimeFeed(category?: string, searchWord?: string, page: number = 1): Promise<AniListAnime[]> {
   let url = `https://api.jikan.moe/v4/anime?page=${page}&limit=25`;
   
@@ -245,28 +136,25 @@ export async function fetchAnimeFeed(category?: string, searchWord?: string, pag
     const json = await response.json();
     const jikanData = json.data || [];
 
-    const malIds = jikanData.map((item: any) => item.mal_id);
-    const imagesBatch = await fetchAniListImagesByIds(malIds);
-
-    const result: AniListAnime[] = jikanData.map((item: any, index: number) => {
-      const images = imagesBatch[`anime_${index}`] || {};
+    const result: AniListAnime[] = jikanData.map((item: any) => {
+      const anilistId = getAniListId(item.mal_id);
 
       return {
         id: item.mal_id,
-        anilistId: images.id,
+        anilistId: anilistId || undefined,
         title: {
           romaji: item.title,
           english: item.title_english || item.title,
           native: item.title_japanese,
           userPreferred: item.title,
         },
-        coverImage: images.coverImage || {
+        coverImage: {
           extraLarge: item.images?.jpg?.large_image_url || item.images?.jpg?.image_url,
           large: item.images?.jpg?.large_image_url || item.images?.jpg?.image_url,
           medium: item.images?.jpg?.image_url,
-          color: images.color || "#ff6b35"
+          color: "#ff6b35"
         },
-        bannerImage: images.bannerImage || "",
+        bannerImage: "",
         episodes: item.episodes || 12,
         season: item.season || "UNKNOWN",
         seasonYear: item.year || 2024,
@@ -433,25 +321,25 @@ export async function fetchAnimeDetails(id: number): Promise<AniListAnime | null
   const item = json.data;
   if (!item) return null;
 
-    const images = await fetchAniListImagesById(item.mal_id);
+  const anilistId = getAniListId(item.mal_id);
 
-    const result = {
-        id: item.mal_id,
-        anilistId: images.id,
-        title: {
-          romaji: item.title,
-          english: item.title_english || item.title,
-          native: item.title_japanese,
-          userPreferred: item.title,
-        },
-        coverImage: images.coverImage || {
-          extraLarge: item.images?.jpg?.large_image_url || item.images?.jpg?.image_url,
-          large: item.images?.jpg?.large_image_url || item.images?.jpg?.image_url,
-          medium: item.images?.jpg?.image_url,
-          color: images.color || "#ff6b35"
-        },
-        bannerImage: images.bannerImage || "",
-        episodes: item.episodes || 12,
+  const result = {
+      id: item.mal_id,
+      anilistId: anilistId || undefined,
+      title: {
+        romaji: item.title,
+        english: item.title_english || item.title,
+        native: item.title_japanese,
+        userPreferred: item.title,
+      },
+      coverImage: {
+        extraLarge: item.images?.jpg?.large_image_url || item.images?.jpg?.image_url,
+        large: item.images?.jpg?.large_image_url || item.images?.jpg?.image_url,
+        medium: item.images?.jpg?.image_url,
+        color: "#ff6b35"
+      },
+      bannerImage: "",
+      episodes: item.episodes || 12,
         season: item.season || "UNKNOWN",
         seasonYear: item.year || 2024,
         status: item.status || "UNKNOWN",

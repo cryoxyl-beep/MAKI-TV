@@ -15,11 +15,17 @@ import { parseEpisodeSearch } from "./utils";
 import { fetchAnimeFeed } from "./services/anilist";
 import { Tv, Flame, Play, Sparkles, ChevronUp } from "lucide-react";
 import { useLibrary } from "./hooks/useLibrary";
+import { initializeFribbMapping } from "./services/fribb";
 
 export default function App() {
   // Navigation states
   const [activePage, setActivePage] = useState<"home" | "trending" | "subscriptions" | "library" | "channel" | "watch">("home");
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Initialize Fribb Mapping on startup
+  useEffect(() => {
+    initializeFribbMapping();
+  }, []);
 
   // Sub-states for specific pages
   const [selectedChannelId, setSelectedChannelId] = useState<number | null>(null);
