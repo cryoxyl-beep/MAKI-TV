@@ -61,6 +61,12 @@ export async function fetchAniList(query: string, variables: any = {}): Promise<
   }
 
   const json = await response.json();
+  const matchedMalId = variables?.idMal || variables?.malId;
+  if (matchedMalId === 57555) {
+    console.log("malId", matchedMalId);
+    console.log("response.data", json.data);
+    console.log("response.data.Media", json.data?.Media);
+  }
   if (json.errors) {
     throw new Error(`AniList API Error: ${json.errors[0].message}`);
   }
@@ -141,8 +147,52 @@ export async function fetchAniListImagesById(malId: number): Promise<{
     bannerImage?: string;
     color?: string;
 }> {
-  const result = await fetchAniListImagesByIds([malId]);
-  return result["anime_0"] || {};
+  const query = `
+    query ($malId: Int) {
+      Media (idMal: $malId, type: ANIME) {
+        id
+        coverImage {
+          extraLarge
+          large
+          medium
+          color
+        }
+        bannerImage
+      }
+    }
+  `;
+
+  try {
+    const response = await fetch("https://graphql.anilist.co", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      body: JSON.stringify({
+        query,
+        variables: { malId },
+      }),
+    });
+
+    const jsonText = await response.text();
+    try {
+      const json = JSON.parse(jsonText);
+      if (malId === 57555) {
+        console.log("[AniList Debug]");
+        console.log("Requested MAL ID:", malId);
+        console.log("Raw AniList Response:", json);
+        console.log("Media Object:", json?.data?.Media);
+        console.log("Returned AniList ID:", json?.data?.Media?.id);
+      }
+      if (json.data && json.data.Media) {
+        return json.data.Media;
+      }
+    } catch(e) {}
+  } catch (err) {
+    console.error("AniList fetch error:", err);
+  }
+  return {};
 }
 
 export async function fetchAnimeFeed(category?: string, searchWord?: string, page: number = 1): Promise<AniListAnime[]> {

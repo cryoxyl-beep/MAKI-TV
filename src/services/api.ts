@@ -42,6 +42,13 @@ export async function fetchAniListImagesById(malId: number): Promise<{
     const jsonText = await response.text();
     try {
       const json = JSON.parse(jsonText);
+      if (malId === 57555) {
+        console.log("[AniList Debug]");
+        console.log("Requested MAL ID:", malId);
+        console.log("Raw AniList Response:", json);
+        console.log("Media Object:", json?.data?.Media);
+        console.log("Returned AniList ID:", json?.data?.Media?.id);
+      }
       if (json.data && json.data.Media) {
         return json.data.Media;
       }
