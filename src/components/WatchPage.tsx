@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { AniListAnime } from "../types";
 import { fetchAnimeDetails } from "../services/anilist";
 import { getTMDBMapping } from "../services/mapping";
@@ -95,11 +95,34 @@ export default function WatchPage({
   const [episodesMap, setEpisodesMap] = useState<Record<number, JikanEpisode[]>>({});
   const [episodeDescription, setEpisodeDescription] = useState<string | null>(null);
   const [currentRange, setCurrentRange] = useState<number>(1);
-  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [viewMode, setViewMode] = useState<"list" | "grid">("grid");
   const [isEpisodeDropdownOpen, setIsEpisodeDropdownOpen] = useState(false);
   const [isAudioDropdownOpen, setIsAudioDropdownOpen] = useState(false);
   const [isServerDropdownOpen, setIsServerDropdownOpen] = useState(false);
   const [episodeSearchQuery, setEpisodeSearchQuery] = useState("");
+
+  const audioDropdownRef = useRef<HTMLDivElement>(null);
+  const serverDropdownRef = useRef<HTMLDivElement>(null);
+  const episodeDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (audioDropdownRef.current && !audioDropdownRef.current.contains(event.target as Node)) {
+        setIsAudioDropdownOpen(false);
+      }
+      if (serverDropdownRef.current && !serverDropdownRef.current.contains(event.target as Node)) {
+        setIsServerDropdownOpen(false);
+      }
+      if (episodeDropdownRef.current && !episodeDropdownRef.current.contains(event.target as Node)) {
+        setIsEpisodeDropdownOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   useEffect(() => {
     setSavedBookmark(isWatchLater(animeId, seasonNumber, episodeNumber));
@@ -449,7 +472,7 @@ export default function WatchPage({
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {/* Audio Dropdown */}
-                <div className="relative">
+                <div className="relative" ref={audioDropdownRef}>
                   <button 
                     onClick={() => {
                       setIsAudioDropdownOpen(!isAudioDropdownOpen);
@@ -498,7 +521,7 @@ export default function WatchPage({
                 </div>
 
                 {/* Server Dropdown */}
-                <div className="relative">
+                <div className="relative" ref={serverDropdownRef}>
                   <button 
                     onClick={() => {
                       setIsServerDropdownOpen(!isServerDropdownOpen);
@@ -507,10 +530,10 @@ export default function WatchPage({
                     className="px-3 py-1.5 bg-white/[0.04] hover:bg-white/[0.08] text-white/90 hover:text-white border border-white/10 rounded-lg flex items-center justify-between gap-2 transition-colors cursor-pointer font-semibold text-xs min-w-[110px]"
                   >
                     <span>
-                      {selectedProvider === "megaplay" ? "MegaPlay" :
-                       selectedProvider === "origami" ? "Origami" :
-                       selectedProvider === "vidnest" ? "VidNest" :
-                       selectedProvider === "animepahe" ? "AnimePahe" :
+                      {selectedProvider === "megaplay" ? "Kyou" :
+                       selectedProvider === "origami" ? "Kami" :
+                       selectedProvider === "vidnest" ? "Haya" :
+                       selectedProvider === "animepahe" ? "Miru" :
                        selectedProvider === "cinesrc" ? "Taberu" :
                        selectedProvider === "vidfast" ? "Matsuri" :
                        selectedProvider === "movies111" ? "Onigiri" : "Server"}
@@ -528,15 +551,12 @@ export default function WatchPage({
                       >
                         <div className="flex flex-col py-1">
                           {[
-                            { id: "megaplay", label: "MegaPlay", subtitle: "[S-SUB] [DUB]" },
-                            { id: "origami", label: "Origami", subtitle: "[S-SUB] [DUB]" },
+                            { id: "megaplay", label: "Kyou", subtitle: "[S-SUB] [DUB]" },
+                            { id: "origami", label: "Kami", subtitle: "[S-SUB] [DUB]" },
                             ...(anime?.anilistId ? [
-                              { id: "vidnest", label: "VidNest", subtitle: "[S-SUB] [DUB]" },
-                              { id: "animepahe", label: "AnimePahe", subtitle: "[S-SUB] [DUB]" }
-                            ] : []),
-                            { id: "cinesrc", label: "Taberu", subtitle: "[EMBED] [S-SUB]" },
-                            { id: "vidfast", label: "Matsuri", subtitle: "[EMBED] [S-SUB]" },
-                            { id: "movies111", label: "Onigiri", subtitle: "[EMBED] [S-SUB]" }
+                              { id: "vidnest", label: "Haya", subtitle: "[S-SUB] [DUB]" },
+                              { id: "animepahe", label: "Miru", subtitle: "[S-SUB] [DUB]" }
+                            ] : [])
                           ].map(provider => (
                             <button
                               key={provider.id}
@@ -602,7 +622,7 @@ export default function WatchPage({
                   Episodes
                 </h3>
                 {isLongRunning && (
-                  <div className="relative">
+                  <div className="relative" ref={episodeDropdownRef}>
                     <button 
                       onClick={() => setIsEpisodeDropdownOpen(!isEpisodeDropdownOpen)}
                       className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-semibold text-white/80 transition-colors cursor-pointer"

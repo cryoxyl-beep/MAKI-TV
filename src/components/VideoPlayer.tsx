@@ -436,9 +436,9 @@ export default function VideoPlayer({
         megaplayLoadError ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-gray-400 z-10 gap-3 bg-[#0a0a0c]">
             <Landmark className="w-12 h-12 text-white/50 mb-2" />
-            <h4 className="text-white text-sm font-bold">MegaPlay Server Connection Timeout</h4>
+            <h4 className="text-white text-sm font-bold">Kyou Server Connection Timeout</h4>
             <p className="text-xs text-gray-505 max-w-sm leading-relaxed">
-              Premium MegaPlay stream timed out or was blocked. Switch language above or choose a fallback server like Taberu or Matsuri below.
+              Premium Kyou stream timed out or was blocked. Switch language above or choose a fallback server like Taberu or Matsuri below.
             </p>
             <div className="flex gap-2.5 mt-2">
               <button
@@ -477,9 +477,9 @@ export default function VideoPlayer({
         origamiLoadError ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-gray-400 z-10 gap-3 bg-[#0a0a0c]">
             <Landmark className="w-12 h-12 text-white/50 mb-2" />
-            <h4 className="text-white text-sm font-bold">Origami Connection Timeout / Error</h4>
+            <h4 className="text-white text-sm font-bold">Kami Connection Timeout / Error</h4>
             <p className="text-xs text-gray-500 max-w-sm leading-relaxed">
-              Premium Origami stream timed out or was blocked. Switch language above or choose a fallback server like Taberu or Matsuri below.
+              Premium Kami stream timed out or was blocked. Switch language above or choose a fallback server like Taberu or Matsuri below.
             </p>
             <div className="flex gap-2.5 mt-2">
               <button
@@ -522,7 +522,7 @@ export default function VideoPlayer({
             allow="autoplay; fullscreen; picture-in-picture"
             allowFullScreen
             onLoad={handleIframeLoad}
-            title={`VidNest Player: ${animeTitle}`}
+            title={`Haya Player: ${animeTitle}`}
           />
         </>
       ) : selectedProvider === "animepahe" ? (
@@ -533,7 +533,7 @@ export default function VideoPlayer({
             allow="autoplay; fullscreen; picture-in-picture"
             allowFullScreen
             onLoad={handleIframeLoad}
-            title={`AnimePahe Player: ${animeTitle}`}
+            title={`Miru Player: ${animeTitle}`}
           />
         </>
       ) : embedUrl ? (
@@ -562,7 +562,7 @@ export default function VideoPlayer({
               Secure Proxy Stream
             </span>
             <span className="text-white text-xs font-semibold">
-              Loading {selectedProvider === "megaplay" ? "MegaPlay" : selectedProvider === "origami" ? "Origami" : "source"} channel connection...
+              Loading {selectedProvider === "megaplay" ? "Kyou" : selectedProvider === "origami" ? "Kami" : "source"} channel connection...
             </span>
           </div>
         </div>
