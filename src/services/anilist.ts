@@ -4,7 +4,7 @@
  */
 
 import { AniListAnime } from "../types";
-import { getAniListId } from "./fribb";
+import { getAniListId, initializeFribbMapping } from "./fribb";
 
 const ANILIST_API_URL = "https://graphql.anilist.co";
 
@@ -135,6 +135,8 @@ export async function fetchAnimeFeed(category?: string, searchWord?: string, pag
     }
     const json = await response.json();
     const jikanData = json.data || [];
+
+    await initializeFribbMapping();
 
     const result: AniListAnime[] = jikanData.map((item: any) => {
       const anilistId = getAniListId(item.mal_id);
@@ -320,6 +322,8 @@ export async function fetchAnimeDetails(id: number): Promise<AniListAnime | null
 
   const item = json.data;
   if (!item) return null;
+
+  await initializeFribbMapping();
 
   const anilistId = getAniListId(item.mal_id);
 

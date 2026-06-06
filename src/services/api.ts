@@ -4,7 +4,7 @@
  */
 
 import { AniListAnime } from "../types";
-import { getAniListId } from "./fribb";
+import { getAniListId, initializeFribbMapping } from "./fribb";
 
 export async function fetchJikanAnimeFeed(category?: string, searchWord?: string, page: number = 1): Promise<AniListAnime[]> {
   // Let's implement Jikan API fetching
@@ -29,6 +29,8 @@ export async function fetchJikanAnimeFeed(category?: string, searchWord?: string
   if (!response.ok) throw new Error("Jikan API error");
   const json = await response.json();
   const jikanData = json.data || [];
+
+  await initializeFribbMapping();
 
   // Map Jikan data to AniListAnime structure
   const result: AniListAnime[] = await Promise.all(jikanData.map(async (item: any) => {
@@ -73,6 +75,8 @@ export async function fetchJikanAnimeDetails(id: number): Promise<AniListAnime |
   const json = await response.json();
   const item = json.data;
   if (!item) return null;
+
+  await initializeFribbMapping();
 
   const anilistId = getAniListId(item.mal_id);
 

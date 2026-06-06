@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { AniListAnime } from "../types";
 import { fetchAnimeDetails } from "../services/anilist";
 import { getTMDBMapping } from "../services/mapping";
+import { initializeFribbMapping, getAniListId } from "../services/fribb";
 import { 
   addToWatchHistory, 
   getEpisodeProgress,
@@ -121,8 +122,16 @@ export default function WatchPage({
     async function loadWatchAnime() {
       setIsLoading(true);
       try {
-        const data = await fetchAnimeDetails(animeId);
+        const [data] = await Promise.all([
+          fetchAnimeDetails(animeId),
+          initializeFribbMapping()
+        ]);
+        
         if (data && mounted) {
+          // Attempt to patch anilistId if missing (e.g. from local storage cache)
+          if (!data.anilistId) {
+            data.anilistId = getAniListId(data.id) ?? undefined;
+          }
           setAnime(data);
 
           // Load target TMDB maps
