@@ -84,6 +84,7 @@ export async function fetchAniListImagesByTitles(titles: string[]): Promise<Reco
   
   const queryChunks = titles.map((title, index) => {
     return `anime_${index}: Media (search: $search_${index}, type: ANIME, sort: SEARCH_MATCH) {
+        id
         coverImage {
           extraLarge
           large
@@ -134,6 +135,7 @@ export async function fetchAniListImagesByTitles(titles: string[]): Promise<Reco
 }
 
 export async function fetchAniListImagesByTitle(title: string): Promise<{
+    id?: number;
     coverImage?: any;
     bannerImage?: string;
     color?: string;
@@ -200,6 +202,7 @@ export async function fetchAnimeFeed(category?: string, searchWord?: string, pag
 
       return {
         id: item.mal_id,
+        anilistId: images.id,
         title: {
           romaji: item.title,
           english: item.title_english || item.title,
@@ -269,6 +272,7 @@ export async function fetchAnimeDetails(id: number): Promise<AniListAnime | null
       query ($idMal: Int) {
         Media (idMal: $idMal, type: ANIME) {
           idMal
+          id
           title {
             romaji
             english
@@ -329,6 +333,7 @@ export async function fetchAnimeDetails(id: number): Promise<AniListAnime | null
          const m = fallbackData.Media;
          const result = {
             id: m.idMal || id,
+            anilistId: m.id,
             title: m.title || { romaji: "Unknown", english: "Unknown", native: null, userPreferred: "Unknown" },
             coverImage: m.coverImage || { extraLarge: "", large: "", medium: "", color: "#ff6b35" },
             bannerImage: m.bannerImage || "",
@@ -382,6 +387,7 @@ export async function fetchAnimeDetails(id: number): Promise<AniListAnime | null
 
     const result = {
         id: item.mal_id,
+        anilistId: images.id,
         title: {
           romaji: item.title,
           english: item.title_english || item.title,

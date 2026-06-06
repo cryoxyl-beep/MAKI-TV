@@ -53,6 +53,7 @@ export interface TrailerInfo {
 
 export interface AniListAnime {
   id: number;
+  anilistId?: number;
   title: AnimeTitle;
   coverImage: CoverImage;
   bannerImage?: string;

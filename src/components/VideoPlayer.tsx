@@ -5,10 +5,11 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { Landmark, RefreshCw } from "lucide-react";
-import { saveUnifiedWatchState } from "../utils";
+import { saveUnifiedWatchState, getUnifiedWatchState } from "../utils";
 
 interface VideoPlayerProps {
   animeId: number;
+  anilistId?: number;
   episodeNumber: number;
   seasonNumber: number;
   animeTitle: string;
@@ -28,6 +29,7 @@ interface VideoPlayerProps {
 
 export default function VideoPlayer({
   animeId,
+  anilistId,
   episodeNumber,
   seasonNumber,
   animeTitle,
@@ -49,6 +51,8 @@ export default function VideoPlayer({
 
   const [megaplayLoadError, setMegaplayLoadError] = useState<boolean>(false);
   const [origamiLoadError, setOrigamiLoadError] = useState<boolean>(false);
+  const [vidnestLoadError, setVidnestLoadError] = useState<boolean>(false);
+  const [animepaheLoadError, setAnimepaheLoadError] = useState<boolean>(false);
 
   // loading and watchdog state tracking refs
   const watchdogTimerRef = useRef<any>(null);
@@ -80,12 +84,17 @@ export default function VideoPlayer({
     setIframeLoading(false);
     setMegaplayLoadError(false);
     setOrigamiLoadError(false);
+    setVidnestLoadError(false);
+    setAnimepaheLoadError(false);
   };
 
   // Trigger loading screen reset when any major state changes
   useEffect(() => {
     setIframeLoading(true);
     setMegaplayLoadError(false);
+    setOrigamiLoadError(false);
+    setVidnestLoadError(false);
+    setAnimepaheLoadError(false);
     const timer = setTimeout(() => {
       setIframeLoading(false);
     }, 4000); // 4-second safety threshold fallback
@@ -339,6 +348,41 @@ export default function VideoPlayer({
       } catch (e) {
         // ignore parsing error
       }
+      
+      // 3. VidNest events check
+      if (origin.includes("vidnest.fun")) {
+        try {
+          const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+          if (data && data.event) {
+            const eventType = data.event;
+            // Handle TIMEUPDATE
+            if (eventType === "TIMEUPDATE" && data.time && data.duration) {
+              const cur = parseFloat(data.time);
+              const dur = parseFloat(data.duration);
+              if (dur > 0) {
+                const percent = parseFloat(((cur / dur) * 100).toFixed(1));
+                onProgressUpdate(percent);
+                saveUnifiedWatchState({
+                  anilistId: animeId,
+                  tmdbId: tmdbId,
+                  title: animeTitle,
+                  provider: selectedProvider,
+                  progress: { watched: cur, duration: dur },
+                  last_season_watched: seasonNumber,
+                  last_episode_watched: episodeNumber,
+                  percentage: percent,
+                  updatedAt: new Date().toISOString()
+                });
+              }
+            } else if (eventType === "ENDED") {
+              console.log("VidNest postMessage: auto-advancing next episode");
+              onNextEpisode();
+            }
+          }
+        } catch (e) {
+          // ignore parsing error
+        }
+      }
     };
  
     window.addEventListener("message", handleMessage);
@@ -352,6 +396,17 @@ export default function VideoPlayer({
     : "";
   const origamiUrl = selectedProvider === "origami"
     ? `https://megaplay.buzz/stream/mal/${animeId}/${episodeNumber}/${audioLanguage}`
+    : "";
+  const watchState = getUnifiedWatchState(animeId);
+  const startAtSeconds = watchState?.last_season_watched === seasonNumber && watchState?.last_episode_watched === episodeNumber && watchState?.progress?.watched
+      ? Math.floor(watchState.progress.watched)
+      : 0;
+
+  const vidnestUrl = selectedProvider === "vidnest"
+    ? `https://vidnest.fun/anime/${anilistId || animeId}/${episodeNumber}/${audioLanguage}${startAtSeconds > 0 ? `?startAt=${startAtSeconds}` : ''}`
+    : "";
+  const animepaheUrl = selectedProvider === "animepahe"
+    ? `https://vidnest.fun/animepahe/${anilistId || animeId}/${episodeNumber}/${audioLanguage}`
     : "";
   const embedUrl = getEmbedUrl();
 
@@ -459,6 +514,28 @@ export default function VideoPlayer({
             />
           </>
         )
+      ) : selectedProvider === "vidnest" ? (
+        <>
+          <iframe
+            src={vidnestUrl}
+            className="w-full h-full border-0 absolute inset-0 z-10 pointer-events-auto"
+            allow="autoplay; fullscreen; picture-in-picture"
+            allowFullScreen
+            onLoad={handleIframeLoad}
+            title={`VidNest Player: ${animeTitle}`}
+          />
+        </>
+      ) : selectedProvider === "animepahe" ? (
+        <>
+          <iframe
+            src={animepaheUrl}
+            className="w-full h-full border-0 absolute inset-0 z-10 pointer-events-auto"
+            allow="autoplay; fullscreen; picture-in-picture"
+            allowFullScreen
+            onLoad={handleIframeLoad}
+            title={`AnimePahe Player: ${animeTitle}`}
+          />
+        </>
       ) : embedUrl ? (
         <iframe
           src={embedUrl}

@@ -6,6 +6,7 @@
 import { AniListAnime } from "../types";
 
 export async function fetchAniListImagesByTitle(title: string): Promise<{
+    id?: number;
     coverImage?: any;
     bannerImage?: string;
     color?: string;
@@ -13,6 +14,7 @@ export async function fetchAniListImagesByTitle(title: string): Promise<{
   const query = `
     query ($search: String) {
       Media (search: $search, type: ANIME, sort: SEARCH_MATCH) {
+        id
         coverImage {
           extraLarge
           large
@@ -81,6 +83,7 @@ export async function fetchJikanAnimeFeed(category?: string, searchWord?: string
 
     return {
       id: item.mal_id,
+      anilistId: images.id,
       title: {
         romaji: item.title,
         english: item.title_english || item.title,
@@ -123,6 +126,7 @@ export async function fetchJikanAnimeDetails(id: number): Promise<AniListAnime |
 
   return {
       id: item.mal_id,
+      anilistId: images.id,
       title: {
         romaji: item.title,
         english: item.title_english || item.title,

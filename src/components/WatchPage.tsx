@@ -340,6 +340,7 @@ export default function WatchPage({
           
           <VideoPlayer
             animeId={anime.id}
+            anilistId={anime.anilistId}
             episodeNumber={episodeNumber}
             seasonNumber={seasonNumber}
             animeTitle={mainTitle}
@@ -436,8 +437,8 @@ export default function WatchPage({
                       setIsAudioDropdownOpen(!isAudioDropdownOpen);
                       setIsServerDropdownOpen(false);
                     }}
-                    disabled={selectedProvider !== "megaplay" && selectedProvider !== "origami"}
-                    className={`px-3 py-1.5 border rounded-lg flex items-center justify-between gap-2 transition-colors font-semibold text-xs min-w-[70px] ${selectedProvider !== "megaplay" && selectedProvider !== "origami" ? "opacity-50 cursor-not-allowed bg-white/[0.02] text-white/40 border-white/[0.05]" : "bg-white/[0.04] text-white/90 border-white/10 hover:bg-white/[0.08] hover:text-white cursor-pointer"}`}
+                    disabled={!["megaplay", "origami", "vidnest", "animepahe"].includes(selectedProvider)}
+                    className={`px-3 py-1.5 border rounded-lg flex items-center justify-between gap-2 transition-colors font-semibold text-xs min-w-[70px] ${!["megaplay", "origami", "vidnest", "animepahe"].includes(selectedProvider) ? "opacity-50 cursor-not-allowed bg-white/[0.02] text-white/40 border-white/[0.05]" : "bg-white/[0.04] text-white/90 border-white/10 hover:bg-white/[0.08] hover:text-white cursor-pointer"}`}
                   >
                     <span>{audioLanguage === "sub" ? "Sub" : "Dub"}</span>
                     <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${isAudioDropdownOpen ? 'rotate-180' : ''}`} />
@@ -490,6 +491,8 @@ export default function WatchPage({
                     <span>
                       {selectedProvider === "megaplay" ? "MegaPlay" :
                        selectedProvider === "origami" ? "Origami" :
+                       selectedProvider === "vidnest" ? "VidNest" :
+                       selectedProvider === "animepahe" ? "AnimePahe" :
                        selectedProvider === "cinesrc" ? "Taberu" :
                        selectedProvider === "vidfast" ? "Matsuri" :
                        selectedProvider === "movies111" ? "Onigiri" : "Server"}
@@ -507,25 +510,28 @@ export default function WatchPage({
                       >
                         <div className="flex flex-col py-1">
                           {[
-                            { id: "megaplay", label: "MegaPlay" },
-                            { id: "origami", label: "Origami" },
-                            { id: "cinesrc", label: "Taberu" },
-                            { id: "vidfast", label: "Matsuri" },
-                            { id: "movies111", label: "Onigiri" }
+                            { id: "megaplay", label: "MegaPlay", subtitle: "[S-SUB] [DUB]" },
+                            { id: "origami", label: "Origami", subtitle: "[S-SUB] [DUB]" },
+                            { id: "vidnest", label: "VidNest", subtitle: "[S-SUB] [DUB]" },
+                            { id: "animepahe", label: "AnimePahe", subtitle: "[S-SUB] [DUB]" },
+                            { id: "cinesrc", label: "Taberu", subtitle: "[EMBED] [S-SUB]" },
+                            { id: "vidfast", label: "Matsuri", subtitle: "[EMBED] [S-SUB]" },
+                            { id: "movies111", label: "Onigiri", subtitle: "[EMBED] [S-SUB]" }
                           ].map(provider => (
                             <button
                               key={provider.id}
                               onClick={() => {
                                 handleSelectProvider(provider.id);
                                 setIsServerDropdownOpen(false);
-                                if (provider.id !== "megaplay" && provider.id !== "origami") {
+                                if (!["megaplay", "origami", "vidnest", "animepahe"].includes(provider.id)) {
                                   setAudioLanguage("sub");
                                   localStorage.setItem("makitv_megaplay_language", "sub");
                                 }
                               }}
-                              className={`px-4 py-2 text-xs font-semibold text-left hover:bg-white/10 transition-colors cursor-pointer ${selectedProvider === provider.id ? "text-white bg-white/5" : "text-white/60"}`}
+                              className={`px-4 py-2 flex flex-col items-start hover:bg-white/10 transition-colors cursor-pointer ${selectedProvider === provider.id ? "bg-white/5" : ""}`}
                             >
-                              {provider.label}
+                              <span className={`text-xs font-semibold ${selectedProvider === provider.id ? "text-white" : "text-white/80"}`}>{provider.label}</span>
+                              <span className="text-[9px] text-white/40 font-mono mt-0.5">{provider.subtitle}</span>
                             </button>
                           ))}
                         </div>
