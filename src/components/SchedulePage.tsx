@@ -27,42 +27,21 @@ interface ScheduleAnime {
 
 // Convert JST time "HH:mm" on a given day to local Unix Timestamp for the NEXT occurrence
 function getNextAiringTimeUnix(jstTime: string, targetDayIndex: number): number {
-  if (!jstTime) return 0;
+  if (!jstTime || jstTime === "TBA") return Number.MAX_SAFE_INTEGER;
   const [hours, minutes] = jstTime.split(":").map(Number);
-  
-  // Create a date in JST
   const now = new Date();
-  
-  // Convert current time to JST to find the "current" JST day and time
-  const jstFormatter = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Tokyo',
-    year: 'numeric', month: 'numeric', day: 'numeric',
-    hour: 'numeric', minute: 'numeric', second: 'numeric',
-    hour12: false
-  });
-  
-  // Just use local timezone math for simplicity:
-  // JST is UTC + 9
-  const nowUtc = new Date(now.getTime() + now.getTimezoneOffset() * 60000);
-  const nowJst = new Date(nowUtc.getTime() + 9 * 3600000);
-  
-  const currentJstDayIndex = (nowJst.getDay() + 6) % 7; // Monday = 0, Sunday = 6
-  
-  let daysDiff = targetDayIndex - currentJstDayIndex;
-  
-  const targetJst = new Date(nowJst);
-  targetJst.setHours(hours, minutes, 0, 0);
-  
-  // If the target day is today but the time has already passed, or it's a future day
-  if (daysDiff < 0 || (daysDiff === 0 && nowJst.getTime() > targetJst.getTime())) {
+  const nowJst = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
+  const currentJstDay = (nowJst.getDay() + 6) % 7;
+  let daysDiff = targetDayIndex - currentJstDay;
+  if (daysDiff < 0 || (daysDiff === 0 && (nowJst.getHours() > hours || (nowJst.getHours() === hours && nowJst.getMinutes() >= minutes)))) {
     daysDiff += 7;
   }
-  
+  const targetJst = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
   targetJst.setDate(targetJst.getDate() + daysDiff);
-  
-  // targetJst is now the exact time in JST. Convert back to Unix time.
-  const targetUtc = new Date(targetJst.getTime() - 9 * 3600000);
-  return Math.floor(targetUtc.getTime() / 1000);
+  targetJst.setHours(hours, minutes, 0, 0);
+  const jstOffsetMs = 9 * 60 * 60 * 1000;
+  const utcMs = targetJst.getTime() - jstOffsetMs;
+  return Math.floor(utcMs / 1000);
 }
 
 function formatCountdown(targetUnix: number): { text: string; state: "live" | "soon" | "normal" } {
@@ -101,15 +80,9 @@ function formatCountdown(targetUnix: number): { text: string; state: "live" | "s
 }
 
 export default function SchedulePage({ onSelectAnime }: SchedulePageProps) {
-  const [selectedDay, setSelectedDay] = useState<number>(0); // 0 = Monday
+  const [selectedDay, setSelectedDay] = useState<number>(() => (new Date().getDay() + 6) % 7);
   const [scheduleData, setScheduleData] = useState<Record<number, ScheduleAnime[]>>({});
   const [isLoading, setIsLoading] = useState(true);
-
-  // Initialize selected day to current local day (Monday = 0)
-  useEffect(() => {
-    const day = (new Date().getDay() + 6) % 7;
-    setSelectedDay(day);
-  }, []);
 
   const fetchDaySchedule = async (dayIndex: number) => {
     if (scheduleData[dayIndex] && scheduleData[dayIndex].length > 0) return;
