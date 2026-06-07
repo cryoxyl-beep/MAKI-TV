@@ -327,6 +327,32 @@ export async function fetchAnimeDetails(id: number): Promise<AniListAnime | null
 
   const anilistId = getAniListId(item.mal_id);
 
+  let aniListCover: any = null;
+  let aniListBanner: string = "";
+  
+  try {
+    const imgQuery = `
+      query ($idMal: Int) {
+        Media(idMal: $idMal, type: ANIME) {
+          coverImage {
+            extraLarge
+            large
+            medium
+            color
+          }
+          bannerImage
+        }
+      }
+    `;
+    const imgData = await fetchAniList(imgQuery, { idMal: id });
+    if (imgData?.Media) {
+       if (imgData.Media.coverImage) aniListCover = imgData.Media.coverImage;
+       if (imgData.Media.bannerImage) aniListBanner = imgData.Media.bannerImage;
+    }
+  } catch (err) {
+      console.warn("Failed to fetch AniList images", err);
+  }
+
   const result = {
       id: item.mal_id,
       anilistId: anilistId || undefined,
@@ -336,13 +362,13 @@ export async function fetchAnimeDetails(id: number): Promise<AniListAnime | null
         native: item.title_japanese,
         userPreferred: item.title,
       },
-      coverImage: {
+      coverImage: aniListCover || {
         extraLarge: item.images?.jpg?.large_image_url || item.images?.jpg?.image_url,
         large: item.images?.jpg?.large_image_url || item.images?.jpg?.image_url,
         medium: item.images?.jpg?.image_url,
         color: "#ff6b35"
       },
-      bannerImage: "",
+      bannerImage: aniListBanner || "",
       episodes: item.episodes || 12,
         season: item.season || "UNKNOWN",
         seasonYear: item.year || 2024,

@@ -102,21 +102,47 @@ export default function WatchPage({
   const [episodeSearchQuery, setEpisodeSearchQuery] = useState("");
 
   const [anivexaEpisodes, setAnivexaEpisodes] = useState<any[]>([]);
+  const [isAnivexaLoading, setIsAnivexaLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
     async function fetchAnivexaEpisodes() {
       if (!anime?.anilistId) return;
+      
+      const cacheKey = `anivexa_episodes_${anime.anilistId}`;
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (Date.now() - parsed.timestamp < 6 * 60 * 60 * 1000) {
+            if (mounted) {
+              setAnivexaEpisodes(parsed.data);
+              setIsAnivexaLoading(false);
+            }
+            return;
+          }
+        } catch(e) {}
+      }
+
+      setIsAnivexaLoading(true);
       try {
         const res = await fetch(`https://anivexa-api-nine.vercel.app/episodes/${anime.anilistId}`);
         if (res.ok) {
            const data = await res.json();
            if (mounted && data?.anineko?.episodes?.sub) {
              setAnivexaEpisodes(data.anineko.episodes.sub);
+             try {
+               localStorage.setItem(cacheKey, JSON.stringify({
+                 timestamp: Date.now(),
+                 data: data.anineko.episodes.sub
+               }));
+             } catch (err) {}
            }
         }
       } catch (e) {
         console.error("Failed to fetch Anivexa episodes", e);
+      } finally {
+        if (mounted) setIsAnivexaLoading(false);
       }
     }
     fetchAnivexaEpisodes();
@@ -844,7 +870,7 @@ export default function WatchPage({
                         const epData = episodesMap[currentRange]?.find(e => e.mal_id === epNum);
                         const anivexaEp = anivexaEpisodes.find(e => e.number === epNum);
                         const epTitleStr = anivexaEp?.title || epData?.title || "";
-                        const epImage = anivexaEp?.image || anime.coverImage.medium || anime.coverImage.large;
+                        const epImage = anivexaEp?.image || (isAnivexaLoading ? "" : (anime.coverImage.medium || anime.coverImage.large));
                         
                         let badge = null;
                         if (epData?.recap) {

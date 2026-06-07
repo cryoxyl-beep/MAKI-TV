@@ -75,7 +75,7 @@ export default function LazyImage({
       />
 
       {/* The actual image */}
-      {shouldLoad && (
+      {shouldLoad && src && (
         <img
           src={src}
           alt={alt}
