@@ -8,6 +8,7 @@ import { formatAiringStatus } from "../services/anilist";
 import { Star, Play, Tv } from "lucide-react";
 import React, { useState } from "react";
 import LazyImage from "./LazyImage";
+import { motion } from "motion/react";
 
 interface AnimeCardProps {
   anime: AniListAnime;
@@ -55,11 +56,20 @@ export default function AnimeCard({ anime, onClick, layout = "grid", index = 0 }
   const studioName = anime.studios?.nodes?.[0]?.name || anime.format || "Anime Studio";
   const averageScore = anime.averageScore ? `★ ${anime.averageScore / 10}` : "★ 7.5";
 
+  // Animation configuration
+  const motionProps = {
+    initial: { opacity: 0, y: 24 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: true, amount: 0.1 },
+    transition: { duration: 0.5, ease: [0.25, 0.1, 0.25, 1], delay: Math.min(index * 0.05, 0.3) }
+  };
+
   // Layout specific classes
   if (layout === "list") {
     // Search result list layout: Ultra-Clean Streaming Platform Row
     return (
-      <div
+      <motion.div
+        {...motionProps}
         onClick={onClick}
         className="flex flex-col sm:flex-row gap-5 md:gap-6 py-4 px-2 sm:px-4 rounded-xl hover:bg-white/[0.03] cursor-pointer transition-colors duration-200 group max-w-4xl"
       >
@@ -139,14 +149,15 @@ export default function AnimeCard({ anime, onClick, layout = "grid", index = 0 }
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   if (layout === "sidebar") {
     // Watch Page suggestions sidebar layout
     return (
-      <div
+      <motion.div
+        {...motionProps}
         onClick={onClick}
         className="flex gap-3 bg-[#0d0d11]/50 hover:bg-[#15151c] border border-transparent hover:border-white/[0.05] p-2.5 rounded-xl cursor-pointer transition-all duration-300 group hover:shadow-lg"
       >
@@ -182,7 +193,7 @@ export default function AnimeCard({ anime, onClick, layout = "grid", index = 0 }
             </span>
           </div>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
@@ -192,15 +203,14 @@ export default function AnimeCard({ anime, onClick, layout = "grid", index = 0 }
   const format = anime.format || "TV";
 
   return (
-    <div
+    <motion.div
+      {...motionProps}
       onClick={onClick}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       className={`group relative flex flex-col cursor-pointer transition-all duration-300 ease-out sm:hover:-translate-y-[4px] active:scale-[0.97] group-hover/row:opacity-[0.85] sm:hover:!opacity-100 animate-fade-in`}
       style={{ 
         width: "200px", 
-        animationDelay: `${index * 50}ms`, 
-        animationFillMode: "both",
       }}
     >
       {/* SKELETON OVERLAY */}
@@ -270,6 +280,6 @@ export default function AnimeCard({ anime, onClick, layout = "grid", index = 0 }
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

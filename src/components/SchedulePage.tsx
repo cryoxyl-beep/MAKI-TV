@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Calendar } from "lucide-react";
 import LazyImage from "./LazyImage";
-import { fetchAnimeFeed } from "../services/anilist";
+import { fetchAnimeFeed, fetchAniList } from "../services/anilist";
 import { getAniListId } from "../services/fribb";
 
 interface SchedulePageProps {
@@ -16,6 +16,7 @@ interface ScheduleAnime {
   mal_id: number;
   title: string;
   image: string;
+  bannerImage?: string;
   format: string;
   broadcastTimeJST: string; // "00:00"
   airingAtUnix: number; // calculated locally
@@ -107,10 +108,12 @@ export default function SchedulePage({ onSelectAnime }: SchedulePageProps) {
         json = retryJson;
       }
       
-      const animes: ScheduleAnime[] = [];
+      const initAnimes: ScheduleAnime[] = [];
       const data = json.data || [];
       const seenIds = new Set<number>();
       
+      const malIdsToFetch: number[] = [];
+
       for (const item of data) {
         if (seenIds.has(item.mal_id)) continue;
         seenIds.add(item.mal_id);
@@ -121,8 +124,9 @@ export default function SchedulePage({ onSelectAnime }: SchedulePageProps) {
         }
         
         const anilistId = getAniListId(item.mal_id) || null;
+        malIdsToFetch.push(item.mal_id);
         
-        animes.push({
+        initAnimes.push({
           mal_id: item.mal_id,
           title: item.title_english || item.title,
           image: item.images?.webp?.large_image_url || item.images?.jpg?.large_image_url,
@@ -132,12 +136,51 @@ export default function SchedulePage({ onSelectAnime }: SchedulePageProps) {
           anilistId
         });
       }
+
+      // Batch fetch from AniList to overwrite Jikan images with AniList ones & get banners
+      if (malIdsToFetch.length > 0) {
+        try {
+          const query = `
+            query ($idMal_in: [Int]) {
+              Page(page: 1, perPage: 50) {
+                media(idMal_in: $idMal_in, type: ANIME) {
+                  idMal
+                  bannerImage
+                  coverImage {
+                    extraLarge
+                    large
+                  }
+                }
+              }
+            }
+          `;
+          const aniData = await fetchAniList(query, { idMal_in: malIdsToFetch });
+          if (aniData?.Page?.media) {
+            const mediaMap = new Map();
+            aniData.Page.media.forEach((m: any) => mediaMap.set(m.idMal, m));
+            
+            initAnimes.forEach(anime => {
+               const aniItem = mediaMap.get(anime.mal_id);
+               if (aniItem) {
+                 if (aniItem.coverImage?.extraLarge || aniItem.coverImage?.large) {
+                   anime.image = aniItem.coverImage.extraLarge || aniItem.coverImage.large;
+                 }
+                 if (aniItem.bannerImage) {
+                   anime.bannerImage = aniItem.bannerImage;
+                 }
+               }
+            });
+          }
+        } catch(e) {
+          console.warn("Failed to fetch anilist metadata for schedule", e);
+        }
+      }
       
-      animes.sort((a, b) => a.airingAtUnix - b.airingAtUnix);
+      initAnimes.sort((a, b) => a.airingAtUnix - b.airingAtUnix);
       
-      setScheduleData(prev => ({ ...prev, [dayIndex]: animes }));
-      if (animes.length > 0) {
-        sessionStorage.setItem(cacheKey, JSON.stringify(animes));
+      setScheduleData(prev => ({ ...prev, [dayIndex]: initAnimes }));
+      if (initAnimes.length > 0) {
+        sessionStorage.setItem(cacheKey, JSON.stringify(initAnimes));
       }
     } catch (err) {
       console.error("Failed to fetch schedule", err);
@@ -189,9 +232,9 @@ export default function SchedulePage({ onSelectAnime }: SchedulePageProps) {
     <div className="w-full min-h-screen px-4 md:px-8 pt-6 pb-20 animate-fade-in relative z-10 max-w-[1600px] mx-auto">
       
       {/* Header & Navigation */}
-      <div className="mb-8 md:mb-10">
-        <div className="flex flex-col gap-2">
-          <div className="flex items-baseline gap-2 md:gap-3 overflow-x-auto scrollbar-hide pb-2 mask-linear-fade">
+      <div className="mb-8 md:mb-10 text-center">
+        <div className="flex flex-col gap-2 items-center">
+          <div className="flex items-baseline gap-2 md:gap-3 overflow-x-auto scrollbar-hide pb-2 mask-linear-fade w-full justify-center">
             {FULL_DAY_LABELS.map((label, index) => {
               const isActive = selectedDay === index;
               return (
@@ -249,18 +292,26 @@ export default function SchedulePage({ onSelectAnime }: SchedulePageProps) {
 
               {/* Cards Grid */}
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 flex-1">
-                {group.animes.map((anime) => {
+                {group.animes.map((anime, index) => {
                   const countdown = formatCountdown(anime.airingAtUnix);
                   
                   return (
-                    <div
+                    <motion.div
                       key={anime.mal_id}
+                      initial={{ opacity: 0, y: 16 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true, amount: 0.1 }}
+                      transition={{ duration: 0.4, ease: "easeOut", delay: Math.min(index * 0.05, 0.3) }}
                       onClick={() => onSelectAnime(anime.mal_id)}
-                      className="group relative flex gap-3 p-1.5 bg-[#121214] hover:bg-[#1a1a1d] border border-white/[0.05] hover:border-white/[0.12] transition-all duration-200 cursor-pointer overflow-hidden rounded-lg hover:-translate-y-[1px]"
+                      className="group relative flex gap-3 p-1.5 bg-[#121214] hover:bg-[#1a1a1d] border border-white/[0.05] hover:border-white/[0.12] transition-colors duration-200 cursor-pointer overflow-hidden rounded-lg hover:-translate-y-[1px]"
                     >
                       {/* Faded right-aligned background */}
-                      <div className="absolute right-0 top-0 bottom-0 w-2/3 pointer-events-none opacity-[0.02] group-hover:opacity-[0.05] transition-opacity duration-200">
-                        <LazyImage src={anime.image} alt="" className="w-full h-full object-cover [mask-image:linear-gradient(to_right,transparent,black)]" />
+                      <div className="absolute right-0 top-0 bottom-0 w-2/3 pointer-events-none opacity-[0.15] group-hover:opacity-[0.3] transition-opacity duration-300">
+                        <LazyImage 
+                          src={anime.bannerImage || anime.image} 
+                          alt="" 
+                          className="w-full h-full object-cover [mask-image:linear-gradient(to_right,transparent,black)] grayscale group-hover:grayscale-0 transition-all duration-300" 
+                        />
                       </div>
 
                       {/* Compact Poster */}
@@ -307,7 +358,7 @@ export default function SchedulePage({ onSelectAnime }: SchedulePageProps) {
                           </span>
                         </div>
                       </div>
-                    </div>
+                    </motion.div>
                   );
                 })}
               </div>

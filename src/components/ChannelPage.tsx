@@ -268,8 +268,12 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
                 const epImage = anivexaEp?.image || (isAnivexaLoading ? "" : (banner || profileAvatar));
                 
                 return (
-                  <div
+                  <motion.div
                     key={episodeNum}
+                    initial={{ opacity: 0, y: 16 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.1 }}
+                    transition={{ duration: 0.4, ease: "easeOut", delay: Math.min(listIndex * 0.05, 0.3) }}
                     onClick={() => onWatchEpisode(anime.id, 1, episodeNum)}
                     className="bg-white/[0.01] border border-white/[0.04] hover:bg-white/[0.03] hover:border-white/[0.1] rounded-2xl overflow-hidden p-3 transition-all cursor-pointer group flex flex-col gap-3 min-w-0 shadow-lg"
                   >
@@ -304,7 +308,7 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
                         {watchProgress > 0 ? `Resume at ${Math.round(watchProgress)}%` : "Not watched yet"}
                       </p>
                     </div>
-                  </div>
+                  </motion.div>
                 );
               });
             })()}

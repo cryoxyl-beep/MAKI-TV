@@ -880,7 +880,13 @@ export default function WatchPage({
                         }
 
                         return (
-                          <div className="pb-2">
+                          <motion.div 
+                            className="pb-2"
+                            initial={{ opacity: 0, y: 12 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true, amount: 0.1 }}
+                            transition={{ duration: 0.3, ease: "easeOut" }}
+                          >
                             <div
                               onClick={() => onNavigateToEpisode(anime.id, seasonNumber, epNum)}
                               className={`flex flex-col gap-2 p-3 rounded-xl cursor-pointer transition-all duration-300 ease-out group relative border active:scale-[0.99] ${
@@ -922,7 +928,7 @@ export default function WatchPage({
                                 </div>
                               </div>
                             </div>
-                          </div>
+                          </motion.div>
                         );
                       }}
                     />
