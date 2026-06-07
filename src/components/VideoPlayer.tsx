@@ -53,6 +53,9 @@ export default function VideoPlayer({
   const [origamiLoadError, setOrigamiLoadError] = useState<boolean>(false);
   const [vidnestLoadError, setVidnestLoadError] = useState<boolean>(false);
   const [animepaheLoadError, setAnimepaheLoadError] = useState<boolean>(false);
+  
+  const [dynamicEmbedUrl, setDynamicEmbedUrl] = useState<string>("");
+  const [dynamicEmbedError, setDynamicEmbedError] = useState<boolean>(false);
 
   // loading and watchdog state tracking refs
   const watchdogTimerRef = useRef<any>(null);
@@ -141,6 +144,82 @@ export default function VideoPlayer({
       };
     }
   }, [animeId, episodeNumber, selectedProvider, audioLanguage]);
+
+  // Dynamic Embed loading for new providers (Anineko and AnimeGG)
+  useEffect(() => {
+    let canceled = false;
+    
+    if (selectedProvider === "anineko" || selectedProvider === "animegg") {
+      setIframeLoading(true);
+      setDynamicEmbedError(false);
+      setDynamicEmbedUrl("");
+
+      const fetchEmbed = async () => {
+        try {
+          if (selectedProvider === "anineko") {
+            const res = await fetch(`https://anivexa-api-nine.vercel.app/watch/anineko/${anilistId}/${audioLanguage}/anineko-${episodeNumber}`);
+            if (!res.ok) throw new Error("Anineko failed to fetch");
+            const data = await res.json();
+            const stream = data.streams?.find((s: any) => s.type === "embed" && s.url?.startsWith("https://vibeplayer.site"));
+            if (!stream && !canceled) {
+              if (onProviderChange) {
+                console.log("Anineko stream not found, falling back to animegg");
+                onProviderChange("animegg");
+              } else {
+                setDynamicEmbedError(true);
+              }
+              return;
+            }
+            if (!canceled && stream?.url) {
+               setDynamicEmbedUrl(stream.url);
+            }
+          } else if (selectedProvider === "animegg") {
+            const res = await fetch(`https://anivexa-api-nine.vercel.app/watch/animegg/${anilistId}/${audioLanguage}/animegg-${episodeNumber}`);
+            if (!res.ok) throw new Error("AnimeGG failed to fetch");
+            const data = await res.json();
+            const stream = data.streams?.find((s: any) => s.type === "embed" && s.server === "Animegg-embed");
+            if (!canceled && stream?.url) {
+               setDynamicEmbedUrl(stream.url);
+            } else if (!canceled) {
+               if (onProviderChange) {
+                 console.log("AnimeGG stream not found, falling back to megaplay");
+                 onProviderChange("megaplay");
+               } else {
+                 setDynamicEmbedError(true);
+               }
+            }
+          }
+        } catch (e) {
+          if (!canceled) {
+             console.error(`Error resolving ${selectedProvider} embed:`, e);
+             if (selectedProvider === "anineko" && onProviderChange) {
+                onProviderChange("animegg");
+             } else if (selectedProvider === "animegg" && onProviderChange) {
+                onProviderChange("megaplay");
+             } else {
+                setDynamicEmbedError(true);
+             }
+          }
+        } finally {
+          if (!canceled) {
+             setIframeLoading(false);
+          }
+        }
+      };
+      
+      if (anilistId) {
+        fetchEmbed();
+      } else {
+        setDynamicEmbedError(true);
+        setIframeLoading(false);
+      }
+    } else {
+      setDynamicEmbedUrl("");
+      setDynamicEmbedError(false);
+    }
+    
+    return () => { canceled = true; };
+  }, [selectedProvider, anilistId, episodeNumber, audioLanguage, onProviderChange]);
 
   // Construct standard Embed URLs for backup providers
   function getEmbedUrl(): string {
@@ -536,6 +615,30 @@ export default function VideoPlayer({
             title={`Miru Player: ${animeTitle}`}
           />
         </>
+      ) : selectedProvider === "anineko" || selectedProvider === "animegg" ? (
+        dynamicEmbedError ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-gray-500 z-10 gap-2">
+            <Landmark className="w-8 h-8 text-gray-600 mb-2" />
+            <h4 className="text-white text-sm font-bold">Failed to resolve stream</h4>
+            <span className="text-xs max-w-sm">
+              Provider could not locate this localized episode stream. Use another proxy.
+            </span>
+          </div>
+        ) : dynamicEmbedUrl ? (
+          <iframe
+            src={dynamicEmbedUrl}
+            className="w-full h-full border-0 absolute inset-0 z-10 pointer-events-auto"
+            allow="autoplay; fullscreen; encrypted-media"
+            allowFullScreen
+            onLoad={handleIframeLoad}
+            title={`${selectedProvider === 'anineko' ? 'Neko' : 'GG'} Player: ${animeTitle}`}
+          />
+        ) : (
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-gray-500 z-10 gap-2">
+            <Landmark className="w-8 h-8 text-gray-600 animate-pulse" />
+            <span className="text-sm font-medium">Resolving {selectedProvider === 'anineko' ? 'Neko' : 'GG'} mapping...</span>
+          </div>
+        )
       ) : embedUrl ? (
         <iframe
           src={embedUrl}
@@ -554,7 +657,7 @@ export default function VideoPlayer({
       )}
  
       {/* Loading Glass overlay */}
-      {iframeLoading && (selectedProvider === "megaplay" ? !megaplayLoadError : selectedProvider === "origami" ? !origamiLoadError : !!embedUrl) && (
+      {iframeLoading && (selectedProvider === "megaplay" ? !megaplayLoadError : selectedProvider === "origami" ? !origamiLoadError : selectedProvider === "anineko" || selectedProvider === "animegg" ? (!dynamicEmbedError && !!dynamicEmbedUrl) : !!embedUrl) && (
         <div className="absolute inset-0 bg-[#0a0a0c] flex flex-col items-center justify-center z-20 gap-3 pointer-events-none">
           <RefreshCw className="w-7 h-7 text-white/50 animate-spin" />
           <div className="text-center font-sans">
@@ -562,7 +665,7 @@ export default function VideoPlayer({
               Secure Proxy Stream
             </span>
             <span className="text-white text-xs font-semibold">
-              Loading {selectedProvider === "megaplay" ? "Kyou" : selectedProvider === "origami" ? "Kami" : "source"} channel connection...
+              Loading {selectedProvider === "megaplay" ? "Kyou" : selectedProvider === "origami" ? "Kami" : selectedProvider === "anineko" ? "Neko" : selectedProvider === "animegg" ? "GG" : "source"} channel connection...
             </span>
           </div>
         </div>

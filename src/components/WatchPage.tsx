@@ -84,8 +84,8 @@ export default function WatchPage({
   
   useEffect(() => {
     if (anime) {
-      if (!anime.anilistId && ["vidnest", "animepahe"].includes(selectedProvider)) {
-        console.warn("Missing AniList mapping for MAL ID:", anime.id, "- disabling VidNest/AnimePahe");
+      if (!anime.anilistId && ["vidnest", "animepahe", "anineko", "animegg"].includes(selectedProvider)) {
+        console.warn("Missing AniList mapping for MAL ID:", anime.id, "- disabling AniList-based providers");
         setSelectedProvider("megaplay");
       }
     }
@@ -100,6 +100,28 @@ export default function WatchPage({
   const [isAudioDropdownOpen, setIsAudioDropdownOpen] = useState(false);
   const [isServerDropdownOpen, setIsServerDropdownOpen] = useState(false);
   const [episodeSearchQuery, setEpisodeSearchQuery] = useState("");
+
+  const [anivexaEpisodes, setAnivexaEpisodes] = useState<any[]>([]);
+
+  useEffect(() => {
+    let mounted = true;
+    async function fetchAnivexaEpisodes() {
+      if (!anime?.anilistId) return;
+      try {
+        const res = await fetch(`https://anivexa-api-nine.vercel.app/episodes/${anime.anilistId}`);
+        if (res.ok) {
+           const data = await res.json();
+           if (mounted && data?.anineko?.episodes?.sub) {
+             setAnivexaEpisodes(data.anineko.episodes.sub);
+           }
+        }
+      } catch (e) {
+        console.error("Failed to fetch Anivexa episodes", e);
+      }
+    }
+    fetchAnivexaEpisodes();
+    return () => { mounted = false; };
+  }, [anime?.anilistId]);
 
   const audioDropdownRef = useRef<HTMLDivElement>(null);
   const serverDropdownRef = useRef<HTMLDivElement>(null);
@@ -331,7 +353,11 @@ export default function WatchPage({
   const studioName = anime.studios?.nodes?.[0]?.name || anime.format || "Official Studio";
 
   const currentEpData = episodesMap[currentRange]?.find(e => e.mal_id === episodeNumber);
-  const currentEpTitle = currentEpData?.title || "";
+  const currentAnivexaEp = anivexaEpisodes.find(e => e.number === episodeNumber);
+  
+  const currentEpTitle = currentAnivexaEp?.title || currentEpData?.title || "";
+  const currentEpDesc = currentAnivexaEp?.description || episodeDescription;
+  const currentEpAired = currentAnivexaEp?.airDate || currentEpData?.aired;
 
   return (
     <div className="w-full bg-transparent pb-20 select-none z-10 relative animate-fade-in text-[#f1f1f1]">
@@ -450,9 +476,9 @@ export default function WatchPage({
                   {currentEpTitle ? `S${seasonNumber}E${episodeNumber}: ${currentEpTitle}` : `S${seasonNumber}E${episodeNumber}`}
                 </h1>
                 <div className="flex items-center flex-wrap gap-2 mt-2.5">
-                  {currentEpData?.aired && (
+                  {currentEpAired && (
                     <span className="text-[11px] font-semibold text-white/50 bg-white/5 px-2 py-1 rounded">
-                      {new Date(currentEpData.aired).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      {new Date(currentEpAired).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </span>
                   )}
                   <span className="text-[11px] font-semibold text-white/50 bg-white/5 px-2 py-1 rounded">
@@ -469,6 +495,11 @@ export default function WatchPage({
                     </span>
                   )}
                 </div>
+                {currentEpDesc && (
+                  <p className="text-[13px] text-white/60 leading-relaxed max-w-3xl mt-3 line-clamp-2 hover:line-clamp-none transition-all pr-4">
+                    {currentEpDesc}
+                  </p>
+                )}
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {/* Audio Dropdown */}
@@ -478,8 +509,8 @@ export default function WatchPage({
                       setIsAudioDropdownOpen(!isAudioDropdownOpen);
                       setIsServerDropdownOpen(false);
                     }}
-                    disabled={!["megaplay", "origami", "vidnest", "animepahe"].includes(selectedProvider)}
-                    className={`px-3 py-1.5 border rounded-lg flex items-center justify-between gap-2 transition-colors font-semibold text-xs min-w-[70px] ${!["megaplay", "origami", "vidnest", "animepahe"].includes(selectedProvider) ? "opacity-50 cursor-not-allowed bg-white/[0.02] text-white/40 border-white/[0.05]" : "bg-white/[0.04] text-white/90 border-white/10 hover:bg-white/[0.08] hover:text-white cursor-pointer"}`}
+                    disabled={!["megaplay", "origami", "vidnest", "animepahe", "anineko", "animegg"].includes(selectedProvider)}
+                    className={`px-3 py-1.5 border rounded-lg flex items-center justify-between gap-2 transition-colors font-semibold text-xs min-w-[70px] ${!["megaplay", "origami", "vidnest", "animepahe", "anineko", "animegg"].includes(selectedProvider) ? "opacity-50 cursor-not-allowed bg-white/[0.02] text-white/40 border-white/[0.05]" : "bg-white/[0.04] text-white/90 border-white/10 hover:bg-white/[0.08] hover:text-white cursor-pointer"}`}
                   >
                     <span>{audioLanguage === "sub" ? "Sub" : "Dub"}</span>
                     <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${isAudioDropdownOpen ? 'rotate-180' : ''}`} />
@@ -536,7 +567,9 @@ export default function WatchPage({
                        selectedProvider === "animepahe" ? "Miru" :
                        selectedProvider === "cinesrc" ? "Taberu" :
                        selectedProvider === "vidfast" ? "Matsuri" :
-                       selectedProvider === "movies111" ? "Onigiri" : "Server"}
+                       selectedProvider === "movies111" ? "Onigiri" :
+                       selectedProvider === "anineko" ? "Neko" :
+                       selectedProvider === "animegg" ? "GG" : "Server"}
                     </span>
                     <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${isServerDropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
@@ -551,6 +584,10 @@ export default function WatchPage({
                       >
                         <div className="flex flex-col py-1">
                           {[
+                            ...(anime?.anilistId ? [
+                              { id: "anineko", label: "Neko", subtitle: "[S-SUB] [DUB]" },
+                              { id: "animegg", label: "GG", subtitle: "[S-SUB] [DUB]" }
+                            ] : []),
                             { id: "megaplay", label: "Kyou", subtitle: "[S-SUB] [DUB]" },
                             { id: "origami", label: "Kami", subtitle: "[S-SUB] [DUB]" },
                             ...(anime?.anilistId ? [
@@ -563,7 +600,7 @@ export default function WatchPage({
                               onClick={() => {
                                 handleSelectProvider(provider.id);
                                 setIsServerDropdownOpen(false);
-                                if (!["megaplay", "origami", "vidnest", "animepahe"].includes(provider.id)) {
+                                if (!["megaplay", "origami", "vidnest", "animepahe", "anineko", "animegg"].includes(provider.id)) {
                                   setAudioLanguage("sub");
                                   localStorage.setItem("makitv_megaplay_language", "sub");
                                 }
@@ -732,7 +769,8 @@ export default function WatchPage({
                   const query = episodeSearchQuery.toLowerCase();
                   episodesToRender = episodesToRender.filter((epNum) => {
                     const epData = episodesMap[currentRange]?.find(e => e.mal_id === epNum);
-                    const epTitle = epData?.title?.toLowerCase() || "";
+                    const anivexaEp = anivexaEpisodes.find(e => e.number === epNum);
+                    const epTitle = (anivexaEp?.title || epData?.title || "").toLowerCase();
                     return epNum.toString().includes(query) || epTitle.includes(query);
                   });
                 }
@@ -804,7 +842,9 @@ export default function WatchPage({
                         const progressVal = getEpisodeProgress(anime.id, seasonNumber, epNum);
                         
                         const epData = episodesMap[currentRange]?.find(e => e.mal_id === epNum);
-                        const epTitleStr = epData?.title || "";
+                        const anivexaEp = anivexaEpisodes.find(e => e.number === epNum);
+                        const epTitleStr = anivexaEp?.title || epData?.title || "";
+                        const epImage = anivexaEp?.image || anime.coverImage.medium || anime.coverImage.large;
                         
                         let badge = null;
                         if (epData?.recap) {
@@ -826,7 +866,7 @@ export default function WatchPage({
                               <div className="flex items-start gap-4">
                                 <div className="relative w-[110px] aspect-video bg-black/40 rounded-lg overflow-hidden flex-shrink-0 border border-white/5 shadow-inner">
                                   <LazyImage
-                                    src={anime.coverImage.medium || anime.coverImage.large}
+                                    src={epImage}
                                     alt={`Episode ${epNum}`}
                                     className={`w-full h-full object-cover transition-opacity duration-300 ${isActive ? "opacity-100" : "opacity-70 group-hover:opacity-100"}`}
                                     referrerPolicy="no-referrer"
