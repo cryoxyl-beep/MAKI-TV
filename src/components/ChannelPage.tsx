@@ -28,6 +28,7 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
 
   const [anivexaEpisodes, setAnivexaEpisodes] = useState<any[]>([]);
   const [isAnivexaLoading, setIsAnivexaLoading] = useState(true);
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -136,274 +137,255 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
   const subscribed = isSubscribed(anime.id);
 
   return (
-    <div className="w-full bg-transparent pb-20 select-none z-10 relative animate-fade-in -mt-[56px]">
+    <div className="w-full bg-[#09090b] min-h-screen select-none pb-20 font-sans group/page -mt-[56px]">
       
-      {/* =============== TOP CHANNEL HERO BANNER =============== */}
-      <div className="w-full h-[280px] sm:h-[360px] md:h-[440px] relative overflow-hidden bg-black/20">
+      {/* =============== HERO ATMOSPHERE =============== */}
+      <div className="absolute top-0 left-0 right-0 h-[450px] z-0 overflow-hidden pointer-events-none">
         {banner ? (
           <LazyImage
             src={banner}
             alt={mainTitle}
-            className="w-full h-full object-cover brightness-[0.6]"
+            className="w-full h-full object-cover opacity-20 object-top"
             referrerPolicy="no-referrer"
           />
         ) : (
-          <div className="w-full h-full bg-white/[0.03]" />
+          <div className="w-full h-full bg-white/[0.02]" />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#09090b] via-black/20 to-black/40" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#09090b] via-[#09090b]/80 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#09090b] via-[#09090b]/50 to-transparent" />
       </div>
 
-      {/* =============== CHANNEL HEADER CONTAINER =============== */}
-      <div className="max-w-6xl mx-auto px-4 md:px-6 py-4 flex flex-col md:flex-row gap-5 md:gap-8 items-start relative -mt-16 sm:-mt-24 z-10">
-        
-        {/* Large circular avatar */}
-        <div className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-full overflow-hidden bg-black/40 ring-4 ring-white/[0.08] flex-shrink-0 shadow-2xl relative group animate-fade-in">
-          <LazyImage
-            src={profileAvatar}
-            alt={mainTitle}
-            className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-200"
-            referrerPolicy="no-referrer"
-          />
-        </div>
-
-        {/* Channel text summary details */}
-        <div className="flex-1 min-w-0 md:pt-4">
-          <h1 className="text-white text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight font-sans block truncate leading-tight drop-shadow">
-            {mainTitle}
-          </h1>
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-28 sm:pt-36 relative z-10">
+        <div className="flex flex-col md:flex-row gap-8 lg:gap-12">
           
-          <div className="flex flex-wrap items-center mt-1.5 text-xs sm:text-sm text-[#aaa] gap-1.5 sm:gap-2 leading-none">
-            <span className="text-white hover:text-white/80 transition-colors font-semibold">
-              {studioName}
-            </span>
-            {anime.averageScore && (
-              <>
-                <span className="text-gray-600">•</span>
-                <span className="text-white drop-shadow font-bold flex items-center gap-1">
-                  <Star className="w-3 h-3 fill-white stroke-none" />
-                  {(anime.averageScore / 10).toFixed(1)} Rating
-                </span>
-              </>
-            )}
-            <span className="text-gray-600">•</span>
-            <span className="px-1.5 py-0.5 bg-white/[0.06] border border-white/[0.08] text-[10px] text-white/90 font-medium rounded">
-              {formatAiringStatus(anime.status)}
-            </span>
+          {/* =============== LEFT COLUMN: POSTER & METADATA =============== */}
+          <div className="w-full md:w-[220px] lg:w-[260px] flex-shrink-0 flex flex-col gap-6 relative">
+            <div className="w-48 sm:w-full mx-auto md:mx-0">
+              <div className="aspect-[2/3] rounded-xl overflow-hidden shadow-2xl bg-white/[0.05] border border-white/[0.1]">
+                <LazyImage
+                  src={profileAvatar}
+                  alt={mainTitle}
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+
+              {/* Sidebar Action Buttons */}
+              <div className="mt-4 flex flex-col gap-2">
+                {anime.trailer && (
+                  <button 
+                    className="w-full py-2.5 bg-white/[0.05] hover:bg-white/[0.08] text-white/90 hover:text-white rounded-lg flex items-center justify-center gap-2 text-sm font-semibold transition-colors border border-white/[0.05]"
+                    onClick={() => {
+                      if (anime.trailer?.id) window.open(`https://youtube.com/watch?v=${anime.trailer.id}`, '_blank');
+                    }}
+                  >
+                    <Play className="w-4 h-4 text-red-500 fill-red-500" />
+                    Watch trailer
+                  </button>
+                )}
+              </div>
+
+              {/* Sidebar Metadata */}
+              <div className="mt-6 flex flex-col gap-4">
+                <div>
+                  <h4 className="text-white/60 text-xs uppercase font-bold mb-1">Format</h4>
+                  <p className="text-white text-sm font-medium">{anime.format || "TV"}</p>
+                </div>
+                <div>
+                  <h4 className="text-white/60 text-xs uppercase font-bold mb-1">Status</h4>
+                  <p className="text-green-500 text-sm font-bold uppercase">{formatAiringStatus(anime.status)}</p>
+                </div>
+                <div>
+                  <h4 className="text-white/60 text-xs uppercase font-bold mb-1">Season</h4>
+                  <p className="text-white text-sm font-medium">{anime.season ? `${anime.season.toUpperCase()} ${anime.seasonYear || ""}` : "UNKNOWN"}</p>
+                </div>
+                <div>
+                  <h4 className="text-white/60 text-xs uppercase font-bold mb-1">Studios</h4>
+                  <p className="text-white text-sm font-medium">{studioName}</p>
+                </div>
+                {anime.averageScore && (
+                  <div>
+                    <h4 className="text-white/60 text-xs uppercase font-bold mb-1">Score</h4>
+                    <p className="text-white text-sm font-medium flex items-center gap-1">
+                      <Star className="w-3.5 h-3.5 fill-yellow-500 text-yellow-500" />
+                      {(anime.averageScore / 10).toFixed(1)}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
-          <p className="text-xs sm:text-sm text-gray-400 mt-3 line-clamp-1 max-w-xl font-normal leading-relaxed">
-            {anime.genres?.slice(0, 4).join("  •  ")}
-          </p>
-        </div>
-
-        {/* Add to Library Action Button */}
-        <div className="md:pt-4 self-stretch md:self-auto flex items-center gap-3">
-          <button
-            onClick={() => setShowInfoModal(true)}
-            className="w-10 h-10 flex flex-shrink-0 items-center justify-center rounded-full bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.1] text-white transition-colors"
-            title="More Information"
-          >
-            <Info className="w-5 h-5" />
-          </button>
-          <button
-            onClick={handleLibraryToggle}
-            className={`w-full md:w-auto px-6 py-2.5 rounded-full text-xs sm:text-sm font-bold tracking-tight shadow flex items-center justify-center gap-2 transition-all cursor-pointer ${
-              subscribed
-                ? "bg-[#272727] text-white hover:bg-[#323232] border border-white/5"
-                : "bg-white text-black hover:bg-gray-200"
-            }`}
-          >
-            {subscribed ? (
-              <>
-                <Check className="w-4 h-4 stroke-[2.5]" />
-                <span>In Library</span>
-              </>
-            ) : (
-              <>
-                <Plus className="w-4 h-4 stroke-[2.5]" />
-                <span>Add to Library</span>
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* =============== MAIN TABS CONTENT AREA =============== */}
-      <div className="max-w-6xl mx-auto px-4 md:px-6 py-8 font-sans">
-        <div className="animate-fade-in flex flex-col space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <h3 className="text-white text-lg font-bold">Uploaded Episodes</h3>
+          {/* =============== RIGHT COLUMN: INFO & EPISODES =============== */}
+          <div className="flex-1 min-w-0 flex flex-col">
             
-            {/* Pagination controls */}
-            {episodesCount > 50 && (
-              <div className="flex flex-wrap gap-1.5 items-center bg-white/[0.02] rounded-lg p-1 border border-white/5 shadow-md">
-                {Array.from({ length: Math.ceil(episodesCount / 50) }).map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setEpisodesPage(i + 1)}
-                    className={`px-3 py-1 text-[10px] sm:text-xs font-bold rounded-md transition-all cursor-pointer ${
-                      episodesPage === i + 1 
-                        ? "bg-white text-black shadow-sm" 
-                        : "text-gray-400 hover:text-white hover:bg-white/5"
-                    }`}
-                  >
-                    {i * 50 + 1}-{Math.min((i + 1) * 50, episodesCount)}
-                  </button>
-                ))}
+            {/* Top info */}
+            {anime.season && (
+              <div className="text-white/60 text-sm uppercase tracking-widest font-semibold mb-2">
+                {anime.season} {anime.seasonYear}
               </div>
             )}
-          </div>
-          
-          {/* Responsive Playlist Grid (High Density) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-5">
-            {(() => {
-              const startIndex = (episodesPage - 1) * 50;
-              const endIndex = Math.min(startIndex + 50, episodesCount);
-              const eps = Array.from({ length: endIndex - startIndex }, (_, i) => startIndex + i + 1);
+            
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white mb-4 tracking-tight leading-tight">
+              {mainTitle}
+            </h1>
 
-              return eps.map((episodeNum, listIndex) => {
-                const watchProgress = getEpisodeProgress(anime.id, 1, episodeNum);
-                const anivexaEp = anivexaEpisodes.find(e => e.number === episodeNum);
-                const epTitleStr = anivexaEp?.title || `${mainTitle.replace(/Season \d+/gi, "").trim()} - Ep ${episodeNum}`;
-                const epImage = anivexaEp?.image || (isAnivexaLoading ? "" : (banner || profileAvatar));
-                
-                return (
-                  <motion.div
-                    key={episodeNum}
-                    initial={{ opacity: 0, y: 16 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, amount: 0.1 }}
-                    transition={{ duration: 0.4, ease: "easeOut", delay: Math.min(listIndex * 0.05, 0.3) }}
-                    onClick={() => onWatchEpisode(anime.id, 1, episodeNum)}
-                    className="bg-white/[0.01] border border-white/[0.04] hover:bg-white/[0.03] hover:border-white/[0.1] rounded-2xl overflow-hidden p-3 transition-all cursor-pointer group flex flex-col gap-3 min-w-0 shadow-lg"
-                  >
-                    <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-white/[0.03] shadow shrink-0">
-                      <LazyImage
-                        src={epImage}
-                        alt={`Ep ${episodeNum}`}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none"
-                        referrerPolicy="no-referrer"
-                      />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all bg-opacity-70">
-                        <Play className="w-8 h-8 fill-white stroke-none transform scale-90 group-hover:scale-100 transition-all duration-300 drop-shadow-lg" />
-                      </div>
-                      <span className="absolute bottom-2 right-2 px-1.5 py-0.5 bg-black/80 text-white text-[10px] font-bold rounded">23:45</span>
-                      {watchProgress > 0 && (
-                        <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
-                          <div style={{ width: `${watchProgress}%` }} className="bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)] h-full" />
+            {/* Genres */}
+            <div className="flex flex-wrap gap-2 mb-6">
+              {anime.genres?.map(g => (
+                <span key={g} className="px-3 py-1 bg-[#0ea5e9]/20 text-[#38bdf8] text-xs font-bold rounded">
+                  {g}
+                </span>
+              ))}
+            </div>
+
+            {/* Main Action Buttons */}
+            <div className="flex items-center gap-3 mb-6">
+              <button 
+                onClick={() => onWatchEpisode(anime.id, 1, 1)}
+                className="h-12 px-8 bg-white text-black hover:bg-gray-200 rounded-full flex items-center justify-center transition-transform active:scale-95"
+              >
+                <Play className="w-5 h-5 fill-black mr-2.5" />
+                <span className="font-bold tracking-wide">Play Now</span>
+              </button>
+              
+              <button 
+                onClick={handleLibraryToggle}
+                className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 border border-white/5 flex items-center justify-center transition-all text-white active:scale-95"
+                title={subscribed ? "Remove from Library" : "Add to Library"}
+              >
+                {subscribed ? <Check className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+              </button>
+            </div>
+
+            {/* Description */}
+            <div className="mb-8 max-w-4xl">
+              <p 
+                className={`text-gray-300 text-sm md:text-base leading-relaxed font-sans ${descriptionExpanded ? "" : "line-clamp-3"}`}
+                dangerouslySetInnerHTML={{ __html: anime.description || "No synopsis available." }}
+              />
+              {anime.description && anime.description.length > 200 && (
+                <button 
+                  onClick={() => setDescriptionExpanded(!descriptionExpanded)}
+                  className="text-white/50 hover:text-white mt-1.5 text-xs font-bold tracking-wider transition-colors uppercase"
+                >
+                  {descriptionExpanded ? "Show Less" : "+ More"}
+                </button>
+              )}
+            </div>
+
+            {/* Tabs */}
+            <div className="flex items-center gap-6 sm:gap-8 border-b border-white/[0.08] mb-6 overflow-x-auto scrollbar-hide">
+              <button className="pb-3 text-white text-sm sm:text-base font-bold border-b-2 border-white whitespace-nowrap">
+                Episodes
+              </button>
+              <button className="pb-3 text-white/50 hover:text-white/80 text-sm sm:text-base font-semibold border-b-2 border-transparent transition-colors whitespace-nowrap">
+                Characters
+              </button>
+              <button className="pb-3 text-white/50 hover:text-white/80 text-sm sm:text-base font-semibold border-b-2 border-transparent transition-colors whitespace-nowrap">
+                Related
+              </button>
+              <button className="pb-3 text-white/50 hover:text-white/80 text-sm sm:text-base font-semibold border-b-2 border-transparent transition-colors whitespace-nowrap">
+                More like this
+              </button>
+            </div>
+
+            {/* Episodes Controls */}
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+              <div className="bg-white/5 px-3 py-1.5 rounded text-xs font-bold text-white/70 tracking-wide">
+                {episodesCount} Episodes
+              </div>
+              
+              {episodesCount > 50 && (
+                <div className="flex flex-wrap gap-1.5 items-center bg-white/[0.02] rounded-lg p-1 border border-white/5">
+                  {Array.from({ length: Math.ceil(episodesCount / 50) }).map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setEpisodesPage(i + 1)}
+                      className={`px-3 py-1.5 text-[10px] sm:text-xs font-bold rounded-md transition-all ${
+                        episodesPage === i + 1 
+                          ? "bg-white text-black shadow-sm" 
+                          : "text-gray-400 hover:text-white hover:bg-white/10"
+                      }`}
+                    >
+                      {i * 50 + 1}-{Math.min((i + 1) * 50, episodesCount)}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Episode Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 sm:gap-5 pb-10">
+              {(() => {
+                const startIndex = (episodesPage - 1) * 50;
+                const endIndex = Math.min(startIndex + 50, episodesCount);
+                const eps = Array.from({ length: endIndex - startIndex }, (_, i) => startIndex + i + 1);
+
+                return eps.map((episodeNum, listIndex) => {
+                  const watchProgress = getEpisodeProgress(anime.id, 1, episodeNum);
+                  const anivexaEp = anivexaEpisodes.find(e => e.number === episodeNum);
+                  const epTitleStr = anivexaEp?.title || `${mainTitle.replace(/Season \d+/gi, "").trim()} - Episode ${episodeNum}`;
+                  const epImage = anivexaEp?.image || (isAnivexaLoading ? "" : (banner || profileAvatar));
+                  
+                  return (
+                    <motion.div
+                      key={episodeNum}
+                      initial={{ opacity: 0, y: 16 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true, amount: 0.1 }}
+                      transition={{ duration: 0.4, ease: "easeOut", delay: Math.min(listIndex * 0.05, 0.3) }}
+                      onClick={() => onWatchEpisode(anime.id, 1, episodeNum)}
+                      className="group cursor-pointer flex flex-col gap-2 rounded-xl transition-all"
+                    >
+                      <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-white/[0.03] border border-white/[0.05] group-hover:border-white/[0.2] group-hover:shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all">
+                        <LazyImage
+                          src={epImage}
+                          alt={`Ep ${episodeNum}`}
+                          className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500 pointer-events-none"
+                          referrerPolicy="no-referrer"
+                        />
+                        {/* Gradient overlay for text */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
+                        
+                        {/* Play Icon hover effect */}
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
+                          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center transform scale-90 group-hover:scale-100 transition-all shadow-lg">
+                            <Play className="w-5 h-5 fill-black text-black ml-0.5" />
+                          </div>
                         </div>
-                      )}
-                    </div>
-                    
-                    <div className="flex-grow min-w-0 flex flex-col justify-between">
-                      <div>
-                        <span className="text-[10px] text-white/50 font-bold uppercase tracking-wider block mb-1">
-                          Episode {startIndex + listIndex + 1}
-                        </span>
-                        <h4 className="text-white text-xs lg:text-sm font-semibold tracking-tight leading-snug line-clamp-2 group-hover:text-white/80 transition-colors">
+
+                        {/* Labels on thumbnail */}
+                        <div className="absolute bottom-2 left-2 px-1.5 py-0.5 bg-white text-black text-[10px] font-bold rounded uppercase">
+                          Ep {episodeNum}
+                        </div>
+                        {/* Optional View count from Anivexa if available or just length */}
+                        <div className="absolute bottom-2 right-2 px-1.5 py-0.5 bg-black/60 text-white/90 text-[10px] font-bold rounded backdrop-blur-sm">
+                          24m
+                        </div>
+
+                        {/* Watch Progress bar */}
+                        {watchProgress > 0 && (
+                          <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-white/20">
+                            <div style={{ width: `${watchProgress}%` }} className="bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)] h-full" />
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="px-1 mt-0.5">
+                        <h4 className="text-white/90 text-sm font-semibold tracking-tight leading-snug line-clamp-2 group-hover:text-white transition-colors">
                           {epTitleStr}
                         </h4>
                       </div>
-                      <p className="text-[10px] lg:text-xs text-gray-500 mt-2 line-clamp-1 font-mono">
-                        {watchProgress > 0 ? `Resume at ${Math.round(watchProgress)}%` : "Not watched yet"}
-                      </p>
-                    </div>
-                  </motion.div>
-                );
-              });
-            })()}
+                    </motion.div>
+                  );
+                });
+              })()}
+            </div>
+
           </div>
         </div>
       </div>
-
-      {/* Info Modal */}
-      <AnimatePresence>
-        {showInfoModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowInfoModal(false)}
-              className="absolute inset-0 bg-black/80 backdrop-blur-md"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative bg-white/[0.04] border border-white/[0.08] rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl backdrop-blur-xl"
-            >
-              {/* Modal Header */}
-              <div className="flex items-center justify-between p-6 border-b border-white/[0.08]">
-                <h2 className="text-white text-xl md:text-2xl font-bold tracking-tight">{mainTitle}</h2>
-                <button 
-                  onClick={() => setShowInfoModal(false)}
-                  className="p-2 bg-white/5 hover:bg-white/10 rounded-full text-white/70 hover:text-white transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Modal Body */}
-              <div className="p-6 md:p-8 overflow-y-auto custom-scrollbar">
-                <div className="flex flex-col md:flex-row gap-8">
-                  {/* Left Column: Synopsis */}
-                  <div className="flex-1 space-y-6">
-                    <div>
-                      <h4 className="text-white/60 text-xs uppercase tracking-wider font-bold mb-2">Synopsis</h4>
-                      <p 
-                        className="text-gray-300 text-sm leading-relaxed font-sans"
-                        dangerouslySetInnerHTML={{ __html: anime.description || "No synopsis available." }}
-                      />
-                    </div>
-                    <div>
-                      <h4 className="text-white/60 text-xs uppercase tracking-wider font-bold mb-3">Genres</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {anime.genres?.map(g => (
-                          <span key={g} className="px-3 py-1 bg-white/[0.05] border border-white/[0.1] rounded-full text-xs text-white/80 font-medium">
-                            {g}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Right Column: Metadata */}
-                  <div className="w-full md:w-64 space-y-4">
-                    <div className="p-4 bg-white/[0.02] border border-white/[0.05] rounded-xl space-y-4">
-                      <div>
-                        <h4 className="text-white/50 text-[10px] uppercase font-bold tracking-widest mb-1">Studio</h4>
-                        <p className="text-white text-sm font-medium">{studioName}</p>
-                      </div>
-                      <div>
-                        <h4 className="text-white/50 text-[10px] uppercase font-bold tracking-widest mb-1">Status</h4>
-                        <p className="text-white text-sm font-medium">{formatAiringStatus(anime.status)}</p>
-                      </div>
-                      <div>
-                        <h4 className="text-white/50 text-[10px] uppercase font-bold tracking-widest mb-1">Season Info</h4>
-                        <p className="text-white text-sm font-medium">{anime.season || "Unknown"} {anime.seasonYear || ""}</p>
-                      </div>
-                      <div>
-                        <h4 className="text-white/50 text-[10px] uppercase font-bold tracking-widest mb-1">Episodes</h4>
-                        <p className="text-white text-sm font-medium">{episodesCount} total</p>
-                      </div>
-                      {anime.averageScore && (
-                        <div>
-                          <h4 className="text-white/50 text-[10px] uppercase font-bold tracking-widest mb-1">Score</h4>
-                          <p className="text-white text-sm font-medium flex items-center gap-1.5">
-                            <Star className="w-3.5 h-3.5 fill-white" />
-                            {(anime.averageScore / 10).toFixed(1)} / 10
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
