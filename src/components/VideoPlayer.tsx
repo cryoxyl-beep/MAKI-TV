@@ -57,6 +57,17 @@ export default function VideoPlayer({
   const [dynamicEmbedUrl, setDynamicEmbedUrl] = useState<string>("");
   const [dynamicEmbedError, setDynamicEmbedError] = useState<boolean>(false);
 
+  console.log("VideoPlayer render");
+  console.log("selectedProvider", selectedProvider);
+  console.log("dynamicEmbedUrl", dynamicEmbedUrl);
+
+  useEffect(() => {
+    if (selectedProvider === "animegg" && dynamicEmbedUrl) {
+      console.log("GG iframe mounted", dynamicEmbedUrl);
+      return () => console.log("GG iframe unmounted");
+    }
+  }, [selectedProvider, dynamicEmbedUrl]);
+
   // loading and watchdog state tracking refs
   const watchdogTimerRef = useRef<any>(null);
   const watchdogCancelledRef = useRef<boolean>(false);
@@ -160,7 +171,7 @@ export default function VideoPlayer({
             const res = await fetch(`https://anivexa-api-nine.vercel.app/watch/anineko/${anilistId}/${audioLanguage}/anineko-${episodeNumber}`);
             if (!res.ok) throw new Error("Anineko failed to fetch");
             const data = await res.json();
-            const stream = data.streams?.find((s: any) => s.type === "embed" && s.url?.startsWith("https://vibeplayer.site"));
+            const stream = data.streams?.find((s: any) => s.embed?.startsWith("https://vibeplayer.site"));
             if (!stream && !canceled) {
               if (onProviderChange) {
                 console.log("Anineko stream not found, falling back to animegg");
@@ -170,8 +181,8 @@ export default function VideoPlayer({
               }
               return;
             }
-            if (!canceled && stream?.url) {
-               setDynamicEmbedUrl(stream.url);
+            if (!canceled && stream?.embed) {
+               setDynamicEmbedUrl(stream.embed);
             }
           } else if (selectedProvider === "animegg") {
             const res = await fetch(`https://anivexa-api-nine.vercel.app/watch/animegg/${anilistId}/${audioLanguage}/animegg-${episodeNumber}`);
@@ -219,7 +230,7 @@ export default function VideoPlayer({
     }
     
     return () => { canceled = true; };
-  }, [selectedProvider, anilistId, episodeNumber, audioLanguage, onProviderChange]);
+  }, [selectedProvider, anilistId, episodeNumber, audioLanguage]);
 
   // Construct standard Embed URLs for backup providers
   function getEmbedUrl(): string {
