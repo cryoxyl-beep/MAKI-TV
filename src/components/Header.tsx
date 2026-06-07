@@ -162,7 +162,7 @@ export default function Header({
 
             {/* Center section: Text Navigation */}
             <nav className="hidden md:flex items-center justify-center gap-1.5 absolute left-1/2 -translate-x-1/2 pointer-events-none">
-              <div className="flex items-center gap-1.5 pointer-events-auto">
+              <div className="flex items-center gap-1.5 pointer-events-auto bg-black/40 backdrop-blur-xl px-2 py-1.5 rounded-full border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
                 {[
                   { id: "home" as const, label: "Home", onClick: onNavigateHome },
                   { id: "schedule" as const, label: "Schedule", onClick: onNavigateSchedule },
@@ -174,16 +174,16 @@ export default function Header({
                     <button
                       key={item.id}
                       onClick={item.onClick}
-                      className={`relative px-4 py-1.5 text-xs lg:text-sm font-semibold tracking-wide transition-all duration-300 rounded-full cursor-pointer ${
+                      className={`relative px-4 py-1.5 text-xs lg:text-sm font-semibold tracking-wide transition-all duration-300 rounded-full cursor-pointer hover:bg-white/[0.05] ${
                         isActive 
                           ? "text-white font-bold" 
-                          : "text-white/60 hover:text-white"
+                          : "text-white/70 hover:text-white"
                       }`}
                     >
                       {isActive && (
                         <motion.div
                           layoutId="activeTabIndicatorHeader"
-                          className="absolute inset-0 bg-white/[0.08] backdrop-blur-md rounded-full border border-white/[0.1] -z-10"
+                          className="absolute inset-0 bg-white/[0.14] backdrop-blur-md rounded-full border border-white/[0.16] shadow-[0_2px_8px_rgba(255,255,255,0.05),inset_0_1px_1px_rgba(255,255,255,0.2)] -z-10"
                           initial={false}
                           transition={{ type: "spring", stiffness: 350, damping: 25 }}
                         />
@@ -208,10 +208,10 @@ export default function Header({
                     setIsFocused(true);
                     setTimeout(() => inputRef.current?.focus(), 50);
                   }}
-                  className={`w-full h-10 flex items-center bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.1] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden relative shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.1),_0_4px_16px_rgba(0,0,0,0.15)] rounded-full focus-within:border-white/[0.22] focus-within:bg-white/[0.1] focus-within:ring-4 focus-within:ring-white/[0.03] ${isExpanded ? "px-4" : "px-0 justify-center"}`}
+                  className={`w-full h-10 flex items-center bg-black/40 hover:bg-black/50 backdrop-blur-xl border border-white/12 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden relative shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),_0_8px_32px_rgba(0,0,0,0.3)] rounded-full focus-within:border-white/25 focus-within:bg-black/60 focus-within:ring-4 focus-within:ring-white/[0.03] ${isExpanded ? "px-4" : "px-0 justify-center"}`}
                 >
                   <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/[0.03] to-white/0 pointer-events-none" />
-                  <Search className={`text-white/50 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] shrink-0 w-[15px] h-[15px] group-focus-within:text-white ${isExpanded ? "mr-2.5" : "mr-0"}`} />
+                  <Search className={`text-white/70 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] shrink-0 w-[15px] h-[15px] group-focus-within:text-white ${isExpanded ? "mr-2.5" : "mr-0"}`} />
                   <input
                     ref={inputRef}
                     type="text"
@@ -223,7 +223,7 @@ export default function Header({
                       setIsFocused(true);
                     }}
                     onBlur={() => setIsFocused(false)}
-                    className={`bg-transparent border-none text-white focus:outline-none text-sm font-medium tracking-wide placeholder-white/45 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isExpanded ? "w-full opacity-100" : "w-0 opacity-0 min-w-0 p-0"}`}
+                    className={`bg-transparent border-none text-white focus:outline-none text-sm font-medium tracking-wide placeholder-white/65 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isExpanded ? "w-full opacity-100" : "w-0 opacity-0 min-w-0 p-0"}`}
                   />
                   {isExpanded && searchVal && (
                     <button
