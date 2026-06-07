@@ -26,6 +26,8 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
   const [showInfoModal, setShowInfoModal] = useState(false);
   const { isSubscribed, toggleSubscription, currentUser } = useLibrary();
 
+  const [anivexaEpisodes, setAnivexaEpisodes] = useState<any[]>([]);
+
   useEffect(() => {
     let mounted = true;
     async function loadChannel() {
@@ -45,6 +47,26 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
     loadChannel();
     return () => { mounted = false; };
   }, [animeId]);
+
+  useEffect(() => {
+    let mounted = true;
+    async function fetchAnivexaEpisodes() {
+      if (!anime?.anilistId) return;
+      try {
+        const res = await fetch(`https://anivexa-api-nine.vercel.app/episodes/${anime.anilistId}`);
+        if (res.ok) {
+           const data = await res.json();
+           if (mounted && data?.anineko?.episodes?.sub) {
+             setAnivexaEpisodes(data.anineko.episodes.sub);
+           }
+        }
+      } catch (e) {
+        console.error("Failed to fetch Anivexa episodes", e);
+      }
+    }
+    fetchAnivexaEpisodes();
+    return () => { mounted = false; };
+  }, [anime?.anilistId]);
 
   useEffect(() => {
     if (anime) {
@@ -215,6 +237,9 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
 
               return eps.map((episodeNum, listIndex) => {
                 const watchProgress = getEpisodeProgress(anime.id, 1, episodeNum);
+                const anivexaEp = anivexaEpisodes.find(e => e.number === episodeNum);
+                const epTitleStr = anivexaEp?.title || `${mainTitle.replace(/Season \d+/gi, "").trim()} - Ep ${episodeNum}`;
+                const epImage = anivexaEp?.image || banner || profileAvatar;
                 
                 return (
                   <div
@@ -224,7 +249,7 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
                   >
                     <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-white/[0.03] shadow shrink-0">
                       <LazyImage
-                        src={banner || profileAvatar}
+                        src={epImage}
                         alt={`Ep ${episodeNum}`}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none"
                         referrerPolicy="no-referrer"
@@ -246,7 +271,7 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
                           Episode {startIndex + listIndex + 1}
                         </span>
                         <h4 className="text-white text-xs lg:text-sm font-semibold tracking-tight leading-snug line-clamp-2 group-hover:text-white/80 transition-colors">
-                          {mainTitle.replace(/Season \d+/gi, "").trim()} - Ep {episodeNum}
+                          {epTitleStr}
                         </h4>
                       </div>
                       <p className="text-[10px] lg:text-xs text-gray-500 mt-2 line-clamp-1 font-mono">
