@@ -137,10 +137,10 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
   const subscribed = isSubscribed(anime.id);
 
   return (
-    <div className="w-full bg-[#09090b] min-h-screen select-none pb-20 font-sans group/page -mt-[56px]">
+    <div className="relative z-10 w-full bg-[#09090b] min-h-screen select-none pb-20 font-sans group/page -mt-[56px]">
       
       {/* =============== HERO ATMOSPHERE =============== */}
-      <div className="absolute top-0 left-0 right-0 h-[450px] z-0 overflow-hidden pointer-events-none">
+      <div className="absolute top-0 left-0 right-0 h-[480px] z-0 overflow-hidden pointer-events-none">
         {banner ? (
           <LazyImage
             src={banner}
@@ -233,7 +233,7 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
             {/* Genres */}
             <div className="flex flex-wrap gap-2 mb-6">
               {anime.genres?.map(g => (
-                <span key={g} className="px-3 py-1 bg-[#0ea5e9]/20 text-[#38bdf8] text-xs font-bold rounded">
+                <span key={g} className="px-3 py-1 bg-white/[0.06] border border-white/[0.08] text-white/90 text-xs font-bold rounded">
                   {g}
                 </span>
               ))}
