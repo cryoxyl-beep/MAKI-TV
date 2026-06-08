@@ -19,6 +19,7 @@ import { useLibrary } from "../hooks/useLibrary";
 import LazyImage from "./LazyImage";
 import VideoPlayer from "./VideoPlayer";
 import SkeletonLoader from "./SkeletonLoader";
+import Header from "./Header";
 import { Share2, Bookmark, Play, ChevronLeft, ChevronRight, CheckSquare, Square, ChevronDown, Grid, List, Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Virtuoso, VirtuosoGrid } from "react-virtuoso";
@@ -30,6 +31,7 @@ interface WatchPageProps {
   onNavigateToChannel: (id: number) => void;
   onNavigateToEpisode: (animeId: number, seasonNumber: number, episodeNumber: number) => void;
   onSubscriptionChanged: () => void;
+  onSearch?: (query: string) => void;
 }
 
 interface JikanEpisode {
@@ -52,6 +54,7 @@ export default function WatchPage({
   onNavigateToChannel,
   onNavigateToEpisode,
   onSubscriptionChanged,
+  onSearch,
 }: WatchPageProps) {
   const [anime, setAnime] = useState<AniListAnime | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -386,7 +389,17 @@ export default function WatchPage({
   const currentEpAired = currentAnivexaEp?.airDate || currentEpData?.aired;
 
   return (
-    <div className="w-full bg-transparent pb-20 select-none z-10 relative animate-fade-in text-[#f1f1f1]">
+    <div className="w-full bg-transparent pb-20 select-none z-10 relative animate-fade-in text-[#f1f1f1] -mt-[56px] pt-[48px]">
+      <Header
+        variant="slim"
+        onSearch={onSearch!}
+        onNavigateHome={() => window.location.hash = "/"}
+        breadcrumbs={[
+          { label: "Home", onClick: () => window.location.hash = "/" },
+          { label: mainTitle, onClick: () => onNavigateToChannel(animeId) },
+          { label: `Episode ${episodeNumber}` }
+        ]}
+      />
       
       {/* =============== RESUME PREVIOUS SESSION HUD ALERT =============== */}
       {resumeSession && (

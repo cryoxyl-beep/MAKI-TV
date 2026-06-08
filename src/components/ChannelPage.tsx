@@ -17,9 +17,10 @@ interface ChannelPageProps {
   animeId: number;
   onWatchEpisode: (animeId: number, seasonNumber: number, episodeNumber: number) => void;
   onSubscriptionChanged: () => void;
+  onSearch?: (query: string) => void;
 }
 
-export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionChanged }: ChannelPageProps) {
+export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionChanged, onSearch }: ChannelPageProps) {
   const [anime, setAnime] = useState<AniListAnime | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [episodesPage, setEpisodesPage] = useState(1);
@@ -155,7 +156,7 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
         <div className="absolute inset-0 bg-gradient-to-r from-[#09090b] via-[#09090b]/50 to-transparent" />
       </div>
 
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-28 sm:pt-36 relative z-10">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-32 relative z-10">
         <div className="flex flex-col md:flex-row gap-8 lg:gap-12">
           
           {/* =============== LEFT COLUMN: POSTER & METADATA =============== */}

@@ -13,8 +13,8 @@ interface HeaderProps {
   onSearch: (query: string) => void;
   initialSearchQuery?: string;
   onNavigateHome: () => void;
-  onNavigateLibrary: () => void;
-  onNavigateSubscriptions: () => void;
+  onNavigateLibrary?: () => void;
+  onNavigateSubscriptions?: () => void;
   isHomeScreen?: boolean;
   activeTab?: "home" | "trending" | "subscriptions" | "library" | "schedule";
 }
@@ -28,7 +28,9 @@ export default function Header({
   onNavigateSchedule,
   isHomeScreen = false,
   activeTab = "home",
-}: HeaderProps & { onNavigateSchedule?: () => void }) {
+  variant = "global",
+  breadcrumbs = []
+}: HeaderProps & { onNavigateSchedule?: () => void; variant?: "global" | "slim"; breadcrumbs?: { label: string; onClick?: () => void }[] }) {
   const [searchVal, setSearchVal] = useState(initialSearchQuery);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
@@ -112,7 +114,7 @@ export default function Header({
 
   return (
     <>
-      <header className={`fixed top-0 left-0 right-0 h-16 z-50 select-none bg-transparent transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0 pointer-events-none"}`}>
+      <header className={`fixed top-0 left-0 right-0 z-50 select-none transform-gpu transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${variant === "slim" ? "h-[48px] bg-transparent pt-1" : "h-16 bg-transparent"} ${isVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0 pointer-events-none"}`}>
         {/* Search Header for Mobile overlay */}
         {showMobileSearch ? (
           <form onSubmit={handleSubmit} className="absolute inset-0 bg-[#0a0a0c] flex items-center px-4 gap-2 z-50">
@@ -149,6 +151,104 @@ export default function Header({
               <Search className="w-5 h-5" />
             </button>
           </form>
+        ) : variant === "slim" ? (
+          <div className="w-full h-full max-w-[1440px] mx-auto px-4 md:px-8 flex items-center justify-between">
+            {/* Breadcrumb Left */}
+            <nav className="flex-1 flex items-center text-sm font-semibold tracking-wide overflow-x-auto scrollbar-hide py-2 pr-4">
+              {breadcrumbs.map((item, index) => {
+                const isLast = index === breadcrumbs.length - 1;
+                const isInteractive = !!item.onClick && !isLast;
+                const isHome = item.label.toLowerCase() === "home";
+                
+                return (
+                  <div key={index} className="flex items-center shrink-0">
+                    {index > 0 && <span className="mx-2.5 text-white/30 text-[11px] font-bold">&gt;</span>}
+                    <button
+                      className={`flex items-center transition-colors duration-200 ${
+                        isInteractive ? "hover:text-white cursor-pointer text-white/50" : "text-white/80 cursor-default pointer-events-none flex items-center"
+                      }`}
+                      onClick={isInteractive ? item.onClick : undefined}
+                      title={item.label}
+                    >
+                      {isHome ? (
+                        <Home className="w-[17px] h-[17px] mb-[1px]" />
+                      ) : (
+                        <span className="truncate max-w-[160px] sm:max-w-[260px] md:max-w-[350px]">{item.label}</span>
+                      )}
+                    </button>
+                  </div>
+                );
+              })}
+            </nav>
+            
+            {/* Right section: Search input & User Profile */}
+            <div className="flex shrink-0 items-center justify-end gap-3 lg:gap-4">
+              {/* Desktop & Tablet Search Bar */}
+              <form
+                onSubmit={handleSubmit}
+                className={`hidden md:flex items-center group relative transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isExpanded ? "w-[200px] lg:w-[240px] xl:w-[280px]" : "w-9"} ${isSubmitting ? "scale-95" : isFocused ? "scale-[1.02]" : "scale-100"} ${!isExpanded ? "cursor-pointer" : "cursor-text"}`}
+              >
+                <div
+                  onClick={() => {
+                    setForceCollapse(false);
+                    setIsFocused(true);
+                    setTimeout(() => inputRef.current?.focus(), 50);
+                  }}
+                  className={`w-full h-9 flex items-center bg-white/[0.03] hover:bg-white/[0.06] backdrop-blur-md border border-white/[0.08] transition-[width,background-color,border-color,box-shadow,padding-left,padding-right] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden relative shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),_0_8px_32px_rgba(0,0,0,0.22)] rounded-full focus-within:border-white/[0.16] focus-within:bg-white/[0.08] focus-within:ring-4 focus-within:ring-white/[0.01] ${isExpanded ? "px-3.5" : "px-0 justify-center"}`}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/[0.03] to-white/0 pointer-events-none" />
+                  <Search className={`text-white/70 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] shrink-0 w-[14px] h-[14px] group-focus-within:text-white ${isExpanded ? "mr-2.5" : "mr-0"}`} />
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    placeholder="Search..."
+                    value={searchVal}
+                    onChange={(e) => setSearchVal(e.target.value)}
+                    onFocus={() => {
+                      setForceCollapse(false);
+                      setIsFocused(true);
+                    }}
+                    onBlur={() => setIsFocused(false)}
+                    className={`bg-transparent border-none text-white focus:outline-none text-[13px] font-medium tracking-wide placeholder-white/65 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isExpanded ? "w-full opacity-100" : "w-0 opacity-0 min-w-0 p-0"}`}
+                  />
+                  {isExpanded && searchVal && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleClear();
+                      }}
+                      className="p-1 hover:bg-white/20 rounded-full text-white/50 hover:text-white transition-colors cursor-pointer relative z-10 shrink-0"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </form>
+
+              {/* Mobile Search Toggle */}
+              <button
+                onClick={() => setShowMobileSearch(true)}
+                className="p-1.5 hover:bg-white/[0.08] text-white/80 hover:text-white rounded-full transition-colors md:hidden cursor-pointer"
+                title="Search"
+              >
+                <Search className="w-[18px] h-[18px]" />
+              </button>
+
+              {/* User Profile Avatar */}
+              <div 
+                onClick={() => setShowAuthModal(true)}
+                className={`w-[34px] h-[34px] rounded-full flex flex-shrink-0 items-center justify-center text-white font-extrabold text-xs border border-white/20 cursor-pointer transition-all duration-300 ${currentUser ? "bg-black overflow-hidden" : "bg-gradient-to-tr from-[#ff6b35] to-[#ffa585] shadow-[0_4px_12px_rgba(255,107,53,0.3)] hover:scale-[1.08] active:scale-95"}`} 
+                title="Account"
+              >
+                {currentUser?.photoURL ? (
+                  <img src={currentUser.photoURL} alt={currentUser.displayName || "User"} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                ) : (
+                  currentUser?.displayName ? currentUser.displayName[0].toUpperCase() : "O"
+                )}
+              </div>
+            </div>
+          </div>
         ) : (
           <div className="w-full h-full max-w-[1440px] mx-auto flex items-center justify-between px-4 md:px-8 lg:px-10 relative">
             {/* Left section: Logo */}
@@ -162,7 +262,7 @@ export default function Header({
 
             {/* Center section: Text Navigation */}
             <nav className="hidden md:flex items-center justify-center gap-1.5 absolute left-1/2 -translate-x-1/2 pointer-events-none">
-              <div className="flex items-center gap-1.5 pointer-events-auto bg-white/[0.03] backdrop-blur-xl px-2.5 py-1.5 rounded-full border border-white/[0.06] shadow-[0_8px_32px_rgba(0,0,0,0.25)]">
+              <div className="flex items-center gap-1.5 pointer-events-auto bg-white/[0.03] backdrop-blur-md px-2.5 py-1.5 rounded-full border border-white/[0.06] shadow-md transition-colors duration-300">
                 {[
                   { id: "home" as const, label: "Home", onClick: onNavigateHome },
                   { id: "schedule" as const, label: "Schedule", onClick: onNavigateSchedule },
@@ -208,7 +308,7 @@ export default function Header({
                     setIsFocused(true);
                     setTimeout(() => inputRef.current?.focus(), 50);
                   }}
-                  className={`w-full h-10 flex items-center bg-white/[0.03] hover:bg-white/[0.06] backdrop-blur-xl border border-white/[0.08] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden relative shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),_0_8px_32px_rgba(0,0,0,0.22)] rounded-full focus-within:border-white/[0.16] focus-within:bg-white/[0.08] focus-within:ring-4 focus-within:ring-white/[0.01] ${isExpanded ? "px-4" : "px-0 justify-center"}`}
+                  className={`w-full h-10 flex items-center bg-white/[0.03] hover:bg-white/[0.06] backdrop-blur-md border border-white/[0.08] transition-[width,background-color,border-color,box-shadow,padding-left,padding-right] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden relative shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),_0_8px_32px_rgba(0,0,0,0.22)] rounded-full focus-within:border-white/[0.16] focus-within:bg-white/[0.08] focus-within:ring-4 focus-within:ring-white/[0.01] ${isExpanded ? "px-4" : "px-0 justify-center"}`}
                 >
                   <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/[0.03] to-white/0 pointer-events-none" />
                   <Search className={`text-white/70 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] shrink-0 w-[15px] h-[15px] group-focus-within:text-white ${isExpanded ? "mr-2.5" : "mr-0"}`} />

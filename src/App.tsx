@@ -203,34 +203,30 @@ export default function App() {
       </div>
 
       {/* 1. Youtube-style Top header layout */}
-      <Header
-        onSearch={handleSearchTrigger}
-        initialSearchQuery={searchQuery}
-        onNavigateHome={() => handleNavigate("home")}
-        onNavigateSchedule={() => handleNavigate("schedule")}
-        onNavigateLibrary={() => handleNavigate("library")}
-        onNavigateSubscriptions={() => handleNavigate("subscriptions")}
-        isHomeScreen={activePage === "home"}
-        activeTab={
-          activePage === "channel" || activePage === "watch"
-            ? "home" // default highlighted
-            : (activePage as any)
-        }
-      />
+      {activePage !== "watch" && (
+        <Header
+          onSearch={handleSearchTrigger}
+          initialSearchQuery={searchQuery}
+          onNavigateHome={() => handleNavigate("home")}
+          onNavigateSchedule={() => handleNavigate("schedule")}
+          onNavigateLibrary={() => handleNavigate("library")}
+          onNavigateSubscriptions={() => handleNavigate("subscriptions")}
+          isHomeScreen={activePage === "home"}
+          activeTab={activePage as any}
+        />
+      )}
 
       <div className="flex flex-1 pt-[56px] text-white z-10 relative">
         
         {/* 2. Left side expandable dynamic Sidebar (Collapses slightly on small desktop screens, hidden or bottom bar on mobile) */}
-        <Sidebar
-          activeTab={
-            activePage === "channel" || activePage === "watch"
-              ? "home" // default highlighted drawer
-              : (activePage as any)
-          }
-          onNavigate={handleNavigate}
-          onChannelClick={handleOpenChannel}
-          subscriptions={subscriptionsList}
-        />
+        {activePage !== "watch" && (
+          <Sidebar
+            activeTab={activePage as any}
+            onNavigate={handleNavigate}
+            onChannelClick={handleOpenChannel}
+            subscriptions={subscriptionsList}
+          />
+        )}
 
         {/* 3. Right main contents stage viewport with standard padding scale */}
         <main
@@ -290,6 +286,7 @@ export default function App() {
               animeId={selectedChannelId}
               onWatchEpisode={handleOpenEpisode}
               onSubscriptionChanged={handleSyncSubscriptions}
+              onSearch={handleSearchTrigger}
             />
           )}
 
@@ -302,6 +299,7 @@ export default function App() {
               onNavigateToChannel={handleOpenChannel}
               onNavigateToEpisode={handleOpenEpisode}
               onSubscriptionChanged={handleSyncSubscriptions}
+              onSearch={handleSearchTrigger}
             />
           )}
         </main>
