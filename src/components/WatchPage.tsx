@@ -391,17 +391,23 @@ export default function WatchPage({
   const currentEpAired = currentAnivexaEp?.airDate || currentEpData?.aired;
 
   return (
-    <div className="w-full bg-transparent pb-20 select-none z-10 relative animate-fade-in text-[#f1f1f1] -mt-[56px] pt-[48px]">
-      <Header
-        variant="slim"
-        onSearch={onSearch!}
-        onNavigateHome={() => window.location.hash = "/"}
-        breadcrumbs={[
-          { label: "Home", onClick: () => window.location.hash = "/" },
-          { label: mainTitle, onClick: () => onNavigateToChannel(animeId) },
-          { label: `Episode ${episodeNumber}` }
-        ]}
-      />
+    <div className="w-full bg-[#0f0f0f] pb-20 select-none z-10 relative animate-fade-in text-[#f1f1f1] min-h-screen">
+      {/* =============== BREADCRUMB BAR =============== */}
+      <div className="sticky top-0 left-0 right-0 h-12 bg-[#0f0f0f]/90 backdrop-blur-md z-[100] border-b border-white/[0.05] flex items-center px-4 lg:px-6">
+        <div className="flex items-center gap-2 text-[13px] font-medium font-sans">
+          <button onClick={() => window.location.hash = "/"} className="text-white/60 hover:text-white transition-colors cursor-pointer">
+            Home
+          </button>
+          <ChevronRight className="w-3.5 h-3.5 text-white/40" />
+          <button onClick={() => onNavigateToChannel(animeId)} className="text-white/60 hover:text-white transition-colors cursor-pointer truncate max-w-[200px] sm:max-w-[300px]">
+             {mainTitle}
+          </button>
+          <ChevronRight className="w-3.5 h-3.5 text-white/40" />
+          <span className="text-white truncate lg:max-w-none max-w-[150px]">
+             {currentEpTitle || `Episode ${episodeNumber}`}
+          </span>
+        </div>
+      </div>
       
       {/* =============== RESUME PREVIOUS SESSION HUD ALERT =============== */}
       {resumeSession && (
@@ -441,10 +447,10 @@ export default function WatchPage({
       )}
 
       {/* =============== MAIN TWO-COLUMN VIEWPORT LISTS =============== */}
-      <div className="max-w-7xl mx-auto px-4 py-5 grid grid-cols-1 lg:grid-cols-12 gap-8 leading-relaxed">
+      <div className="max-w-[1700px] mx-auto px-4 lg:px-6 py-6 flex flex-col lg:flex-row gap-6">
         
         {/* LEFT COLUMN: Player, Details, and Info Panels */}
-        <div className="lg:col-span-8 flex flex-col min-w-0">
+        <div className="w-full lg:w-[71%] flex flex-col min-w-0">
           
           <VideoPlayer
             animeId={anime.id}
@@ -510,263 +516,255 @@ export default function WatchPage({
           </div>
 
           {/* Episode Info */}
-          <div className="mt-4 flex flex-col gap-3">
+          <div className="mt-2 flex flex-col gap-3 pb-8">
             {/* Orange Warning Banner */}
-            <div className="bg-[#ff6b35]/10 border border-[#ff6b35]/20 text-[#ff6b35] text-xs font-semibold px-4 py-2.5 rounded-lg flex items-center gap-2">
+            <div className="bg-[#ff6b35]/10 border border-[#ff6b35]/20 text-[#ff6b35] text-[13px] font-semibold px-4 py-2.5 rounded-lg flex items-center gap-2">
               <Info className="w-4 h-4 shrink-0" />
-              <span>Please report broken servers if you experience playback issues.</span>
+              <span>If the current server doesn't work, feel free to try the other available servers.</span>
             </div>
 
             {/* Current Episode Title */}
-            <h1 className="text-white text-xl sm:text-2xl font-bold font-sans tracking-tight leading-tight mt-1">
-              {currentEpTitle ? `S${seasonNumber}E${episodeNumber}: ${currentEpTitle}` : `S${seasonNumber}E${episodeNumber}`}
+            <h1 className="text-white text-xl sm:text-[22px] font-bold font-sans tracking-tight mt-1">
+              {currentEpTitle || `Episode ${episodeNumber}`}
             </h1>
 
             {/* Series / Creator Info Row */}
-            <div className="flex items-center justify-between py-1">
-              <div 
-                onClick={() => onNavigateToChannel(anime.id)}
-                className="flex items-center gap-3 cursor-pointer group"
-              >
-                <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-black/40 border border-white/5">
-                  <LazyImage src={avatar} alt={mainTitle} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+            <div className="flex flex-col xl:flex-row xl:items-center justify-between py-1 gap-4">
+              <div className="flex items-center gap-4">
+                <div 
+                  onClick={() => onNavigateToChannel(anime.id)}
+                  className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0 bg-black/40 border border-white/5 cursor-pointer"
+                >
+                  <LazyImage src={avatar} alt={mainTitle} className="w-full h-full object-cover hover:scale-105 transition-transform" />
                 </div>
-                <div>
-                  <h3 className="text-white text-[15px] font-bold truncate group-hover:text-white/80 transition-colors">
+                <div className="flex flex-col justify-center">
+                  <h3 
+                    onClick={() => onNavigateToChannel(anime.id)}
+                    className="text-white text-[16px] font-bold truncate max-w-[250px] sm:max-w-[350px] cursor-pointer hover:text-white/80 transition-colors"
+                  >
                     {mainTitle}
                   </h3>
-                  <span className="text-[12px] text-white/50 font-medium block truncate flex items-center gap-1">
-                    {studioName} <Check className="w-3 h-3 text-white/50" />
-                  </span>
+                  {anime.popularity && (
+                    <span className="text-[13px] text-white/50 block truncate">
+                      {anime.popularity.toLocaleString()} users
+                    </span>
+                  )}
                 </div>
+                
+                <button 
+                   onClick={() => toggleSubscription(anime.id)}
+                   className={`ml-2 px-4 py-2 rounded-full font-bold text-[13px] transition-colors whitespace-nowrap ${isSubscribed(animeId) ? "bg-white/10 text-white hover:bg-white/20" : "bg-white text-black hover:bg-gray-200"}`}
+                >
+                  {isSubscribed(animeId) ? "In Library" : "Add to Library"}
+                </button>
               </div>
 
-              <button 
-                 onClick={() => toggleSubscription(anime.id)}
-                 className={`px-4 py-2 rounded-full font-bold text-sm transition-colors ${isSubscribed(animeId) ? "bg-white/10 text-white hover:bg-white/20" : "bg-white text-black hover:bg-gray-200"}`}
-              >
-                {isSubscribed(animeId) ? "Subscribed" : "Subscribe"}
-              </button>
-            </div>
-
-            {/* Action Buttons Row */}
-            <div className="mt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 overflow-x-auto custom-scrollbar pb-2">
-              <button onClick={handleToggleWatchLater} className="flex items-center gap-2 bg-white/[0.08] hover:bg-white/[0.12] focus:bg-white/[0.16] text-white text-[13px] font-semibold px-4 py-2 rounded-full transition-colors whitespace-nowrap">
-                <Bookmark className={`w-4 h-4 ${savedBookmark ? "fill-white" : ""}`} />
-                {savedBookmark ? "Saved" : "Add to List"}
-              </button>
-              
-              <button className="flex items-center gap-2 bg-white/[0.08] hover:bg-white/[0.12] focus:bg-white/[0.16] text-white text-[13px] font-semibold px-4 py-2 rounded-full transition-colors whitespace-nowrap">
-                <Heart className="w-4 h-4" /> Like
-              </button>
-
-              <div className="relative flex-shrink-0" ref={audioDropdownRef}>
-                <button 
-                  onClick={() => {
-                    setIsAudioDropdownOpen(!isAudioDropdownOpen);
-                    setIsServerDropdownOpen(false);
-                  }}
-                  disabled={!["megaplay", "origami", "vidnest", "animepahe", "anineko", "animegg"].includes(selectedProvider)}
-                  className={`px-4 py-2 rounded-full flex items-center justify-between gap-2 transition-colors font-semibold text-[13px] ${!["megaplay", "origami", "vidnest", "animepahe", "anineko", "animegg"].includes(selectedProvider) ? "opacity-50 cursor-not-allowed bg-white/[0.02] text-white/40" : "bg-white/[0.08] text-white hover:bg-white/[0.12]"}`}
-                >
-                  <span>{audioLanguage === "sub" ? "Sub" : "Dub"}</span>
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${isAudioDropdownOpen ? 'rotate-180' : ''}`} />
+              {/* Action Buttons Row */}
+              <div className="flex items-center gap-2 flex-wrap xl:flex-nowrap">
+                {/* Like Button (Visual Only for spec match) */}
+                <button className="flex items-center gap-2 bg-white/[0.08] hover:bg-white/[0.12] text-white text-[13px] font-semibold px-4 py-2 rounded-full transition-colors whitespace-nowrap">
+                  <Heart className="w-4 h-4" /> Like
                 </button>
-                <AnimatePresence>
-                  {isAudioDropdownOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -5 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute right-0 sm:left-0 top-full mt-2 w-28 bg-[#121214] border border-white/10 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] z-50 origin-top overflow-hidden"
-                    >
-                      <div className="flex flex-col py-1">
-                        <button
-                          onClick={() => {
-                            setAudioLanguage("sub");
-                            localStorage.setItem("makitv_megaplay_language", "sub");
-                            setIsAudioDropdownOpen(false);
-                          }}
-                          className={`px-4 py-2 text-xs font-semibold text-left hover:bg-white/10 transition-colors cursor-pointer ${audioLanguage === "sub" ? "text-white bg-white/5" : "text-white/60"}`}
-                        >
-                          Sub
-                        </button>
-                        <button
-                          onClick={() => {
-                            setAudioLanguage("dub");
-                            localStorage.setItem("makitv_megaplay_language", "dub");
-                            setIsAudioDropdownOpen(false);
-                          }}
-                          className={`px-4 py-2 text-xs font-semibold text-left hover:bg-white/10 transition-colors cursor-pointer ${audioLanguage === "dub" ? "text-white bg-white/5" : "text-white/60"}`}
-                        >
-                          Dub
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
 
-              <div className="relative flex-shrink-0" ref={serverDropdownRef}>
-                <button 
-                  onClick={() => {
-                    setIsServerDropdownOpen(!isServerDropdownOpen);
-                    setIsAudioDropdownOpen(false);
-                  }}
-                  className="px-4 py-2 rounded-full flex items-center justify-between gap-2 transition-colors font-semibold text-[13px] bg-white/[0.08] text-white hover:bg-white/[0.12]"
-                >
-                  <span>
-                    {selectedProvider === "megaplay" ? "Kyou" :
-                     selectedProvider === "origami" ? "Kami" :
-                     selectedProvider === "vidnest" ? "Haya" :
-                     selectedProvider === "animepahe" ? "Miru" :
-                     selectedProvider === "cinesrc" ? "Taberu" :
-                     selectedProvider === "vidfast" ? "Matsuri" :
-                     selectedProvider === "movies111" ? "Onigiri" :
-                     selectedProvider === "anineko" ? "Neko" :
-                     selectedProvider === "animegg" ? "GG" : "Server"}
-                  </span>
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${isServerDropdownOpen ? 'rotate-180' : ''}`} />
-                </button>
-                <AnimatePresence>
-                  {isServerDropdownOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -5 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute right-0 sm:left-0 top-full mt-2 w-36 bg-[#121214] border border-white/10 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] z-50 origin-top overflow-hidden"
-                    >
-                      <div className="flex flex-col py-1">
-                        {[
-                          ...(anime?.anilistId ? [
-                            { id: "anineko", label: "Neko", subtitle: "[S-SUB] [DUB]" },
-                            { id: "animegg", label: "GG", subtitle: "[S-SUB] [DUB]" }
-                          ] : []),
-                          { id: "megaplay", label: "Kyou", subtitle: "[S-SUB] [DUB]" },
-                          { id: "origami", label: "Kami", subtitle: "[S-SUB] [DUB]" },
-                          ...(anime?.anilistId ? [
-                            { id: "vidnest", label: "Haya", subtitle: "[S-SUB] [DUB]" },
-                            { id: "animepahe", label: "Miru", subtitle: "[S-SUB] [DUB]" }
-                          ] : [])
-                        ].map(provider => (
+                <div className="relative flex-shrink-0 z-[100]" ref={audioDropdownRef}>
+                  <button 
+                    onClick={() => {
+                      setIsAudioDropdownOpen(!isAudioDropdownOpen);
+                      setIsServerDropdownOpen(false);
+                    }}
+                    disabled={!["megaplay", "origami", "vidnest", "animepahe", "anineko", "animegg"].includes(selectedProvider)}
+                    className={`px-4 py-2 rounded-full flex items-center justify-between gap-2 transition-colors font-semibold text-[13px] ${!["megaplay", "origami", "vidnest", "animepahe", "anineko", "animegg"].includes(selectedProvider) ? "opacity-50 cursor-not-allowed bg-white/[0.02] text-white/40" : "bg-white/[0.08] text-white hover:bg-white/[0.12]"}`}
+                  >
+                    <span>{audioLanguage === "sub" ? "Sub" : "Dub"}</span>
+                    <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isAudioDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  <AnimatePresence>
+                    {isAudioDropdownOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -5 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute right-0 sm:left-auto sm:right-0 top-full mt-2 w-32 bg-[#212121] border border-white/10 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] z-[200] origin-top overflow-hidden"
+                      >
+                        <div className="flex flex-col py-1">
                           <button
-                            key={provider.id}
                             onClick={() => {
-                              handleSelectProvider(provider.id);
-                              setIsServerDropdownOpen(false);
-                              if (!["megaplay", "origami", "vidnest", "animepahe", "anineko", "animegg"].includes(provider.id)) {
-                                setAudioLanguage("sub");
-                                localStorage.setItem("makitv_megaplay_language", "sub");
-                              }
+                              setAudioLanguage("sub");
+                              localStorage.setItem("makitv_megaplay_language", "sub");
+                              setIsAudioDropdownOpen(false);
                             }}
-                            className={`px-4 py-2 flex flex-col items-start hover:bg-white/10 transition-colors cursor-pointer ${selectedProvider === provider.id ? "bg-white/5" : ""}`}
+                            className={`px-4 py-2.5 text-[13px] font-semibold text-left hover:bg-white/10 transition-colors cursor-pointer ${audioLanguage === "sub" ? "text-white bg-white/5" : "text-white/60"}`}
                           >
-                            <span className={`text-xs font-semibold ${selectedProvider === provider.id ? "text-white" : "text-white/80"}`}>{provider.label}</span>
-                            <span className="text-[9px] text-white/40 font-mono mt-0.5">{provider.subtitle}</span>
+                            Sub
                           </button>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                          <button
+                            onClick={() => {
+                              setAudioLanguage("dub");
+                              localStorage.setItem("makitv_megaplay_language", "dub");
+                              setIsAudioDropdownOpen(false);
+                            }}
+                            className={`px-4 py-2.5 text-[13px] font-semibold text-left hover:bg-white/10 transition-colors cursor-pointer ${audioLanguage === "dub" ? "text-white bg-white/5" : "text-white/60"}`}
+                          >
+                            Dub
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                <div className="relative flex-shrink-0 z-[100]" ref={serverDropdownRef}>
+                  <button 
+                    onClick={() => {
+                      setIsServerDropdownOpen(!isServerDropdownOpen);
+                      setIsAudioDropdownOpen(false);
+                    }}
+                    className="px-4 py-2 rounded-full flex items-center justify-between gap-2 transition-colors font-semibold text-[13px] bg-white/[0.08] text-white hover:bg-white/[0.12]"
+                  >
+                    <span>
+                      {selectedProvider === "megaplay" ? "Kyou" :
+                       selectedProvider === "origami" ? "Kami" :
+                       selectedProvider === "vidnest" ? "Haya" :
+                       selectedProvider === "animepahe" ? "Miru" :
+                       selectedProvider === "cinesrc" ? "Taberu" :
+                       selectedProvider === "vidfast" ? "Matsuri" :
+                       selectedProvider === "movies111" ? "Onigiri" :
+                       selectedProvider === "anineko" ? "Neko" :
+                       selectedProvider === "animegg" ? "GG" : "Server"}
+                    </span>
+                    <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isServerDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  <AnimatePresence>
+                    {isServerDropdownOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -5 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute right-0 sm:left-auto sm:right-0 top-full mt-2 w-40 bg-[#212121] border border-white/10 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] z-[200] origin-top overflow-hidden"
+                      >
+                        <div className="flex flex-col py-1">
+                          {[
+                            ...(anime?.anilistId ? [
+                              { id: "anineko", label: "Neko", subtitle: "[S-SUB] [DUB]" },
+                              { id: "animegg", label: "GG", subtitle: "[S-SUB] [DUB]" }
+                            ] : []),
+                            { id: "megaplay", label: "Kyou", subtitle: "[S-SUB] [DUB]" },
+                            { id: "origami", label: "Kami", subtitle: "[S-SUB] [DUB]" },
+                            ...(anime?.anilistId ? [
+                              { id: "vidnest", label: "Haya", subtitle: "[S-SUB] [DUB]" },
+                              { id: "animepahe", label: "Miru", subtitle: "[S-SUB] [DUB]" }
+                            ] : [])
+                          ].map(provider => (
+                            <button
+                              key={provider.id}
+                              onClick={() => {
+                                handleSelectProvider(provider.id);
+                                setIsServerDropdownOpen(false);
+                                if (!["megaplay", "origami", "vidnest", "animepahe", "anineko", "animegg"].includes(provider.id)) {
+                                  setAudioLanguage("sub");
+                                  localStorage.setItem("makitv_megaplay_language", "sub");
+                                }
+                              }}
+                              className={`px-4 py-2 flex flex-col items-start hover:bg-white/10 transition-colors cursor-pointer ${selectedProvider === provider.id ? "bg-white/5" : ""}`}
+                            >
+                              <span className={`text-[13px] font-semibold ${selectedProvider === provider.id ? "text-white" : "text-white/80"}`}>{provider.label}</span>
+                              <span className="text-[10px] text-white/40 font-mono mt-0.5">{provider.subtitle}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                <button onClick={handleShare} className="flex items-center gap-2 bg-white/[0.08] hover:bg-white/[0.12] text-white text-[13px] font-semibold px-4 py-2 rounded-full transition-colors whitespace-nowrap">
+                  <Share2 className="w-4 h-4" /> Share
+                </button>
+
+                <button className="flex items-center gap-2 bg-white/[0.08] hover:bg-white/[0.12] text-white text-[13px] font-semibold px-4 py-2 rounded-full transition-colors whitespace-nowrap">
+                  <Flag className="w-4 h-4" /> Report
+                </button>
               </div>
-
-              <button onClick={handleShare} className="flex items-center gap-2 bg-white/[0.08] hover:bg-white/[0.12] focus:bg-white/[0.16] text-white text-[13px] font-semibold px-4 py-2 rounded-full transition-colors whitespace-nowrap">
-                <Share2 className="w-4 h-4" /> Share
-              </button>
-
-              <button className="flex items-center gap-2 bg-white/[0.08] hover:bg-white/[0.12] focus:bg-white/[0.16] text-white text-[13px] font-semibold px-4 py-2 rounded-full transition-colors whitespace-nowrap">
-                <Flag className="w-4 h-4" /> Report
-              </button>
             </div>
 
             {/* Episode Description Card */}
-            <div className="mt-4 bg-white/[0.05] hover:bg-white/[0.08] transition-colors border border-white/5 rounded-2xl p-4 cursor-pointer">
-              <div className="flex flex-wrap items-center gap-2 text-sm font-bold text-white mb-2">
-                <span>{anime.popularity ? (anime.popularity * 42).toLocaleString() : "1.2M"} views</span>
-                <span className="text-white/40">•</span>
-                <span>{currentEpAired ? new Date(currentEpAired).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : "Recently Updated"}</span>
-                {anime.trending && (
-                  <>
-                    <span className="text-white/40">•</span>
-                    <span className="text-[#ff6b35]">#{anime.trending} Trending</span>
-                  </>
+            <div className="mt-3 bg-white/[0.05] hover:bg-white/[0.08] transition-colors rounded-xl p-4 border border-white/5">
+              <div className="flex flex-wrap items-center gap-2 text-[14px] font-bold text-white mb-2">
+                {currentEpAired && (
+                  <span>Aired {new Date(currentEpAired).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                 )}
               </div>
               
-              <p className="text-[13px] text-white/80 leading-relaxed font-medium">
-                <span className="font-bold text-white mr-2">Episode {episodeNumber}</span>
-                {currentEpDesc || "No synopsis available for this episode."}
+              <p className="text-[14px] text-white/90 leading-relaxed font-medium">
+                <span className="font-bold text-white mr-2 block mb-1">Episode {episodeNumber}</span>
+                {currentEpDesc ? currentEpDesc : "No official synopsis available for this episode."}
               </p>
             </div>
+            
           </div>
-
         </div>
 
         {/* =============== RIGHT COLUMN: INTEGRATED EPISODE QUEUE SIDEBAR =============== */}
-        <div className="lg:col-span-4 flex flex-col gap-4 lg:sticky lg:top-[80px] lg:max-h-[calc(100vh-100px)] overflow-y-auto custom-scrollbar pr-2 pb-10">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-3 border-b border-white/[0.05] gap-3">
-              <div className="flex items-center gap-3">
-                <h3 className="text-white text-base font-bold font-sans tracking-tight">
-                  Up Next
-                </h3>
-                {isLongRunning && (
-                  <div className="relative" ref={episodeDropdownRef}>
-                    <button 
-                      onClick={() => setIsEpisodeDropdownOpen(!isEpisodeDropdownOpen)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-semibold text-white/80 transition-colors cursor-pointer"
-                    >
-                      {(currentRange - 1) * 100 + 1}-{Math.min(currentRange * 100, episodesCount)}
-                      <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${isEpisodeDropdownOpen ? 'rotate-180' : ''}`} />
-                    </button>
-                    <AnimatePresence>
-                      {isEpisodeDropdownOpen && (
-                        <motion.div 
-                          initial={{ opacity: 0, y: -5 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -5 }}
-                          transition={{ duration: 0.15 }}
-                          className="absolute top-full left-0 mt-2 max-h-64 overflow-y-auto w-32 bg-[#121214] border border-white/10 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] z-50 custom-scrollbar origin-top"
-                        >
-                          {[...Array(Math.ceil(episodesCount / 100))].map((_, idx) => {
-                            const page = idx + 1;
-                            const pStart = (page - 1) * 100 + 1;
-                            const pEnd = Math.min(page * 100, episodesCount);
-                            return (
-                              <button
-                                key={page}
-                                onClick={() => { setCurrentRange(page); setIsEpisodeDropdownOpen(false); setEpisodeSearchQuery(""); }}
-                                className={`w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-white/10 transition-colors cursor-pointer ${currentRange === page ? "text-white bg-white/10" : "text-white/60"}`}
-                              >
-                                {pStart}-{pEnd}
-                              </button>
-                            );
-                          })}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                )}
-              </div>
-              <div className="flex items-center w-full sm:w-auto gap-2">
-                <div className="relative flex-1 sm:flex-initial">
+        <div className="w-full lg:w-[29%] flex flex-col gap-4 lg:sticky lg:top-[60px] lg:h-[calc(100vh-80px)] pr-2 pb-10">
+            <div className="flex flex-col pb-3 border-b border-white/[0.05] gap-2">
+              <h3 className="text-white text-[15px] font-bold font-sans tracking-tight">
+                Up Next - {currentEpTitle || `Episode ${episodeNumber}`}
+              </h3>
+              <p className="text-white/50 text-[13px] truncate">
+                Playing - Episode {episodeNumber} - {mainTitle}
+              </p>
+              
+              <div className="flex items-center w-full gap-2 mt-2">
+                <div className="relative flex-1">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/40" />
                   <input
                     type="text"
-                    placeholder="Search..."
-                    className="w-full sm:w-28 bg-white/5 hover:bg-white/10 border-none outline-none text-xs text-white rounded-lg pl-8 pr-3 py-1.5 transition-colors placeholder:text-white/30 font-medium"
+                    placeholder="Search Episode"
+                    className="w-full bg-white/5 hover:bg-white/10 border border-transparent focus:border-white/20 outline-none text-[13px] text-white rounded-lg pl-8 pr-3 py-1.5 transition-colors placeholder:text-white/40 font-medium"
                     value={episodeSearchQuery}
                     onChange={(e) => setEpisodeSearchQuery(e.target.value)}
                   />
                 </div>
-                <div className="flex flex-shrink-0 items-center bg-white/5 rounded-lg p-0.5">
-                   {/* Mock sort/refresh buttons to match layout req */}
-                   <button className="p-1.5 rounded-md transition-colors cursor-pointer text-white/40 hover:text-white/80">
-                     <List className="w-4 h-4" /> {/* Originally list icon, treating this as view toggle/sort */}
-                   </button>
-                   <button className="p-1.5 rounded-md transition-colors cursor-pointer text-white/40 hover:text-white/80">
+                <div className="flex flex-shrink-0 items-center gap-1">
+                   {isLongRunning && (
+                     <div className="relative" ref={episodeDropdownRef}>
+                       <button 
+                         onClick={() => setIsEpisodeDropdownOpen(!isEpisodeDropdownOpen)}
+                         className="p-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-white/60 transition-colors cursor-pointer flex items-center justify-center w-8 h-8"
+                       >
+                         <List className="w-4 h-4" />
+                       </button>
+                       <AnimatePresence>
+                         {isEpisodeDropdownOpen && (
+                           <motion.div 
+                             initial={{ opacity: 0, y: -5 }}
+                             animate={{ opacity: 1, y: 0 }}
+                             exit={{ opacity: 0, y: -5 }}
+                             transition={{ duration: 0.15 }}
+                             className="absolute top-full right-0 mt-2 max-h-64 overflow-y-auto w-32 bg-[#212121] border border-white/10 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] z-[200] custom-scrollbar origin-top"
+                           >
+                             {[...Array(Math.ceil(episodesCount / 100))].map((_, idx) => {
+                               const page = idx + 1;
+                               const pStart = (page - 1) * 100 + 1;
+                               const pEnd = Math.min(page * 100, episodesCount);
+                               return (
+                                 <button
+                                   key={page}
+                                   onClick={() => { setCurrentRange(page); setIsEpisodeDropdownOpen(false); setEpisodeSearchQuery(""); }}
+                                   className={`w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-white/10 transition-colors cursor-pointer ${currentRange === page ? "text-white bg-white/10" : "text-white/60"}`}
+                                 >
+                                   {pStart}-{pEnd}
+                                 </button>
+                               );
+                             })}
+                           </motion.div>
+                         )}
+                       </AnimatePresence>
+                     </div>
+                   )}
+                   <button className="p-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-white/60 transition-colors cursor-pointer w-8 h-8 flex items-center justify-center">
                      <Grid className="w-4 h-4" />
                    </button>
                 </div>
@@ -774,7 +772,7 @@ export default function WatchPage({
             </div>
 
           {/* Scrollable Playlist Queue Container */}
-          <div className="flex flex-col gap-1 relative h-[500px]">
+          <div className="flex flex-col gap-1 relative flex-1 min-h-[400px] lg:min-h-0">
             <AnimatePresence mode="wait">
               {(() => {
                 if (!episodesMap[currentRange]) {
@@ -896,60 +894,56 @@ export default function WatchPage({
                         }
 
                         return (
-                          <motion.div 
+                          <div 
                             className="pb-2"
-                            initial={{ opacity: 0, y: 12 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true, amount: 0.1 }}
-                            transition={{ duration: 0.3, ease: "easeOut" }}
                           >
                             <div
                               onClick={() => onNavigateToEpisode(anime.id, seasonNumber, epNum)}
-                              className={`flex flex-col gap-2 p-3 rounded-xl cursor-pointer transition-all duration-300 ease-out group relative border active:scale-[0.99] ${
+                              className={`flex flex-row gap-3 p-2 rounded-lg cursor-pointer transition-colors group relative border border-transparent ${
                                 isActive
-                                  ? "bg-[#8b5cf6]/10 border-[#8b5cf6]/30 shadow-[0_4px_20px_rgba(139,92,246,0.15)] transform-none"
-                                  : "bg-transparent border-transparent hover:bg-white/[0.04] hover:border-white/10 hover:-translate-y-0.5 hover:shadow-lg hover:brightness-110"
+                                  ? "bg-white/10"
+                                  : "hover:bg-white/5"
                               }`}
                             >
-                              <div className="flex items-start gap-4">
-                                <div className="relative w-[110px] aspect-video bg-black/40 rounded-lg overflow-hidden flex-shrink-0 border border-white/5 shadow-inner">
-                                  <LazyImage
-                                    src={epImage}
-                                    alt={`Episode ${epNum}`}
-                                    className={`w-full h-full object-cover transition-opacity duration-300 ${isActive ? "opacity-100" : "opacity-70 group-hover:opacity-100"}`}
-                                    referrerPolicy="no-referrer"
-                                  />
-                                  {isActive && (
-                                    <div className="absolute inset-0 bg-[#8b5cf6]/20 flex items-center justify-center backdrop-blur-[1px]">
-                                      <Play className="w-6 h-6 fill-white stroke-none drop-shadow-md animate-pulse" />
-                                    </div>
-                                  )}
-                                  {progressVal > 0 && !isActive && (
-                                     <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
-                                       <div className="bg-[#8b5cf6] h-full transition-all duration-500 ease-out" style={{ width: `${progressVal}%` }} />
-                                     </div>
-                                  )}
-                                </div>
-
-                                <div className="flex-1 min-w-0 flex flex-col justify-center py-0.5">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    {badge}
-                                    <span className="text-[11px] text-white/40 font-medium select-none transition-colors group-hover:text-white/60">
-                                      {isActive ? "Now Playing" : progressVal > 0 ? `${Math.round(progressVal)}% Watched` : "Not Watched"}
-                                    </span>
+                              <div className="relative w-[120px] aspect-video bg-[#212121] rounded-md overflow-hidden flex-shrink-0">
+                                <LazyImage
+                                  src={epImage}
+                                  alt={`Episode ${epNum}`}
+                                  className={`w-full h-full object-cover ${isActive ? "opacity-100" : "opacity-80 group-hover:opacity-100 transition-opacity"}`}
+                                  referrerPolicy="no-referrer"
+                                />
+                                {isActive && (
+                                  <div className="absolute inset-0 bg-white/10 flex items-center justify-center">
+                                    <Play className="w-8 h-8 text-white drop-shadow-md" />
                                   </div>
-                                  <h4 className={`text-sm font-bold truncate transition-colors duration-300 leading-tight ${isActive ? "text-white" : "text-white/80 group-hover:text-white"}`}>
-                                     S{seasonNumber}E{epNum}{epTitleStr ? ` — ${epTitleStr}` : ""}
-                                  </h4>
-                                  {epAired && (
-                                    <span className="text-[11px] text-white/30 font-medium mt-1 inline-block">
-                                      Aired: {new Date(epAired).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                    </span>
+                                )}
+                                <div className="absolute bottom-1 right-1 bg-[#121212]/90 backdrop-blur-sm px-1.5 py-0.5 rounded text-[11px] font-bold text-white tracking-wider flex items-center">
+                                  Ep {epNum}
+                                </div>
+                                {progressVal > 0 && !isActive && (
+                                   <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
+                                     <div className="bg-[#8b5cf6] h-full" style={{ width: `${progressVal}%` }} />
+                                   </div>
+                                )}
+                              </div>
+
+                              <div className="flex-1 min-w-0 flex flex-col pt-0.5">
+                                <h4 className={`text-[14px] font-bold leading-tight line-clamp-2 ${isActive ? "text-white" : "text-white/90 group-hover:text-white"}`}>
+                                   {epTitleStr ? epTitleStr : `${mainTitle} Episode ${epNum}`}
+                                </h4>
+                                <div className="text-[12px] text-white/50 font-medium mt-1 inline-flex items-center gap-1.5 flex-wrap">
+                                  {badge}
+                                  <span>{epAired ? new Date(epAired).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : `Episode ${epNum}`}</span>
+                                  {progressVal > 0 && (
+                                    <>
+                                      <span className="text-white/30">•</span>
+                                      <span className="text-[#8b5cf6]/80">{Math.round(progressVal)}% Watched</span>
+                                    </>
                                   )}
                                 </div>
                               </div>
                             </div>
-                          </motion.div>
+                          </div>
                         );
                       }}
                     />

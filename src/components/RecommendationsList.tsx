@@ -140,8 +140,8 @@ export default function RecommendationsList({ anilistId, onNavigateToChannel }: 
   }
 
   return (
-    <div className="mt-8 mb-24 flex flex-col gap-3">
-      <h3 className="text-white text-base font-bold font-sans tracking-tight">More Like This</h3>
+    <div className="mt-8 mb-24 flex flex-col gap-4">
+      <h3 className="text-white text-xl font-bold font-sans tracking-tight">More like this</h3>
       <div className="flex flex-col gap-3">
         {recommendations.map(anime => {
           const bgImage = anime.bannerImage || anime.coverImage.large || "";
@@ -153,29 +153,29 @@ export default function RecommendationsList({ anilistId, onNavigateToChannel }: 
             <div 
               key={anime.id}
               onClick={() => onNavigateToChannel(anime.idMal || anime.id)}
-              className="relative h-28 rounded-xl overflow-hidden cursor-pointer group shadow-md"
+              className="relative h-[100px] rounded-xl overflow-hidden cursor-pointer bg-[#0a0a0a] border border-white/[0.03]"
             >
-              {/* Diffuse Banner Background */}
+              {/* Banner Background */}
               <div 
-                className="absolute inset-0 bg-cover bg-center opacity-30 group-hover:scale-105 transition-transform duration-500 ease-out"
+                className="absolute right-0 top-0 bottom-0 w-[70%] bg-cover bg-center"
                 style={{ backgroundImage: `url(${bgImage})` }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-r from-[#121214] via-[#121214]/90 to-transparent" />
-              <div className="absolute inset-0 bg-gradient-to-b from-[#121214]/30 to-[#121214]/90" />
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-[#0a0a0a] via-[#0a0a0a]/80 to-transparent" />
+              </div>
 
               {/* Content */}
-              <div className="absolute inset-0 flex items-center p-2.5 gap-3">
-                <div className="h-full w-16 flex-shrink-0 rounded-lg overflow-hidden border border-white/10 relative z-10 shadow-lg">
+              <div className="absolute inset-0 flex items-center p-3 gap-4">
+                <div className="h-full w-[60px] flex-shrink-0 rounded-md overflow-hidden bg-black/40">
                   <LazyImage src={posterImage} alt={title} className="w-full h-full object-cover" />
                 </div>
                 
-                <div className="flex flex-col justify-center min-w-0 pr-4 z-10">
-                  <h4 className="text-sm font-bold text-white tracking-tight leading-tight line-clamp-2 group-hover:text-blue-300 transition-colors">
+                <div className="flex flex-col justify-center min-w-0 pr-4 z-10 flex-1">
+                  <h4 className="text-[15px] font-bold text-white tracking-tight leading-tight line-clamp-2">
                     {title}
                   </h4>
                   {(format || anime.season || anime.seasonYear) && (
-                    <span className="text-[11px] font-semibold text-white/50 bg-black/40 px-1.5 py-0.5 rounded backdrop-blur-md border border-white/5 mt-1.5 inline-block w-fit uppercase tracking-wider">
-                      {format} {anime.season ? `• ${anime.season}` : ""} {anime.seasonYear ? anime.seasonYear : ""}
+                    <span className="text-[12px] font-medium text-white/50 mt-1 uppercase tracking-widest">
+                      {format} {anime.season ? ` ${anime.season}` : ""} {anime.seasonYear ? anime.seasonYear : ""}
                     </span>
                   )}
                 </div>
