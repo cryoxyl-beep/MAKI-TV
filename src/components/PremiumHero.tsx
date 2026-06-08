@@ -151,7 +151,7 @@ export default function PremiumHero({ onSelectAnime }: PremiumHeroProps) {
         loop={false}
         onSwiper={setSwiperInstance}
         onSlideChange={(swiper) => setActiveSlideIndex(swiper.activeIndex)}
-        className="w-full h-[60vh] md:h-[75vh] 2xl:h-[85vh] relative"
+        className="w-full h-[55vh] md:h-[60vh] lg:h-[65vh] relative min-h-[400px]"
         allowTouchMove={true}
       >
         {trailers.map((trailer, idx) => {
@@ -275,14 +275,14 @@ function HeroSlide({ trailer, isActive, onSelect, onEnded }: { trailer: HeroTrai
       <div className="absolute inset-0 pointer-events-none z-10 bg-gradient-to-r from-black/80 via-black/30 to-transparent w-full md:w-[70%]" />
       <div className="absolute inset-0 pointer-events-none z-10 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
 
-      <div className="absolute inset-0 z-20 flex flex-col justify-end p-6 md:p-12 pb-6 md:pb-12 lg:pb-14 pointer-events-none wrapper">
+      <div className="absolute inset-0 z-20 flex flex-col justify-end p-6 md:p-10 pb-4 md:pb-8 lg:pb-10 pointer-events-none wrapper">
         <div className={`max-w-7xl mx-auto w-full h-full flex flex-col justify-end ${isActive ? 'pointer-events-auto' : 'pointer-events-none'}`}>
-          <div className="max-w-3xl lg:max-w-4xl flex flex-col items-start gap-3 transform transition-transform duration-700 hover:translate-y-[-4px]">
+          <div className="max-w-3xl lg:max-w-4xl flex flex-col items-start gap-2 transform transition-transform duration-700 hover:translate-y-[-4px]">
             {trailer.logoUrl ? (
               <img 
                 src={trailer.logoUrl} 
                 alt={trailer.title} 
-                className="max-w-[60vw] sm:max-w-[320px] max-h-[110px] md:max-h-[140px] px-1 object-contain object-left drop-shadow-2xl brightness-110 mb-2" 
+                className="max-w-[55vw] sm:max-w-[280px] md:max-w-[320px] max-h-[90px] md:max-h-[120px] px-1 object-contain object-left drop-shadow-2xl brightness-110 mb-1" 
               />
             ) : (
               <h2 className="text-white text-3xl md:text-5xl lg:text-6xl font-black tracking-tight font-sans drop-shadow leading-tight line-clamp-2 px-1 mb-2">
@@ -291,8 +291,8 @@ function HeroSlide({ trailer, isActive, onSelect, onEnded }: { trailer: HeroTrai
             )}
 
             {metadata && (
-              <div className="flex flex-col gap-3 px-1">
-                <div className="flex flex-wrap items-center gap-2 text-xs md:text-sm font-semibold text-white/90 drop-shadow-md tracking-widest uppercase">
+              <div className="flex flex-col gap-2 px-1">
+                <div className="flex flex-wrap items-center gap-2 text-[11px] md:text-sm font-semibold text-white/90 drop-shadow-md tracking-widest uppercase">
                   {[
                     metadata.format,
                     metadata.status,
@@ -313,12 +313,12 @@ function HeroSlide({ trailer, isActive, onSelect, onEnded }: { trailer: HeroTrai
             )}
 
             {cleanDescription && (
-              <p className="text-white/80 max-w-2xl text-sm md:text-base line-clamp-2 lg:line-clamp-3 leading-relaxed drop-shadow-lg mix-blend-lighten px-1 mt-2">
+              <p className="text-white/80 max-w-2xl text-[13px] md:text-sm line-clamp-2 lg:line-clamp-3 leading-relaxed drop-shadow-lg mix-blend-lighten px-1 mt-1">
                 {cleanDescription}
               </p>
             )}
 
-            <div className={`flex items-center gap-4 mt-6 md:mt-8 px-1 ${isActive ? 'pointer-events-auto' : 'pointer-events-none'}`}>
+            <div className={`flex items-center gap-4 mt-3 md:mt-5 px-1 ${isActive ? 'pointer-events-auto' : 'pointer-events-none'}`}>
               <button 
                 onClick={handleSelectClick}
                 disabled={!isActive}
