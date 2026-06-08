@@ -772,7 +772,7 @@ export default function WatchPage({
             </div>
 
           {/* Scrollable Playlist Queue Container */}
-          <div className="flex flex-col gap-1 relative flex-1 min-h-[400px] lg:min-h-0">
+          <div className="flex flex-col gap-1 relative flex-1 min-h-[400px]">
             <AnimatePresence mode="wait">
               {(() => {
                 if (!episodesMap[currentRange]) {
@@ -783,7 +783,7 @@ export default function WatchPage({
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.2 }}
-                      className="absolute inset-0 flex flex-col gap-2"
+                      className="w-full h-full flex flex-col gap-2"
                     >
                       {[...Array(8)].map((_, i) => (
                         <div key={i} className="flex items-start gap-4 p-3 rounded-xl bg-white/[0.02] border border-white/5 animate-pulse">
@@ -822,7 +822,7 @@ export default function WatchPage({
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.98 }}
                       transition={{ duration: 0.2 }}
-                      className="absolute inset-0 pr-2"
+                      className="w-full h-full pr-2"
                     >
                       <VirtuosoGrid
                         className="custom-scrollbar"
@@ -870,7 +870,7 @@ export default function WatchPage({
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.98 }}
                     transition={{ duration: 0.2 }}
-                    className="absolute inset-0 pr-2"
+                    className="w-full h-full pr-2"
                   >
                     <Virtuoso
                       className="custom-scrollbar"
