@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useRef } from "react";
-import { Search, X, ArrowLeft, Home, Clapperboard, History, LogOut } from "lucide-react";
+import { Search, X, ArrowLeft, Home, Clapperboard, History, LogOut, Menu } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { signInWithGoogle, signOut, onAuthStateChanged } from "../services/auth";
 import { User } from "firebase/auth";
@@ -117,7 +117,7 @@ export default function Header({
       <header className={`fixed top-0 left-0 right-0 z-50 select-none transform-gpu transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${variant === "slim" ? "h-[48px] bg-transparent pt-1" : "h-16 bg-transparent"} ${isVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0 pointer-events-none"}`}>
         {/* Search Header for Mobile overlay */}
         {showMobileSearch ? (
-          <form onSubmit={handleSubmit} className="absolute inset-0 bg-[#0a0a0c] flex items-center px-4 gap-2 z-50">
+          <form onSubmit={handleSubmit} className="absolute inset-0 bg-[#09090b] flex items-center px-4 gap-2 z-50">
             <button
               type="button"
               onClick={() => setShowMobileSearch(false)}
@@ -252,48 +252,19 @@ export default function Header({
         ) : (
           <div className="w-full h-full max-w-[1440px] mx-auto flex items-center justify-between px-4 md:px-8 lg:px-10 relative">
             {/* Left section: Logo */}
-            <div className="flex-1 flex items-center">
+            <div className="flex-1 flex items-center gap-4">
+              <button 
+                className="hidden md:flex p-2 hover:bg-white/[0.08] text-white/80 hover:text-white rounded-full transition-colors cursor-pointer"
+                title="Menu"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
               <div className="flex items-center cursor-pointer group" onClick={onNavigateHome}>
                 <span className="text-xl md:text-2xl font-black tracking-wider bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-transparent hover:opacity-90 transition-all duration-300">
                   miyoro
                 </span>
               </div>
             </div>
-
-            {/* Center section: Text Navigation */}
-            <nav className="hidden md:flex items-center justify-center gap-1.5 absolute left-1/2 -translate-x-1/2 pointer-events-none">
-              <div className="flex items-center gap-1.5 pointer-events-auto bg-white/[0.03] backdrop-blur-md px-2.5 py-1.5 rounded-full border border-white/[0.06] shadow-md transition-colors duration-300">
-                {[
-                  { id: "home" as const, label: "Home", onClick: onNavigateHome },
-                  { id: "schedule" as const, label: "Schedule", onClick: onNavigateSchedule },
-                  { id: "subscriptions" as const, label: "Browse", onClick: onNavigateSubscriptions },
-                  { id: "library" as const, label: "Library", onClick: onNavigateLibrary },
-                ].filter(item => item.onClick).map((item) => {
-                  const isActive = activeTab === item.id;
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={item.onClick}
-                      className={`relative px-4 py-1.5 text-xs lg:text-sm font-semibold tracking-wide transition-all duration-300 rounded-full cursor-pointer hover:bg-white/[0.04] ${
-                        isActive 
-                          ? "text-white font-bold" 
-                          : "text-white/65 hover:text-white"
-                      }`}
-                    >
-                      {isActive && (
-                        <motion.div
-                          layoutId="activeTabIndicatorHeader"
-                          className="absolute inset-0 bg-white/[0.09] rounded-full border border-white/[0.10] shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),_0_2px_8px_rgba(0,0,0,0.1)] -z-10"
-                          initial={false}
-                          transition={{ type: "spring", stiffness: 350, damping: 25 }}
-                        />
-                      )}
-                      {item.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </nav>
 
             {/* Right section: Search input & User Profile */}
             <div className="flex-1 flex items-center justify-end gap-4 lg:gap-6">

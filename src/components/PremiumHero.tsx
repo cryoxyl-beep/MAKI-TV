@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import { db } from "../lib/firebase";
-import { Play } from "lucide-react";
+import { Play, Bookmark, Check } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { EffectFade } from "swiper/modules";
 import type { Swiper as SwiperType } from "swiper";
@@ -9,6 +9,7 @@ import "swiper/css";
 import "swiper/css/effect-fade";
 import { fetchAnimeDetails } from "../services/anilist";
 import { AniListAnime } from "../types";
+import { useLibrary } from "../hooks/useLibrary";
 
 class EventEmitter {
   callbacks: ((progress: number) => void)[] = [];
@@ -185,6 +186,7 @@ function HeroSlide({ trailer, isActive, onSelect, onEnded }: { trailer: HeroTrai
   const [videoReady, setVideoReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [metadata, setMetadata] = useState<AniListAnime | null>(null);
+  const { isSubscribed, toggleSubscription, currentUser } = useLibrary();
 
   useEffect(() => {
     let mounted = true;
@@ -240,9 +242,29 @@ function HeroSlide({ trailer, isActive, onSelect, onEnded }: { trailer: HeroTrai
     onSelect();
   };
 
+  const handleLibraryToggle = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!currentUser) {
+      alert("Please sign in to add to your library.");
+      return;
+    }
+    if (metadata) { 
+      await toggleSubscription(metadata);
+    } else {
+      await toggleSubscription({
+        id: trailer.malId,
+        title: { userPreferred: trailer.title },
+        coverImage: { large: trailer.logoUrl || "", medium: trailer.logoUrl || "" },
+        genres: [],
+      } as any);
+    }
+  };
+
+  const subscribed = isSubscribed(trailer.malId);
+
   return (
     <div 
-      className={`w-full h-full relative overflow-hidden bg-black isolation-auto transition-all duration-500 ${isActive ? 'pointer-events-auto opacity-100 z-10' : 'pointer-events-none opacity-0 z-0'}`}
+      className={`w-full h-full relative overflow-hidden bg-[#09090b] isolation-auto transition-all duration-500 ${isActive ? 'pointer-events-auto opacity-100 z-10' : 'pointer-events-none opacity-0 z-0'}`}
     >
       {trailer.trailerUrl && (
         <img
@@ -265,17 +287,16 @@ function HeroSlide({ trailer, isActive, onSelect, onEnded }: { trailer: HeroTrai
         onPlaying={() => setVideoReady(true)}
       />
 
-      <div 
-        className="absolute inset-0 pointer-events-none z-10"
-        style={{
-          background: "linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 25%, rgba(0,0,0,0.3) 60%, rgba(0,0,0,0.95) 100%), radial-gradient(circle at 75% 50%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.3) 100%)"
-        }}
-      />
-      
-      <div className="absolute inset-0 pointer-events-none z-10 bg-gradient-to-r from-black/80 via-black/30 to-transparent w-full md:w-[70%]" />
-      <div className="absolute inset-0 pointer-events-none z-10 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+      {/* Layer 3: Background vignette - subtle edge darkening */}
+      <div className="absolute inset-0 pointer-events-none z-10 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-transparent to-black/40" />
 
-      <div className="absolute inset-0 z-20 flex flex-col justify-end p-6 md:p-10 pb-4 md:pb-8 lg:pb-10 pointer-events-none wrapper">
+      {/* Layer 1: Left-side text readability gradient */}
+      <div className="absolute inset-0 pointer-events-none z-10 bg-gradient-to-r from-black/90 via-black/40 to-transparent w-full md:w-[65%]" />
+
+      {/* Layer 2: Bottom fade into homepage background */}
+      <div className="absolute inset-0 pointer-events-none z-10 top-auto h-2/3 bg-gradient-to-t from-[#09090b] via-[#09090b]/80 to-transparent" />
+
+      <div className="absolute inset-0 z-20 flex flex-col justify-end px-6 md:px-14 lg:px-20 py-8 lg:py-12 pb-6 md:pb-10 lg:pb-10 pointer-events-none wrapper">
         <div className={`max-w-7xl mx-auto w-full h-full flex flex-col justify-end ${isActive ? 'pointer-events-auto' : 'pointer-events-none'}`}>
           <div className="max-w-3xl lg:max-w-4xl flex flex-col items-start gap-2 transform transition-transform duration-700 hover:translate-y-[-4px]">
             {trailer.logoUrl ? (
@@ -303,7 +324,7 @@ function HeroSlide({ trailer, isActive, onSelect, onEnded }: { trailer: HeroTrai
                 {metadata.genres && metadata.genres.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {metadata.genres.slice(0, 3).map(g => (
-                      <span key={g} className="px-2.5 py-1 text-[10px] md:text-xs font-medium uppercase tracking-widest text-white/90 bg-white/10 backdrop-blur-md rounded-md border border-white/10 uppercase">
+                      <span key={g} className="px-2.5 py-1 text-[10px] md:text-xs font-medium uppercase tracking-widest text-white/90 bg-white/10 backdrop-blur-md rounded-md border border-white/10">
                         {g}
                       </span>
                     ))}
@@ -318,14 +339,23 @@ function HeroSlide({ trailer, isActive, onSelect, onEnded }: { trailer: HeroTrai
               </p>
             )}
 
-            <div className={`flex items-center gap-4 mt-3 md:mt-5 px-1 ${isActive ? 'pointer-events-auto' : 'pointer-events-none'}`}>
+            <div className={`flex items-center gap-3 mt-3 md:mt-5 px-1 ${isActive ? 'pointer-events-auto' : 'pointer-events-none'}`}>
               <button 
                 onClick={handleSelectClick}
                 disabled={!isActive}
-                className={`px-6 py-2.5 md:px-8 md:py-3 bg-white hover:bg-white/90 text-black font-extrabold rounded-md flex items-center gap-2 shadow-[0_0_20px_rgba(255,255,255,0.3)] shadow-black/20 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] group ${isActive ? 'pointer-events-auto cursor-pointer' : 'pointer-events-none'}`}
+                className={`px-6 py-2.5 md:px-8 md:py-3 bg-black/40 hover:bg-black/60 backdrop-blur-md border border-white/10 text-white font-bold rounded-md flex items-center gap-2 shadow-[0_4px_30px_rgba(0,0,0,0.1)] transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] group ${isActive ? 'pointer-events-auto cursor-pointer' : 'pointer-events-none'}`}
               >
-                <Play className="w-5 h-5 fill-black stroke-none" />
+                <Play className="w-5 h-5 fill-white stroke-none" />
                 <span className="tracking-wide text-sm md:text-base">Play Now</span>
+              </button>
+
+              <button 
+                onClick={handleLibraryToggle}
+                disabled={!isActive}
+                className={`px-6 py-2.5 md:px-8 md:py-3 bg-black/40 hover:bg-black/60 backdrop-blur-md border ${subscribed ? 'border-white/30' : 'border-white/10'} text-white font-bold rounded-md flex items-center gap-2 shadow-[0_4px_30px_rgba(0,0,0,0.1)] transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] group ${isActive ? 'pointer-events-auto cursor-pointer' : 'pointer-events-none'}`}
+              >
+                <Bookmark className={`w-5 h-5 transition-colors ${subscribed ? 'fill-white text-white' : 'text-white'}`} />
+                <span className="tracking-wide text-sm md:text-base">Add to Library</span>
               </button>
             </div>
           </div>
