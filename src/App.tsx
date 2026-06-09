@@ -32,6 +32,8 @@ export default function App() {
   const [selectedChannelId, setSelectedChannelId] = useState<number | null>(null);
   const [watchDetails, setWatchDetails] = useState<{ animeId: number; seasonNumber: number; episodeNumber: number } | null>(null);
 
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
   // Live Subscription list via useLibrary
   const { library: subscriptionsList } = useLibrary();
 
@@ -213,21 +215,24 @@ export default function App() {
           onNavigateSubscriptions={() => handleNavigate("subscriptions")}
           isHomeScreen={activePage === "home"}
           activeTab={activePage as any}
+          onMenuClick={() => setIsSidebarOpen(true)}
+        />
+      )}
+
+      {/* 2. Left side expandable overlay Sidebar rendered at root level to properly overlay the Header and entire viewport */}
+      {activePage !== "watch" && (
+        <Sidebar
+          activeTab={activePage as any}
+          onNavigate={handleNavigate}
+          onChannelClick={handleOpenChannel}
+          subscriptions={subscriptionsList}
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
         />
       )}
 
       <div className="flex flex-1 pt-[56px] text-white z-10 relative">
         
-        {/* 2. Left side expandable dynamic Sidebar (Collapses slightly on small desktop screens, hidden or bottom bar on mobile) */}
-        {activePage !== "watch" && (
-          <Sidebar
-            activeTab={activePage as any}
-            onNavigate={handleNavigate}
-            onChannelClick={handleOpenChannel}
-            subscriptions={subscriptionsList}
-          />
-        )}
-
         {/* 3. Right main contents stage viewport with standard padding scale */}
         <main
           className="flex-1 min-w-0 bg-transparent pb-32 z-10 relative px-0"

@@ -17,6 +17,7 @@ interface HeaderProps {
   onNavigateSubscriptions?: () => void;
   isHomeScreen?: boolean;
   activeTab?: "home" | "trending" | "subscriptions" | "library" | "schedule";
+  onMenuClick?: () => void;
 }
 
 export default function Header({
@@ -28,6 +29,7 @@ export default function Header({
   onNavigateSchedule,
   isHomeScreen = false,
   activeTab = "home",
+  onMenuClick,
   variant = "global",
   breadcrumbs = []
 }: HeaderProps & { onNavigateSchedule?: () => void; variant?: "global" | "slim"; breadcrumbs?: { label: string; onClick?: () => void }[] }) {
@@ -74,7 +76,14 @@ export default function Header({
     };
     handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+
+    const openAuthListener = () => setShowAuthModal(true);
+    window.addEventListener("openAuthModal", openAuthListener);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("openAuthModal", openAuthListener);
+    };
   }, [isExpanded]);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -250,14 +259,19 @@ export default function Header({
             </div>
           </div>
         ) : (
-          <div className="w-full h-full flex items-center justify-between px-4 md:px-8 lg:px-10 relative">
+          <div className="w-full h-full flex items-center justify-between pl-6 md:pl-10 lg:pl-14 pr-6 md:pr-10 lg:pr-12 relative">
             {/* Left section: Logo */}
-            <div className="flex-1 flex items-center gap-4">
+            <div className="flex-1 flex items-center gap-2 md:gap-2">
               <button 
-                className="hidden md:flex p-2 hover:bg-white/[0.08] text-white/80 hover:text-white rounded-full transition-colors cursor-pointer"
+                onClick={onMenuClick}
+                className="hidden md:flex p-1.5 hover:bg-white/[0.08] text-white/80 hover:text-white rounded-full transition-colors cursor-pointer"
                 title="Menu"
               >
-                <Menu className="w-5 h-5" />
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="3" y1="12" x2="21" y2="12"></line>
+                  <line x1="3" y1="6" x2="21" y2="6"></line>
+                  <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
               </button>
               <div className="flex items-center cursor-pointer group" onClick={onNavigateHome}>
                 <span className="text-xl md:text-2xl font-black tracking-wider bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-transparent hover:opacity-90 transition-all duration-300">

@@ -24,7 +24,7 @@ export default function LibraryPage({ onWatchEpisode, onNavigateToChannel }: Lib
   const [activeTab, setActiveTab] = useState<Tab>("history");
   const [historyItems, setHistoryItems] = useState<WatchHistoryItem[]>([]);
   const [watchLaterItems, setWatchLaterItems] = useState<WatchLaterItem[]>([]);
-  const { library, isLoading: libraryLoading } = useLibrary();
+  const { library, isLoading: libraryLoading, toggleSubscription } = useLibrary();
   const [isLocalLoading, setIsLocalLoading] = useState(true);
 
   useEffect(() => {
@@ -221,6 +221,18 @@ export default function LibraryPage({ onWatchEpisode, onNavigateToChannel }: Lib
                               alt={item.animeTitle}
                               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                             />
+                            {/* Remove Action */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                toggleSubscription({ id: item.animeId } as any);
+                              }}
+                              className="absolute top-2 right-2 p-1.5 sm:p-2 bg-black/60 rounded-full hover:bg-black/90 text-white/70 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all duration-200 cursor-pointer backdrop-blur-md"
+                              title="Remove from Library"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           </div>
                           <h3 className="mt-2 text-white text-xs font-medium leading-snug truncate">
                             {item.animeTitle}

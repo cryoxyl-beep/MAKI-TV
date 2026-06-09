@@ -233,12 +233,6 @@ function HeroSlide({ trailer, isActive, onSelect, onEnded }: { trailer: HeroTrai
   const handleSelectClick = (e: React.MouseEvent) => {
     if (!isActive) return;
     e.preventDefault();
-    console.log(
-      "Hero Click",
-      trailer.title,
-      trailer.malId,
-      trailer.anilistId
-    );
     onSelect();
   };
 
