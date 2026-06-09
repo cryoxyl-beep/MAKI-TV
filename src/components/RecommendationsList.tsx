@@ -165,24 +165,23 @@ export default function RecommendationsList({ anilistId, onNavigateToChannel, li
               className="relative h-[100px] rounded-xl overflow-hidden cursor-pointer bg-[#121214] border border-white/5 hover:border-white/10 transition-all duration-150 hover:scale-[1.015] hover:brightness-110 active:scale-[0.98] group select-none shadow-md transform-gpu z-0"
               style={{ "--hover-color": accentColor } as React.CSSProperties}
             >
-              {/* Background image constrained to right side and heavily darkened to prevent edge bleeding */}
+              {/* Sharp and crisp unblurred background banner on the right side */}
               {bgImage && (
                 <div 
-                  className="absolute right-0 top-0 bottom-0 w-[60%] bg-cover bg-center pointer-events-none transition-transform duration-150 ease-out group-hover:scale-[1.03] z-[-10]"
+                  className="absolute right-0 top-0 bottom-0 w-[55%] bg-cover bg-center pointer-events-none transition-transform duration-150 ease-out group-hover:scale-[1.03]"
                   style={{ 
                     backgroundImage: `url(${bgImage})`,
-                    opacity: 0.15,
+                    opacity: 0.65,
                   }}
                 />
               )}
 
-              {/* Edge crushers - Static solid gradients to ensure no bright colors touch the borders */}
-              <div className="absolute inset-0 pointer-events-none bg-gradient-to-r from-[#121214] via-[#121214]/80 to-transparent z-[-5]" />
-              <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-[#121214] via-transparent to-[#121214] z-[-5]" />
-              <div className="absolute inset-y-0 right-0 w-[10%] pointer-events-none bg-gradient-to-l from-[#121214] to-transparent z-[-5]" />
+              {/* A sharp solid mask for high text readability on the left side */}
+              <div className="absolute inset-y-0 left-0 right-[40%] pointer-events-none bg-[#121214] z-1" />
+              <div className="absolute inset-y-0 left-[60%] w-[15%] pointer-events-none bg-gradient-to-r from-[#121214] to-transparent z-1" />
 
               {/* Interactive Content */}
-              <div className="absolute inset-0 flex items-center p-3 gap-4">
+              <div className="absolute inset-0 flex items-center p-3 gap-4 z-10">
                 <div className="h-full w-[60px] flex-shrink-0 rounded-md overflow-hidden bg-black/40 relative z-10 transition-transform duration-150 ease-out group-hover:scale-105 shadow-lg shadow-black/40">
                   <LazyImage src={posterImage} alt={title} className="w-full h-full object-cover" />
                 </div>
