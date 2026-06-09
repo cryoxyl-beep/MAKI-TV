@@ -152,7 +152,7 @@ export default function Header({
             </button>
           </form>
         ) : variant === "slim" ? (
-          <div className="w-full h-full max-w-[1440px] mx-auto px-4 md:px-8 flex items-center justify-between">
+          <div className="w-full h-full px-4 md:px-8 lg:px-10 flex items-center justify-between">
             {/* Breadcrumb Left */}
             <nav className="flex-1 flex items-center text-sm font-semibold tracking-wide overflow-x-auto scrollbar-hide py-2 pr-4">
               {breadcrumbs.map((item, index) => {
@@ -250,7 +250,7 @@ export default function Header({
             </div>
           </div>
         ) : (
-          <div className="w-full h-full max-w-[1440px] mx-auto flex items-center justify-between px-4 md:px-8 lg:px-10 relative">
+          <div className="w-full h-full flex items-center justify-between px-4 md:px-8 lg:px-10 relative">
             {/* Left section: Logo */}
             <div className="flex-1 flex items-center gap-4">
               <button 
