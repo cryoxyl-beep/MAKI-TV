@@ -25,7 +25,7 @@ interface RecommendationsListProps {
   onNavigateToChannel: (id: number) => void;
 }
 
-export default function RecommendationsList({ anilistId, onNavigateToChannel }: RecommendationsListProps) {
+export default function RecommendationsList({ anilistId, onNavigateToChannel, limit }: RecommendationsListProps & { limit?: number }) {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -111,6 +111,9 @@ export default function RecommendationsList({ anilistId, onNavigateToChannel }: 
               .filter(Boolean);
           }
           
+          if (limit) {
+            recs = recs.slice(0, limit);
+          }
           setRecommendations(recs);
         }
       } catch (err) {
@@ -159,33 +162,33 @@ export default function RecommendationsList({ anilistId, onNavigateToChannel }: 
             <div 
               key={anime.id}
               onClick={() => onNavigateToChannel(anime.idMal || anime.id)}
-              className="relative h-[100px] rounded-xl overflow-hidden cursor-pointer bg-[#121214] border border-white/5 hover:border-white/10 hover:bg-[#161619] transition duration-200 hover:scale-[1.015] active:scale-[0.98] group select-none shadow-md hover:shadow-xl transform-gpu z-0"
+              className="relative h-[100px] rounded-xl overflow-hidden cursor-pointer bg-[#121214] border border-white/5 hover:border-white/10 transition-all duration-150 hover:scale-[1.015] hover:brightness-110 active:scale-[0.98] group select-none shadow-md transform-gpu z-0"
               style={{ "--hover-color": accentColor } as React.CSSProperties}
             >
-              {/* Image smoothly masked natively to blend perfectly into the bg WITHOUT messy overlaid gradient grids */}
+              {/* Background image constrained to right side and heavily darkened to prevent edge bleeding */}
               {bgImage && (
                 <div 
-                  className="absolute inset-0 bg-cover bg-center pointer-events-none transition-transform duration-500 ease-out group-hover:scale-[1.03] z-[-10]"
+                  className="absolute right-0 top-0 bottom-0 w-[60%] bg-cover bg-center pointer-events-none transition-transform duration-150 ease-out group-hover:scale-[1.03] z-[-10]"
                   style={{ 
                     backgroundImage: `url(${bgImage})`,
-                    opacity: 0.25,
-                    WebkitMaskImage: 'linear-gradient(90deg, transparent 0%, transparent 20%, black 50%, black 100%)',
-                    maskImage: 'linear-gradient(90deg, transparent 0%, transparent 20%, black 50%, black 100%)'
+                    opacity: 0.15,
                   }}
                 />
               )}
 
-              {/* Massive static inner shadow to aggressively crush any bright colors at the top, bottom, and right edges */}
-              <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_40px_rgba(18,18,20,1)] rounded-xl z-[-5]" />
+              {/* Edge crushers - Static solid gradients to ensure no bright colors touch the borders */}
+              <div className="absolute inset-0 pointer-events-none bg-gradient-to-r from-[#121214] via-[#121214]/80 to-transparent z-[-5]" />
+              <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-[#121214] via-transparent to-[#121214] z-[-5]" />
+              <div className="absolute inset-y-0 right-0 w-[10%] pointer-events-none bg-gradient-to-l from-[#121214] to-transparent z-[-5]" />
 
               {/* Interactive Content */}
               <div className="absolute inset-0 flex items-center p-3 gap-4">
-                <div className="h-full w-[60px] flex-shrink-0 rounded-md overflow-hidden bg-black/40 relative z-10 group-hover:scale-[1.04] transition-transform duration-300 ease-out shadow-lg">
+                <div className="h-full w-[60px] flex-shrink-0 rounded-md overflow-hidden bg-black/40 relative z-10 transition-transform duration-150 ease-out group-hover:scale-105 shadow-lg shadow-black/40">
                   <LazyImage src={posterImage} alt={title} className="w-full h-full object-cover" />
                 </div>
                 
                 <div className="flex flex-col justify-center min-w-0 pr-4 z-10 flex-1">
-                  <h4 className="text-[15px] font-bold text-white tracking-tight leading-tight line-clamp-2 transition-colors group-hover:text-[var(--hover-color)]">
+                  <h4 className="text-[15px] font-bold text-white tracking-tight leading-tight line-clamp-2 transition-colors duration-150 group-hover:text-[var(--hover-color)]">
                     {title}
                   </h4>
                   {(format || anime.season || anime.seasonYear) && (
