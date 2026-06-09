@@ -147,7 +147,7 @@ export default function RecommendationsList({ anilistId, onNavigateToChannel, li
 
   return (
     <div className="mt-8 mb-24 flex flex-col gap-4">
-      <h3 className="text-white text-xl font-bold font-sans tracking-tight">More like this</h3>
+      <h3 className="text-white text-xl font-bold font-sans tracking-tight">Suggested</h3>
       <div className="flex flex-col gap-3">
         {recommendations.map(anime => {
           const bgImage = anime.bannerImage || anime.coverImage.large || "";
@@ -162,26 +162,25 @@ export default function RecommendationsList({ anilistId, onNavigateToChannel, li
             <div 
               key={anime.id}
               onClick={() => onNavigateToChannel(anime.idMal || anime.id)}
-              className="relative h-[100px] rounded-xl overflow-hidden cursor-pointer bg-[#121214] border border-white/5 hover:border-white/10 transition-all duration-150 hover:scale-[1.015] hover:brightness-110 active:scale-[0.98] group select-none shadow-md transform-gpu z-0"
+              className="relative h-[100px] rounded-xl overflow-hidden cursor-pointer bg-[#121214] border border-white/5 hover:border-white/10 transition-transform duration-200 hover:scale-[1.015] active:scale-[0.98] group select-none shadow-[0_4px_10px_rgba(0,0,0,0.5)]"
               style={{ "--hover-color": accentColor } as React.CSSProperties}
             >
-              {/* Sharp and crisp unblurred background banner on the right side */}
+              {/* Crisp background banner covering right side */}
               {bgImage && (
                 <div 
-                  className="absolute right-0 top-0 bottom-0 w-[55%] bg-cover bg-center pointer-events-none transition-transform duration-150 ease-out group-hover:scale-[1.03]"
-                  style={{ 
-                    backgroundImage: `url(${bgImage})`,
-                    opacity: 0.65,
-                  }}
+                  className="absolute inset-0 bg-cover bg-right pointer-events-none transition-transform duration-300 ease-out group-hover:scale-105"
+                  style={{ backgroundImage: `url(${bgImage})` }}
                 />
               )}
 
-              {/* A sharp solid mask for high text readability on the left side */}
-              <div className="absolute inset-y-0 left-0 right-[40%] pointer-events-none bg-[#121214] z-1" />
-              <div className="absolute inset-y-0 left-[60%] w-[15%] pointer-events-none bg-gradient-to-r from-[#121214] to-transparent z-1" />
+              {/* Exact gradient overlay matching Netflix/AniWave style. No arbitrary negative inset positioning that breaks bounds logic. */}
+              <div 
+                className="absolute inset-0 pointer-events-none z-[1]" 
+                style={{ background: 'linear-gradient(to right, #121214 0%, #121214 35%, rgba(18,18,20,0.7) 65%, transparent 100%)' }}
+              />
 
               {/* Interactive Content */}
-              <div className="absolute inset-0 flex items-center p-3 gap-4 z-10">
+              <div className="absolute inset-0 flex items-center p-3 gap-4 z-10 pointer-events-none">
                 <div className="h-full w-[60px] flex-shrink-0 rounded-md overflow-hidden bg-black/40 relative z-10 transition-transform duration-150 ease-out group-hover:scale-105 shadow-lg shadow-black/40">
                   <LazyImage src={posterImage} alt={title} className="w-full h-full object-cover" />
                 </div>

@@ -392,13 +392,24 @@ export default function WatchPage({
   const avatar = anime.coverImage.medium || anime.coverImage.large || "";
   const studioName = anime.studios?.nodes?.[0]?.name || anime.format || "Official Studio";
 
-  const currentEpData = episodesMap[currentRange]?.find(e => e.mal_id === episodeNumber);
-  const currentAnivexaEp = anivexaEpisodes.find(e => e.number === episodeNumber);
+  const currentEpData = episodesMap[currentRange]?.find(e => Number(e.mal_id) === Number(episodeNumber));
+  const currentAnivexaEp = anivexaEpisodes.find(e => Number(e.number) === Number(episodeNumber));
   
-  const currentEpTitle = currentAnivexaEp?.title || currentEpData?.title || "";
+  const currentEpTitle = currentEpData?.title || currentAnivexaEp?.title || "";
   const currentEpDesc = currentAnivexaEp?.description || episodeDescription;
-  const currentEpAired = currentAnivexaEp?.airDate || currentEpData?.aired;
+  const currentEpAired = currentEpData?.aired || currentAnivexaEp?.airDate;
   const accentColor = anime?.coverImage?.color || "#38bdf8";
+
+  // Calculate next episode title for "Up Next" header
+  const nextEpNum = Number(episodeNumber) + 1;
+  const nextEpData = episodesMap[currentRange]?.find(e => Number(e.mal_id) === nextEpNum);
+  const nextAnivexaEp = anivexaEpisodes.find(e => Number(e.number) === nextEpNum);
+  const nextEpTitle = nextEpData?.title || nextAnivexaEp?.title || "";
+  const hasNextEpisode = nextEpNum <= (anime.episodes || 9999);
+  
+  const upNextHeader = hasNextEpisode 
+    ? `Up Next - ${nextEpTitle ? nextEpTitle : `Episode ${nextEpNum}`}` 
+    : "Up Next";
 
   return (
     <div className="w-full bg-[#0f0f0f] pb-20 pt-14 select-none z-10 relative animate-fade-in text-[#f1f1f1] min-h-screen">
@@ -484,7 +495,7 @@ export default function WatchPage({
         <div className="w-full lg:w-[29%] min-w-0 flex flex-col bg-[#121214] border border-white/5 rounded-2xl p-4 overflow-hidden min-h-[400px] lg:min-h-0">
           <div className="flex flex-col pb-3 border-b border-white/[0.05] gap-2">
             <h3 className="text-white text-[15px] font-bold font-sans tracking-tight">
-              Up Next - {currentEpTitle || `Episode ${episodeNumber}`}
+              {upNextHeader}
             </h3>
             <p className="text-white/50 text-[13px] truncate">
               Playing - Episode {episodeNumber} - {mainTitle}
@@ -581,9 +592,9 @@ export default function WatchPage({
                 if (episodeSearchQuery.trim() !== "") {
                   const query = episodeSearchQuery.toLowerCase();
                   episodesToRender = episodesToRender.filter((epNum) => {
-                    const epData = episodesMap[currentRange]?.find(e => e.mal_id === epNum);
-                    const anivexaEp = anivexaEpisodes.find(e => e.number === epNum);
-                    const epTitle = (anivexaEp?.title || epData?.title || "").toLowerCase();
+                    const epData = episodesMap[currentRange]?.find(e => Number(e.mal_id) === Number(epNum));
+                    const anivexaEp = anivexaEpisodes.find(e => Number(e.number) === Number(epNum));
+                    const epTitle = (epData?.title || anivexaEp?.title || "").toLowerCase();
                     return epNum.toString().includes(query) || epTitle.includes(query);
                   });
                 }
@@ -606,7 +617,7 @@ export default function WatchPage({
                         itemContent={(index, epNum) => {
                           const isActive = epNum === episodeNumber;
                           const progressVal = getEpisodeProgress(anime.id, seasonNumber, epNum);
-                          const epData = episodesMap[currentRange]?.find(e => e.mal_id === epNum);
+                          const epData = episodesMap[currentRange]?.find(e => Number(e.mal_id) === Number(epNum));
                           
                           let badgeClasses = "";
                           if (epData?.filler) badgeClasses = "bg-[#9bc2e6]/10 text-[#9bc2e6] border-[#9bc2e6]/20";
@@ -654,11 +665,11 @@ export default function WatchPage({
                         const isActive = epNum === episodeNumber;
                         const progressVal = getEpisodeProgress(anime.id, seasonNumber, epNum);
                         
-                        const epData = episodesMap[currentRange]?.find(e => e.mal_id === epNum);
-                        const anivexaEp = anivexaEpisodes.find(e => e.number === epNum);
-                        const epTitleStr = anivexaEp?.title || epData?.title || "";
+                        const epData = episodesMap[currentRange]?.find(e => Number(e.mal_id) === Number(epNum));
+                        const anivexaEp = anivexaEpisodes.find(e => Number(e.number) === Number(epNum));
+                        const epTitleStr = epData?.title || anivexaEp?.title || "";
                         const epImage = anivexaEp?.image || (isAnivexaLoading ? "" : (anime.coverImage.medium || anime.coverImage.large));
-                        const epAired = anivexaEp?.airDate || epData?.aired;
+                        const epAired = epData?.aired || anivexaEp?.airDate;
                         
                         let badge = null;
                         if (epData?.recap) {
@@ -960,18 +971,13 @@ export default function WatchPage({
             </div>
 
             {/* Episode Description Card */}
-            <div className="mt-3 bg-white/[0.05] hover:bg-white/[0.08] transition-colors rounded-xl p-4 border border-white/5">
-              <div className="flex flex-wrap items-center gap-2 text-[14px] font-bold text-white mb-2">
-                {currentEpAired && (
-                  <span>Aired {new Date(currentEpAired).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                )}
+            {currentEpDesc && (
+              <div className="mt-3 bg-white/[0.05] rounded-xl p-5 border border-white/5">
+                <p className="text-[14px] text-white/90 leading-relaxed font-medium">
+                  {currentEpDesc}
+                </p>
               </div>
-              
-              <p className="text-[14px] text-white/90 leading-relaxed font-medium">
-                <span className="font-bold text-white mr-2 block mb-1">Episode {episodeNumber}</span>
-                {currentEpDesc ? currentEpDesc : "No official synopsis available for this episode."}
-              </p>
-            </div>
+            )}
           </div>
         </div>
 
