@@ -389,25 +389,21 @@ export default function WatchPage({
   const currentEpTitle = currentAnivexaEp?.title || currentEpData?.title || "";
   const currentEpDesc = currentAnivexaEp?.description || episodeDescription;
   const currentEpAired = currentAnivexaEp?.airDate || currentEpData?.aired;
+  const accentColor = anime?.coverImage?.color || "#38bdf8";
 
   return (
-    <div className="w-full bg-[#0f0f0f] pb-20 select-none z-10 relative animate-fade-in text-[#f1f1f1] min-h-screen">
-      {/* =============== BREADCRUMB BAR =============== */}
-      <div className="sticky top-0 left-0 right-0 h-12 bg-[#0f0f0f]/90 backdrop-blur-md z-[100] border-b border-white/[0.05] flex items-center px-4 lg:px-6">
-        <div className="flex items-center gap-2 text-[13px] font-medium font-sans">
-          <button onClick={() => window.location.hash = "/"} className="text-white/60 hover:text-white transition-colors cursor-pointer">
-            Home
-          </button>
-          <ChevronRight className="w-3.5 h-3.5 text-white/40" />
-          <button onClick={() => onNavigateToChannel(animeId)} className="text-white/60 hover:text-white transition-colors cursor-pointer truncate max-w-[200px] sm:max-w-[300px]">
-             {mainTitle}
-          </button>
-          <ChevronRight className="w-3.5 h-3.5 text-white/40" />
-          <span className="text-white truncate lg:max-w-none max-w-[150px]">
-             {currentEpTitle || `Episode ${episodeNumber}`}
-          </span>
-        </div>
-      </div>
+    <div className="w-full bg-[#0f0f0f] pb-20 pt-14 select-none z-10 relative animate-fade-in text-[#f1f1f1] min-h-screen">
+      {/* =============== HEADER WITH INTEGRATED BREADCRUMBS =============== */}
+      <Header
+        variant="slim"
+        onSearch={onSearch}
+        onNavigateHome={() => window.location.hash = "/"}
+        breadcrumbs={[
+          { label: "Home", onClick: () => window.location.hash = "/", color: accentColor },
+          { label: mainTitle, onClick: () => onNavigateToChannel(animeId), color: accentColor },
+          { label: currentEpTitle || `Episode ${episodeNumber}` }
+        ]}
+      />
       
       {/* =============== RESUME PREVIOUS SESSION HUD ALERT =============== */}
       {resumeSession && (
@@ -517,9 +513,16 @@ export default function WatchPage({
 
           {/* Episode Info */}
           <div className="mt-2 flex flex-col gap-3 pb-8">
-            {/* Orange Warning Banner */}
-            <div className="bg-[#ff6b35]/10 border border-[#ff6b35]/20 text-[#ff6b35] text-[13px] font-semibold px-4 py-2.5 rounded-lg flex items-center gap-2">
-              <Info className="w-4 h-4 shrink-0" />
+            {/* Warning Banner styled dynamically with the anime's AniList color */}
+            <div 
+              className="border text-[13px] font-semibold px-4 py-2.5 rounded-lg flex items-center gap-2 transition-all duration-300"
+              style={{
+                backgroundColor: `${accentColor}12`, // ~7% opacity
+                borderColor: `${accentColor}33`,     // 20% opacity
+                color: accentColor
+              }}
+            >
+              <Info className="w-4.5 h-4.5 shrink-0" />
               <span>If the current server doesn't work, feel free to try the other available servers.</span>
             </div>
 
@@ -707,7 +710,7 @@ export default function WatchPage({
         </div>
 
         {/* =============== RIGHT COLUMN: INTEGRATED EPISODE QUEUE SIDEBAR =============== */}
-        <div className="w-full lg:w-[29%] flex flex-col gap-4 lg:sticky lg:top-[60px] lg:h-[calc(100vh-80px)] pr-2 pb-10">
+        <div className="w-full lg:w-[29%] flex flex-col gap-4 lg:sticky lg:top-[70px] lg:h-[calc(100vh-100px)] pr-2 lg:overflow-y-auto custom-scrollbar pb-24">
             <div className="flex flex-col pb-3 border-b border-white/[0.05] gap-2">
               <h3 className="text-white text-[15px] font-bold font-sans tracking-tight">
                 Up Next - {currentEpTitle || `Episode ${episodeNumber}`}

@@ -231,7 +231,7 @@ export default function App() {
         />
       )}
 
-      <div className="flex flex-1 pt-[56px] text-white z-10 relative">
+      <div className={`flex flex-1 ${activePage === "watch" ? "pt-0" : "pt-[56px]"} text-white z-10 relative`}>
         
         {/* 3. Right main contents stage viewport with standard padding scale */}
         <main

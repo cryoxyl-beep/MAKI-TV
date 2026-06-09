@@ -12,6 +12,7 @@ interface Recommendation {
   coverImage: {
     large: string | null;
     medium: string | null;
+    color: string | null;
   };
   bannerImage: string | null;
   format: string | null;
@@ -50,6 +51,7 @@ export default function RecommendationsList({ anilistId, onNavigateToChannel }: 
                     coverImage {
                       large
                       medium
+                      color
                     }
                     bannerImage
                     format
@@ -71,6 +73,7 @@ export default function RecommendationsList({ anilistId, onNavigateToChannel }: 
                     coverImage {
                       large
                       medium
+                      color
                     }
                     bannerImage
                     format
@@ -149,28 +152,40 @@ export default function RecommendationsList({ anilistId, onNavigateToChannel }: 
           const title = anime.title.english || anime.title.romaji || anime.title.userPreferred || "Unknown";
           const format = anime.format ? anime.format.replace(/_/g, " ") : "TV";
           
+          // Capture the dynamic color from AniList; default to soft white/silver if none is set
+          const accentColor = anime.coverImage.color || "#ffffff";
+          
           return (
             <div 
               key={anime.id}
               onClick={() => onNavigateToChannel(anime.idMal || anime.id)}
-              className="relative h-[100px] rounded-xl overflow-hidden cursor-pointer bg-[#0a0a0a] border border-white/[0.03]"
+              className="relative h-[100px] rounded-xl overflow-hidden cursor-pointer bg-[#121214] border border-white/5 hover:border-white/10 hover:bg-[#161619] transition duration-200 hover:scale-[1.015] active:scale-[0.98] group select-none shadow-md hover:shadow-xl transform-gpu z-0"
+              style={{ "--hover-color": accentColor } as React.CSSProperties}
             >
-              {/* Banner Background */}
-              <div 
-                className="absolute right-0 top-0 bottom-0 w-[70%] bg-cover bg-center"
-                style={{ backgroundImage: `url(${bgImage})` }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-[#0a0a0a] via-[#0a0a0a]/80 to-transparent" />
-              </div>
+              {/* Image smoothly masked natively to blend perfectly into the bg WITHOUT messy overlaid gradient grids */}
+              {bgImage && (
+                <div 
+                  className="absolute inset-0 bg-cover bg-center pointer-events-none transition-transform duration-500 ease-out group-hover:scale-[1.03] z-[-10]"
+                  style={{ 
+                    backgroundImage: `url(${bgImage})`,
+                    opacity: 0.25,
+                    WebkitMaskImage: 'linear-gradient(90deg, transparent 0%, transparent 20%, black 50%, black 100%)',
+                    maskImage: 'linear-gradient(90deg, transparent 0%, transparent 20%, black 50%, black 100%)'
+                  }}
+                />
+              )}
 
-              {/* Content */}
+              {/* Massive static inner shadow to aggressively crush any bright colors at the top, bottom, and right edges */}
+              <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_40px_rgba(18,18,20,1)] rounded-xl z-[-5]" />
+
+              {/* Interactive Content */}
               <div className="absolute inset-0 flex items-center p-3 gap-4">
-                <div className="h-full w-[60px] flex-shrink-0 rounded-md overflow-hidden bg-black/40">
+                <div className="h-full w-[60px] flex-shrink-0 rounded-md overflow-hidden bg-black/40 relative z-10 group-hover:scale-[1.04] transition-transform duration-300 ease-out shadow-lg">
                   <LazyImage src={posterImage} alt={title} className="w-full h-full object-cover" />
                 </div>
                 
                 <div className="flex flex-col justify-center min-w-0 pr-4 z-10 flex-1">
-                  <h4 className="text-[15px] font-bold text-white tracking-tight leading-tight line-clamp-2">
+                  <h4 className="text-[15px] font-bold text-white tracking-tight leading-tight line-clamp-2 transition-colors group-hover:text-[var(--hover-color)]">
                     {title}
                   </h4>
                   {(format || anime.season || anime.seasonYear) && (

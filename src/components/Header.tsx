@@ -32,7 +32,7 @@ export default function Header({
   onMenuClick,
   variant = "global",
   breadcrumbs = []
-}: HeaderProps & { onNavigateSchedule?: () => void; variant?: "global" | "slim"; breadcrumbs?: { label: string; onClick?: () => void }[] }) {
+}: HeaderProps & { onNavigateSchedule?: () => void; variant?: "global" | "slim"; breadcrumbs?: { label: string; onClick?: () => void; color?: string }[] }) {
   const [searchVal, setSearchVal] = useState(initialSearchQuery);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
@@ -123,7 +123,7 @@ export default function Header({
 
   return (
     <>
-      <header className={`fixed top-0 left-0 right-0 z-50 select-none transform-gpu transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${variant === "slim" ? "h-[48px] bg-transparent pt-1" : "h-16 bg-transparent"} ${isVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0 pointer-events-none"}`}>
+      <header className={`fixed top-0 left-0 right-0 z-50 select-none transform-gpu transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${variant === "slim" ? "h-14 bg-[#0f0f0f]/95 border-b border-white/[0.05] backdrop-blur-md" : "h-16 bg-transparent"} ${isVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0 pointer-events-none"}`}>
         {/* Search Header for Mobile overlay */}
         {showMobileSearch ? (
           <form onSubmit={handleSubmit} className="absolute inset-0 bg-[#09090b] flex items-center px-4 gap-2 z-50">
@@ -163,7 +163,7 @@ export default function Header({
         ) : variant === "slim" ? (
           <div className="w-full h-full px-4 md:px-8 lg:px-10 flex items-center justify-between">
             {/* Breadcrumb Left */}
-            <nav className="flex-1 flex items-center text-sm font-semibold tracking-wide overflow-x-auto scrollbar-hide py-2 pr-4">
+            <nav className="flex-1 flex items-center text-[15px] md:text-base font-semibold tracking-wide overflow-x-auto scrollbar-hide py-2 pr-4">
               {breadcrumbs.map((item, index) => {
                 const isLast = index === breadcrumbs.length - 1;
                 const isInteractive = !!item.onClick && !isLast;
@@ -171,16 +171,26 @@ export default function Header({
                 
                 return (
                   <div key={index} className="flex items-center shrink-0">
-                    {index > 0 && <span className="mx-2.5 text-white/30 text-[11px] font-bold">&gt;</span>}
+                    {index > 0 && <span className="mx-2 sm:mx-3 text-white/30 text-sm font-bold">&gt;</span>}
                     <button
-                      className={`flex items-center transition-colors duration-200 ${
-                        isInteractive ? "hover:text-white cursor-pointer text-white/50" : "text-white/80 cursor-default pointer-events-none flex items-center"
+                      className={`flex items-center transition-all duration-200 ${
+                        isInteractive ? "cursor-pointer text-white/60" : "text-white/95 cursor-default pointer-events-none flex items-center"
                       }`}
                       onClick={isInteractive ? item.onClick : undefined}
                       title={item.label}
+                      onMouseEnter={(e) => {
+                        if (isInteractive) {
+                          e.currentTarget.style.color = item.color || '#38bdf8';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (isInteractive) {
+                          e.currentTarget.style.color = '';
+                        }
+                      }}
                     >
                       {isHome ? (
-                        <Home className="w-[17px] h-[17px] mb-[1px]" />
+                        <Home className="w-[18px] h-[18px] hover:scale-105 transition-transform" />
                       ) : (
                         <span className="truncate max-w-[160px] sm:max-w-[260px] md:max-w-[350px]">{item.label}</span>
                       )}
