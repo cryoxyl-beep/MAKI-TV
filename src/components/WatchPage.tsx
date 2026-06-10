@@ -392,8 +392,8 @@ export default function WatchPage({
   const avatar = anime.coverImage.medium || anime.coverImage.large || "";
   const studioName = anime.studios?.nodes?.[0]?.name || anime.format || "Official Studio";
 
-  const currentEpData = episodesMap[currentRange]?.find(e => Number(e.mal_id) === Number(episodeNumber));
-  const currentAnivexaEp = anivexaEpisodes.find(e => Number(e.number) === Number(episodeNumber));
+  const currentEpData = episodesMap[currentRange]?.find(e => Number(e.mal_id) === Number(episodeNumber)) || episodesMap[currentRange]?.[Number(episodeNumber) - 1];
+  const currentAnivexaEp = anivexaEpisodes.find(e => Number(e.number) === Number(episodeNumber)) || anivexaEpisodes[Number(episodeNumber) - 1];
   
   const currentEpTitle = currentEpData?.title || currentAnivexaEp?.title || "";
   const currentEpDesc = currentAnivexaEp?.description || episodeDescription;
@@ -402,8 +402,9 @@ export default function WatchPage({
 
   // Calculate next episode title for "Up Next" header
   const nextEpNum = Number(episodeNumber) + 1;
-  const nextEpData = episodesMap[currentRange]?.find(e => Number(e.mal_id) === nextEpNum);
-  const nextAnivexaEp = anivexaEpisodes.find(e => Number(e.number) === nextEpNum);
+  const targetRange = Math.max(1, Math.ceil(nextEpNum / 100));
+  const nextEpData = episodesMap[targetRange]?.find(e => Number(e.mal_id) === nextEpNum) || episodesMap[targetRange]?.[(nextEpNum - 1) % 100];
+  const nextAnivexaEp = anivexaEpisodes.find(e => Number(e.number) === nextEpNum) || anivexaEpisodes[nextEpNum - 1];
   const nextEpTitle = nextEpData?.title || nextAnivexaEp?.title || "";
   const hasNextEpisode = nextEpNum <= (anime.episodes || 9999);
   
@@ -592,8 +593,8 @@ export default function WatchPage({
                 if (episodeSearchQuery.trim() !== "") {
                   const query = episodeSearchQuery.toLowerCase();
                   episodesToRender = episodesToRender.filter((epNum) => {
-                    const epData = episodesMap[currentRange]?.find(e => Number(e.mal_id) === Number(epNum));
-                    const anivexaEp = anivexaEpisodes.find(e => Number(e.number) === Number(epNum));
+                    const epData = episodesMap[currentRange]?.find(e => Number(e.mal_id) === Number(epNum)) || episodesMap[currentRange]?.[(epNum - 1) % 100];
+                    const anivexaEp = anivexaEpisodes.find(e => Number(e.number) === Number(epNum)) || anivexaEpisodes[epNum - 1];
                     const epTitle = (epData?.title || anivexaEp?.title || "").toLowerCase();
                     return epNum.toString().includes(query) || epTitle.includes(query);
                   });
@@ -617,7 +618,7 @@ export default function WatchPage({
                         itemContent={(index, epNum) => {
                           const isActive = epNum === episodeNumber;
                           const progressVal = getEpisodeProgress(anime.id, seasonNumber, epNum);
-                          const epData = episodesMap[currentRange]?.find(e => Number(e.mal_id) === Number(epNum));
+                          const epData = episodesMap[currentRange]?.find(e => Number(e.mal_id) === Number(epNum)) || episodesMap[currentRange]?.[(epNum - 1) % 100];
                           
                           let badgeClasses = "";
                           if (epData?.filler) badgeClasses = "bg-[#9bc2e6]/10 text-[#9bc2e6] border-[#9bc2e6]/20";
@@ -665,8 +666,8 @@ export default function WatchPage({
                         const isActive = epNum === episodeNumber;
                         const progressVal = getEpisodeProgress(anime.id, seasonNumber, epNum);
                         
-                        const epData = episodesMap[currentRange]?.find(e => Number(e.mal_id) === Number(epNum));
-                        const anivexaEp = anivexaEpisodes.find(e => Number(e.number) === Number(epNum));
+                        const epData = episodesMap[currentRange]?.find(e => Number(e.mal_id) === Number(epNum)) || episodesMap[currentRange]?.[(epNum - 1) % 100];
+                        const anivexaEp = anivexaEpisodes.find(e => Number(e.number) === Number(epNum)) || anivexaEpisodes[epNum - 1];
                         const epTitleStr = epData?.title || anivexaEp?.title || "";
                         const epImage = anivexaEp?.image || (isAnivexaLoading ? "" : (anime.coverImage.medium || anime.coverImage.large));
                         const epAired = epData?.aired || anivexaEp?.airDate;

@@ -117,7 +117,7 @@ export default function RecommendationsList({ anilistId, onNavigateToChannel, li
           setRecommendations(recs);
         }
       } catch (err) {
-        console.error("Failed to fetch recs", err);
+        console.warn("Failed to fetch recs:", err);
       } finally {
         if (mounted) setIsLoading(false);
       }
@@ -165,18 +165,18 @@ export default function RecommendationsList({ anilistId, onNavigateToChannel, li
               className="relative h-[100px] rounded-xl overflow-hidden cursor-pointer bg-[#121214] border border-white/5 hover:border-white/10 transition-transform duration-200 hover:scale-[1.015] active:scale-[0.98] group select-none shadow-[0_4px_10px_rgba(0,0,0,0.5)]"
               style={{ "--hover-color": accentColor } as React.CSSProperties}
             >
-              {/* Crisp background banner covering right side */}
+              {/* Crisp background banner extending entire width */}
               {bgImage && (
                 <div 
-                  className="absolute inset-0 bg-cover bg-right pointer-events-none transition-transform duration-300 ease-out group-hover:scale-105"
+                  className="absolute inset-0 bg-cover bg-center pointer-events-none transition-transform duration-300 ease-out group-hover:scale-105"
                   style={{ backgroundImage: `url(${bgImage})` }}
                 />
               )}
 
-              {/* Exact gradient overlay matching Netflix/AniWave style. No arbitrary negative inset positioning that breaks bounds logic. */}
+              {/* Seamless gradient fade preventing any dark strips. Fades smoothly into the image. */}
               <div 
                 className="absolute inset-0 pointer-events-none z-[1]" 
-                style={{ background: 'linear-gradient(to right, #121214 0%, #121214 35%, rgba(18,18,20,0.7) 65%, transparent 100%)' }}
+                style={{ background: 'linear-gradient(90deg, #121214 0%, #121214 30%, rgba(18,18,20,0) 100%)' }} 
               />
 
               {/* Interactive Content */}
