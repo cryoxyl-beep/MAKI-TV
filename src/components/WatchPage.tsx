@@ -948,23 +948,23 @@ export default function WatchPage({
                   <AnimatePresence>
                     {isServerDropdownOpen && (
                       <motion.div
-                        initial={{ opacity: 0, y: -5 }}
+                        initial={{ opacity: 0, y: 5 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -5 }}
+                        exit={{ opacity: 0, y: 5 }}
                         transition={{ duration: 0.15 }}
-                        className="absolute right-0 sm:left-auto sm:right-0 top-full mt-2 w-40 bg-[#212121] border border-white/10 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] z-[200] origin-top overflow-hidden"
+                        className="absolute right-0 sm:left-auto sm:right-0 bottom-full mb-2 w-28 bg-[#212121] border border-white/10 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] z-[200] origin-bottom overflow-hidden"
                       >
                         <div className="flex flex-col py-1">
                           {[
                             ...(anime?.anilistId ? [
-                              { id: "anineko", label: "Neko", subtitle: "[S-SUB] [DUB]" },
-                              { id: "animegg", label: "GG", subtitle: "[S-SUB] [DUB]" }
+                              { id: "anineko", label: "Neko" },
+                              { id: "animegg", label: "GG" }
                             ] : []),
-                            { id: "megaplay", label: "Kyou", subtitle: "[S-SUB] [DUB]" },
-                            { id: "origami", label: "Kami", subtitle: "[S-SUB] [DUB]" },
+                            { id: "megaplay", label: "Kyou" },
+                            { id: "origami", label: "Kami" },
                             ...(anime?.anilistId ? [
-                              { id: "vidnest", label: "Haya", subtitle: "[S-SUB] [DUB]" },
-                              { id: "animepahe", label: "Miru", subtitle: "[S-SUB] [DUB]" }
+                              { id: "vidnest", label: "Haya" },
+                              { id: "animepahe", label: "Miru" }
                             ] : [])
                           ].map(provider => (
                             <button
@@ -977,10 +977,9 @@ export default function WatchPage({
                                   localStorage.setItem("makitv_megaplay_language", "sub");
                                 }
                               }}
-                              className={`px-4 py-2 flex flex-col items-start hover:bg-white/10 transition-colors cursor-pointer ${selectedProvider === provider.id ? "bg-white/5" : ""}`}
+                              className={`px-4 py-2.5 text-left hover:bg-white/10 transition-colors cursor-pointer ${selectedProvider === provider.id ? "bg-white/5 text-white" : "text-white/60 hover:text-white"}`}
                             >
-                              <span className={`text-[13px] font-semibold ${selectedProvider === provider.id ? "text-white" : "text-white/80"}`}>{provider.label}</span>
-                              <span className="text-[10px] text-white/40 font-mono mt-0.5">{provider.subtitle}</span>
+                              <span className="text-[13px] font-semibold">{provider.label}</span>
                             </button>
                           ))}
                         </div>
