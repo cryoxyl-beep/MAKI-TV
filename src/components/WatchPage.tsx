@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { AniListAnime } from "../types";
 import { fetchAnimeDetails } from "../services/anilist";
 import { getTMDBMapping } from "../services/mapping";
@@ -11,6 +11,7 @@ import { initializeFribbMapping, getAniListId } from "../services/fribb";
 import { 
   addToWatchHistory, 
   getEpisodeProgress,
+  getWatchHistory,
   getUnifiedWatchState,
   isWatchLater,
   toggleWatchLater
@@ -188,6 +189,39 @@ export default function WatchPage({
 
   const episodesCount = anime?.episodes || 12;
   const isLongRunning = episodesCount >= 100;
+
+  // Optimization: Memoize watch progress map to avoid repetitive localStorage hits during scroll
+  const progressMap = useMemo(() => {
+    if (!anime) return {};
+    const map: Record<string, number> = {};
+    const watchHistory = getWatchHistory();
+    watchHistory.forEach(item => {
+      if (item.animeId === anime.id) {
+        map[`${item.seasonNumber}-${item.episodeNumber}`] = item.progress;
+      }
+    });
+    return map;
+  }, [anime, animeId]);
+
+  const episodesToRender = useMemo(() => {
+    if (!anime) return [];
+    const currentRangeStart = (currentRange - 1) * 100 + 1;
+    const currentRangeEnd = Math.min(currentRange * 100, episodesCount);
+    const currentRangeCount = isLongRunning ? Math.max(0, currentRangeEnd - currentRangeStart + 1) : episodesCount;
+    
+    let eps = Array.from({ length: currentRangeCount }, (_, idx) => isLongRunning ? currentRangeStart + idx : idx + 1);
+
+    if (episodeSearchQuery.trim() !== "") {
+      const query = episodeSearchQuery.toLowerCase();
+      eps = eps.filter((epNum) => {
+        const epData = episodesMap[currentRange]?.find(e => Number(e.mal_id) === Number(epNum)) || episodesMap[currentRange]?.[(epNum - 1) % 100];
+        const anivexaEp = anivexaEpisodes.find(e => Number(e.number) === Number(epNum)) || anivexaEpisodes[epNum - 1];
+        const epTitle = (epData?.title || anivexaEp?.title || "").toLowerCase();
+        return epNum.toString().includes(query) || epTitle.includes(query);
+      });
+    }
+    return eps;
+  }, [anime, currentRange, episodesCount, isLongRunning, episodeSearchQuery, episodesMap, anivexaEpisodes]);
   
   // Set initial range based on current episode
   useEffect(() => {
@@ -614,10 +648,11 @@ export default function WatchPage({
                         className="custom-scrollbar"
                         style={{ height: '100%', width: '100%' }}
                         data={episodesToRender}
+                        overscan={400}
                         listClassName="grid grid-cols-5 sm:grid-cols-7 lg:grid-cols-6 xl:grid-cols-8 gap-2 pb-4 pt-1 px-1"
                         itemContent={(index, epNum) => {
                           const isActive = epNum === episodeNumber;
-                          const progressVal = getEpisodeProgress(anime.id, seasonNumber, epNum);
+                          const progressVal = progressMap[`${seasonNumber}-${epNum}`] || 0;
                           const epData = episodesMap[currentRange]?.find(e => Number(e.mal_id) === Number(epNum)) || episodesMap[currentRange]?.[(epNum - 1) % 100];
                           
                           let badgeClasses = "";
@@ -662,9 +697,11 @@ export default function WatchPage({
                       className="custom-scrollbar"
                       style={{ height: '100%', width: '100%' }}
                       data={episodesToRender}
+                      overscan={10}
+                      increaseViewportBy={300}
                       itemContent={(index, epNum) => {
                         const isActive = epNum === episodeNumber;
-                        const progressVal = getEpisodeProgress(anime.id, seasonNumber, epNum);
+                        const progressVal = progressMap[`${seasonNumber}-${epNum}`] || 0;
                         
                         const epData = episodesMap[currentRange]?.find(e => Number(e.mal_id) === Number(epNum)) || episodesMap[currentRange]?.[(epNum - 1) % 100];
                         const anivexaEp = anivexaEpisodes.find(e => Number(e.number) === Number(epNum)) || anivexaEpisodes[epNum - 1];
@@ -717,7 +754,7 @@ export default function WatchPage({
                                 </h4>
                                 <div className="text-[12px] text-white/50 font-medium mt-1 inline-flex items-center gap-1.5 flex-wrap">
                                   {badge}
-                                  <span>{epAired ? new Date(epAired).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : `Episode ${epNum}`}</span>
+                                  <span>{epAired ? new Date(epAired).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : `Episode ${epNum}`}</span>
                                   {progressVal > 0 && (
                                     <>
                                       <span className="text-white/30">•</span>

@@ -146,8 +146,8 @@ export default function RecommendationsList({ anilistId, onNavigateToChannel, li
   }
 
   return (
-    <div className="mt-8 mb-24 flex flex-col gap-4">
-      <h3 className="text-white text-xl font-bold font-sans tracking-tight">Suggested</h3>
+    <div className="mt-8 mb-24 flex flex-col gap-5 px-0.5">
+      <h3 className="text-white text-[15px] font-bold font-sans tracking-tight px-1 opacity-90">Suggested</h3>
       <div className="flex flex-col gap-3">
         {recommendations.map(anime => {
           const bgImage = anime.bannerImage || anime.coverImage.large || "";
@@ -162,22 +162,22 @@ export default function RecommendationsList({ anilistId, onNavigateToChannel, li
             <div 
               key={anime.id}
               onClick={() => onNavigateToChannel(anime.idMal || anime.id)}
-              className="relative h-[100px] rounded-xl overflow-hidden cursor-pointer bg-[#121214] border border-white/5 hover:border-white/10 transition-transform duration-200 hover:scale-[1.015] active:scale-[0.98] group select-none shadow-[0_4px_10px_rgba(0,0,0,0.5)]"
+              className="relative h-[100px] rounded-xl overflow-hidden cursor-pointer bg-[#121214] border border-white/5 hover:border-white/10 transition-all duration-200 hover:scale-[1.015] active:scale-[0.98] group select-none shadow-[0_4px_10px_rgba(0,0,0,0.5)] isolation-isolate transform-gpu"
               style={{ "--hover-color": accentColor } as React.CSSProperties}
             >
-              {/* Crisp background banner extending entire width */}
-              {bgImage && (
+              {/* Unified Background Layer: Scaled unit with negative inset to over-bleed the clipping edge. Added grayscale filter that transitions to color on hover. */}
+              <div className="absolute -inset-[2px] pointer-events-none transition-all duration-500 ease-out group-hover:scale-[1.06] grayscale group-hover:grayscale-0 will-change-[transform,filter] transform-gpu">
+                {bgImage && (
+                  <div 
+                    className="absolute inset-0 bg-cover bg-center"
+                    style={{ backgroundImage: `url(${bgImage})` }}
+                  />
+                )}
                 <div 
-                  className="absolute inset-0 bg-cover bg-center pointer-events-none transition-transform duration-300 ease-out group-hover:scale-105"
-                  style={{ backgroundImage: `url(${bgImage})` }}
+                  className="absolute inset-0 z-[1]" 
+                  style={{ background: 'linear-gradient(90deg, #121214 0%, #121214 25%, rgba(18,18,20,0.85) 45%, rgba(18,18,20,0) 100%)' }} 
                 />
-              )}
-
-              {/* Seamless gradient fade preventing any dark strips. Fades smoothly into the image. */}
-              <div 
-                className="absolute inset-0 pointer-events-none z-[1]" 
-                style={{ background: 'linear-gradient(90deg, #121214 0%, #121214 30%, rgba(18,18,20,0) 100%)' }} 
-              />
+              </div>
 
               {/* Interactive Content */}
               <div className="absolute inset-0 flex items-center p-3 gap-4 z-10 pointer-events-none">
