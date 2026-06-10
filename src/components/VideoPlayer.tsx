@@ -4,7 +4,8 @@
  */
 
 import React, { useState, useEffect, useRef } from "react";
-import { Landmark, RefreshCw } from "lucide-react";
+import { Landmark } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 import { saveUnifiedWatchState, getUnifiedWatchState } from "../utils";
 
 interface VideoPlayerProps {
@@ -109,10 +110,7 @@ export default function VideoPlayer({
     setOrigamiLoadError(false);
     setVidnestLoadError(false);
     setAnimepaheLoadError(false);
-    const timer = setTimeout(() => {
-      setIframeLoading(false);
-    }, 4000); // 4-second safety threshold fallback
-    return () => clearTimeout(timer);
+    // Removed 4-second safety threshold fallback as per requirements to use real events
   }, [animeId, episodeNumber, seasonNumber, selectedProvider, tmdbId]);
 
   // MegaPlay and Origami loading and fallback watchdog effect loop
@@ -552,7 +550,12 @@ export default function VideoPlayer({
             </div>
           </div>
         ) : (
-          <>
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.25 }}
+            className="w-full h-full"
+          >
             <iframe
               src={megaPlayUrl}
               className="w-full h-full border-0 absolute inset-0 z-10 pointer-events-auto"
@@ -561,7 +564,7 @@ export default function VideoPlayer({
               onLoad={handleIframeLoad}
               title={`MakiTV Player: ${animeTitle}`}
             />
-          </>
+          </motion.div>
         )
       ) : selectedProvider === "origami" ? (
         origamiLoadError ? (
@@ -593,7 +596,12 @@ export default function VideoPlayer({
             </div>
           </div>
         ) : (
-          <>
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.25 }}
+            className="w-full h-full"
+          >
             <iframe
               src={origamiUrl}
               className="w-full h-full border-0 absolute inset-0 z-10 pointer-events-auto"
@@ -602,10 +610,15 @@ export default function VideoPlayer({
               onLoad={handleIframeLoad}
               title={`MakiTV Player: ${animeTitle}`}
             />
-          </>
+          </motion.div>
         )
       ) : selectedProvider === "vidnest" ? (
-        <>
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.25 }}
+          className="w-full h-full"
+        >
           <iframe
             src={vidnestUrl}
             className="w-full h-full border-0 absolute inset-0 z-10 pointer-events-auto"
@@ -614,9 +627,14 @@ export default function VideoPlayer({
             onLoad={handleIframeLoad}
             title={`Haya Player: ${animeTitle}`}
           />
-        </>
+        </motion.div>
       ) : selectedProvider === "animepahe" ? (
-        <>
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.25 }}
+          className="w-full h-full"
+        >
           <iframe
             src={animepaheUrl}
             className="w-full h-full border-0 absolute inset-0 z-10 pointer-events-auto"
@@ -625,7 +643,7 @@ export default function VideoPlayer({
             onLoad={handleIframeLoad}
             title={`Miru Player: ${animeTitle}`}
           />
-        </>
+        </motion.div>
       ) : selectedProvider === "anineko" || selectedProvider === "animegg" ? (
         dynamicEmbedError ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-gray-500 z-10 gap-2">
@@ -636,51 +654,69 @@ export default function VideoPlayer({
             </span>
           </div>
         ) : dynamicEmbedUrl ? (
-          <iframe
-            src={dynamicEmbedUrl}
-            className="w-full h-full border-0 absolute inset-0 z-10 pointer-events-auto"
-            allow="autoplay; fullscreen; encrypted-media"
-            allowFullScreen
-            onLoad={handleIframeLoad}
-            title={`${selectedProvider === 'anineko' ? 'Neko' : 'GG'} Player: ${animeTitle}`}
-          />
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.25 }}
+            className="w-full h-full"
+          >
+            <iframe
+              src={dynamicEmbedUrl}
+              className="w-full h-full border-0 absolute inset-0 z-10 pointer-events-auto"
+              allow="autoplay; fullscreen; encrypted-media"
+              allowFullScreen
+              onLoad={handleIframeLoad}
+              title={`${selectedProvider === 'anineko' ? 'Neko' : 'GG'} Player: ${animeTitle}`}
+            />
+          </motion.div>
         ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-gray-500 z-10 gap-2">
-            <Landmark className="w-8 h-8 text-gray-600 animate-pulse" />
-            <span className="text-sm font-medium">Resolving {selectedProvider === 'anineko' ? 'Neko' : 'GG'} mapping...</span>
-          </div>
+          <div className="absolute inset-0 bg-[#0a0a0c]" />
         )
       ) : embedUrl ? (
-        <iframe
-          src={embedUrl}
-          className="w-full h-full border-0 absolute inset-0 z-10 pointer-events-auto"
-          allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-          referrerPolicy="origin"
-          allowFullScreen
-          onLoad={() => setIframeLoading(false)}
-          title={`MakiTV Player: ${animeTitle}`}
-        />
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.25 }}
+          className="w-full h-full"
+        >
+          <iframe
+            src={embedUrl}
+            className="w-full h-full border-0 absolute inset-0 z-10 pointer-events-auto"
+            allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+            referrerPolicy="origin"
+            allowFullScreen
+            onLoad={() => setIframeLoading(false)}
+            title={`MakiTV Player: ${animeTitle}`}
+          />
+        </motion.div>
       ) : (
-        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-gray-500 z-10 gap-2">
-          <Landmark className="w-8 h-8 text-gray-600 animate-pulse" />
-          <span className="text-sm font-medium">Resolving stream pipeline mappings...</span>
-        </div>
+        <div className="absolute inset-0 bg-[#0a0a0c]" />
       )}
  
-      {/* Loading Glass overlay */}
-      {iframeLoading && (selectedProvider === "megaplay" ? !megaplayLoadError : selectedProvider === "origami" ? !origamiLoadError : selectedProvider === "anineko" || selectedProvider === "animegg" ? (!dynamicEmbedError && !!dynamicEmbedUrl) : !!embedUrl) && (
-        <div className="absolute inset-0 bg-[#0a0a0c] flex flex-col items-center justify-center z-20 gap-3 pointer-events-none">
-          <RefreshCw className="w-7 h-7 text-white/50 animate-spin" />
-          <div className="text-center font-sans">
-            <span className="text-[10px] uppercase text-white/40 font-bold tracking-widest block mb-0.5">
-              Secure Proxy Stream
-            </span>
-            <span className="text-white text-xs font-semibold">
-              Loading {selectedProvider === "megaplay" ? "Kyou" : selectedProvider === "origami" ? "Kami" : selectedProvider === "anineko" ? "Neko" : selectedProvider === "animegg" ? "GG" : "source"} channel connection...
-            </span>
-          </div>
-        </div>
-      )}
+      {/* Anime-themed Loading Experience */}
+      <AnimatePresence>
+        {(iframeLoading && !megaplayLoadError && !origamiLoadError && !dynamicEmbedError) && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="absolute inset-0 bg-[#0a0a0c] z-20 pointer-events-none overflow-hidden"
+          >
+            <img 
+              src="https://res.cloudinary.com/dgymbeaxk/image/upload/v1781102541/animesher.com_run-school-uniform-bread-1335779_mruzcm.gif"
+              alt="Loading..."
+              className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 object-contain pointer-events-none transition-all"
+              style={{ 
+                top: '68%',
+                width: 'clamp(200px, 40%, 280px)',
+                height: 'auto'
+              }}
+              referrerPolicy="no-referrer"
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
