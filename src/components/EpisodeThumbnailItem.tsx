@@ -15,11 +15,12 @@ interface EpisodeThumbnailItemProps {
   alt: string;
   className?: string;
   animeTitle?: string;
+  tvdbThumbnailMap?: Record<string, string>;
 }
 
 /**
  * A wrapper component that handles the tiered loading of episode thumbnails.
- * Follows the priority: TVDB -> TMDB -> Anivexa -> AniList Fallback
+ * Follows the priority: TVDB (from pre-fetched map) -> TMDB -> Anivexa -> AniList Fallback
  */
 export default function EpisodeThumbnailItem({
   animeId,
@@ -28,20 +29,31 @@ export default function EpisodeThumbnailItem({
   fallbackImages,
   alt,
   className,
-  animeTitle
+  animeTitle,
+  tvdbThumbnailMap
 }: EpisodeThumbnailItemProps) {
   const [thumbnailSrc, setThumbnailSrc] = useState<string>("");
 
   useEffect(() => {
     let active = true;
     async function load() {
-      // Check cache is built-in to service
+      // Check if it's already in the parent-provided TVDB map
+      if (tvdbThumbnailMap) {
+        const tvdbUrl = tvdbThumbnailMap[`${season}_${episode}`];
+        if (tvdbUrl) {
+          setThumbnailSrc(tvdbUrl);
+          return;
+        }
+      }
+
+      // Fallback to sequential resolver (caches internally)
       const src = await getEpisodeThumbnail({
         animeId,
         season,
         episode,
         fallbackImages,
-        animeTitle
+        animeTitle,
+        tvdbThumbnailMap
       });
       if (active && src) {
         setThumbnailSrc(src);
@@ -49,7 +61,7 @@ export default function EpisodeThumbnailItem({
     }
     load();
     return () => { active = false; };
-  }, [animeId, season, episode, fallbackImages, animeTitle]);
+  }, [animeId, season, episode, fallbackImages, animeTitle, tvdbThumbnailMap]);
 
   return (
     <LazyImage

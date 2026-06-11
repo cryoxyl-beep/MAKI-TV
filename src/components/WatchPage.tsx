@@ -7,8 +7,9 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { AniListAnime } from "../types";
 import { fetchAnimeDetails } from "../services/anilist";
 import { getTMDBMapping } from "../services/mapping";
-import { initializeFribbMapping, getAniListId } from "../services/fribb";
+import { getAniListId, getFribbEntryByAnilist, initializeFribbMapping } from "../services/fribb";
 import EpisodeThumbnailItem from "./EpisodeThumbnailItem";
+import { getTVDBSeriesManifest } from "../services/thumbnails";
 import { 
   addToWatchHistory, 
   getEpisodeProgress,
@@ -76,6 +77,8 @@ export default function WatchPage({
     return (localStorage.getItem("makitv_megaplay_language") as "sub" | "dub") || "sub";
   });
 
+  const [tvdbThumbnailMap, setTvdbThumbnailMap] = useState<Record<string, string>>({});
+
   const { isSubscribed, toggleSubscription, currentUser } = useLibrary();
 
   // Floating continue/session resume prompt trigger
@@ -111,6 +114,28 @@ export default function WatchPage({
 
   const [anivexaEpisodes, setAnivexaEpisodes] = useState<any[]>([]);
   const [isAnivexaLoading, setIsAnivexaLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    async function loadTVDBManifest() {
+      if (!anime) return;
+      const idToUse = anime.anilistId || anime.id;
+      if (!idToUse) return;
+
+      await initializeFribbMapping();
+      const entry = getFribbEntryByAnilist(idToUse);
+      
+      if (entry?.tvdb_id) {
+        console.log(`[Thumbnail Engine] TVDB ID ${entry.tvdb_id} found. Fetching manifest...`);
+        const manifest = await getTVDBSeriesManifest(entry.tvdb_id, entry.season);
+        if (mounted) {
+          setTvdbThumbnailMap(manifest);
+        }
+      }
+    }
+    loadTVDBManifest();
+    return () => { mounted = false; };
+  }, [anime?.id, anime?.anilistId]);
 
   useEffect(() => {
     let mounted = true;
@@ -733,6 +758,7 @@ export default function WatchPage({
                                   episode={epNum}
                                   fallbackImages={[anime.bannerImage || "", anime.coverImage?.extraLarge || "", anime.coverImage?.large || ""]}
                                   animeTitle={anime.title.english || anime.title.romaji}
+                                  tvdbThumbnailMap={tvdbThumbnailMap}
                                   alt={`Episode ${epNum}`}
                                   className={`w-full h-full object-cover ${isActive ? "opacity-100" : "opacity-80 group-hover:opacity-100 transition-opacity"}`}
                                 />
