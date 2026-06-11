@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { fetchAnimeFeed } from "../services/anilist";
 import { AniListAnime } from "../types";
 import AnimeCard from "./AnimeCard";
@@ -12,7 +12,7 @@ interface DiscoveryShelfProps {
   onSelectAnime: (id: number) => void;
 }
 
-export default function DiscoveryShelf({ title, subtitle, category, onSelectAnime }: DiscoveryShelfProps) {
+const DiscoveryShelf = React.memo(({ title, subtitle, category, onSelectAnime }: DiscoveryShelfProps) => {
   const [animes, setAnimes] = useState<AniListAnime[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -60,4 +60,6 @@ export default function DiscoveryShelf({ title, subtitle, category, onSelectAnim
       </ShelfScroller>
     </div>
   );
-}
+});
+
+export default DiscoveryShelf;

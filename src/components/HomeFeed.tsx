@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { fetchAnimeFeed } from "../services/anilist";
+import { fetchAnimeFeed, fetchNewReleases } from "../services/anilist";
 import { AniListAnime } from "../types";
 import AnimeCard from "./AnimeCard";
 import CategoryChips from "./CategoryChips";
@@ -31,7 +31,9 @@ export default function HomeFeed({
 }: HomeFeedProps) {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [animeList, setAnimeList] = useState<AniListAnime[]>([]);
+  const [newReleases, setNewReleases] = useState<AniListAnime[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isNewReleasesLoading, setIsNewReleasesLoading] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -59,6 +61,13 @@ export default function HomeFeed({
     // Keep stale results on screen while loading to prevent flashes, only wipe if moving away completely from content
     if (!searchQuery && selectedCategory === "All") {
       setAnimeList([]);
+      
+      // Also load new releases specifically for the shelf
+      setIsNewReleasesLoading(true);
+      fetchNewReleases(1).then(data => {
+        setNewReleases(data);
+        setIsNewReleasesLoading(false);
+      }).catch(() => setIsNewReleasesLoading(false));
     }
     setPage(1);
     setHasMore(true);
@@ -148,6 +157,29 @@ export default function HomeFeed({
       {/* Grid or List flow for HOMEPAGE recommendations */}
       {selectedCategory === "All" && !searchQuery ? (
         <div className="flex flex-col gap-1 w-full bg-transparent pt-6 relative isolate">
+          {/* New Releases shelf */}
+          {isNewReleasesLoading ? (
+            <SkeletonLoader type="shelf" />
+          ) : (
+            newReleases.length > 0 && (
+              <div className="flex flex-col gap-4 relative isolate mb-8 animate-fade-in">
+                <div className="px-4 md:px-6 flex flex-col">
+                  <h2 className="text-2xl font-bold text-[#f1f1f1] tracking-tight">New Releases</h2>
+                  <p className="text-[13px] text-gray-400 font-medium mt-0.5">Fresh from this season</p>
+                </div>
+                <ShelfScroller>
+                  {newReleases.slice(0, 15).map((anime, index) => {
+                    return (
+                      <div key={`${anime.id}-${index}`} className="snap-start shrink-0">
+                        <AnimeCard anime={anime} onClick={() => onSelectAnime(anime.id)} layout="grid" index={index} />
+                      </div>
+                    );
+                  })}
+                </ShelfScroller>
+              </div>
+            )
+          )}
+
           {/* Trending Now shelf (using already fetched feedAnimes) */}
           {isLoading ? (
             <SkeletonLoader type="shelf" />

@@ -4,7 +4,7 @@ interface ShelfScrollerProps {
   children: React.ReactNode;
 }
 
-export default function ShelfScroller({ children }: ShelfScrollerProps) {
+const ShelfScroller = React.memo(({ children }: ShelfScrollerProps) => {
   const listRef = useRef<HTMLDivElement>(null);
   const isDraggingMoused = useRef(false);
 
@@ -228,4 +228,6 @@ export default function ShelfScroller({ children }: ShelfScrollerProps) {
       </div>
     </div>
   );
-}
+});
+
+export default ShelfScroller;

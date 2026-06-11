@@ -26,6 +26,15 @@ export default function LazyImage({
   const [isLoaded, setIsLoaded] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
+  // Reset loaded status when source changes
+  const prevSrcRef = useRef<string>(src);
+  useEffect(() => {
+    if (prevSrcRef.current !== src) {
+      if (src) setIsLoaded(false);
+      prevSrcRef.current = src;
+    }
+  }, [src]);
+
   useEffect(() => {
     // If IntersectionObserver is not supported, load immediately as fallback
     if (typeof window === "undefined" || !("IntersectionObserver" in window)) {
@@ -43,8 +52,8 @@ export default function LazyImage({
         });
       },
       {
-        // Start loading when 250px before entering the viewport to prevent pop-in
-        rootMargin: "250px 0px 250px 0px",
+        // Start loading when 500px before entering the viewport to prevent pop-in
+        rootMargin: "500px 0px 500px 0px",
       }
     );
 
@@ -83,10 +92,9 @@ export default function LazyImage({
             setIsLoaded(true);
             if (onLoadComplete) onLoadComplete();
           }}
-          className={`transition-opacity duration-300 ease-out z-0 relative ${
+          className={`transition-opacity duration-500 ease-out z-0 relative ${
             isLoaded ? "opacity-100" : "opacity-0"
           } ${className}`}
-          loading="lazy"
           decoding="async"
           {...props}
         />

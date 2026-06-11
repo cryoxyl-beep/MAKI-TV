@@ -17,7 +17,7 @@ interface AnimeCardProps {
   index?: number;
 }
 
-export default function AnimeCard({ anime, onClick, layout = "grid", index = 0 }: AnimeCardProps) {
+export const AnimeCard = React.memo(({ anime, onClick, layout = "grid", index = 0 }: AnimeCardProps) => {
   const [isCardReady, setIsCardReady] = useState(false);
   const [rotate, setRotate] = useState({ x: 0, y: 0 });
 
@@ -208,7 +208,7 @@ export default function AnimeCard({ anime, onClick, layout = "grid", index = 0 }
       onClick={onClick}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className={`group relative flex flex-col cursor-pointer transition-all duration-300 ease-out sm:hover:-translate-y-[4px] active:scale-[0.97] group-hover/row:opacity-[0.85] sm:hover:!opacity-100 animate-fade-in`}
+      className={`group relative flex flex-col cursor-pointer transition-all duration-300 ease-out sm:hover:-translate-y-[4px] active:scale-[0.97] group-hover/row:opacity-[0.85] sm:hover:!opacity-100 animate-fade-in transform-gpu will-change-[transform,opacity]`}
       style={{ 
         width: "200px", 
       }}
@@ -282,4 +282,6 @@ export default function AnimeCard({ anime, onClick, layout = "grid", index = 0 }
       </div>
     </motion.div>
   );
-}
+});
+
+export default AnimeCard;
