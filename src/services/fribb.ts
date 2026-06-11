@@ -1,16 +1,20 @@
 export interface FribbAnimeEntry {
   mal_id?: number;
   anilist_id?: number;
+  tvdb_id?: number;
+  themoviedb_id?: number | { tv?: number; movie?: number };
+  season?: { tvdb?: number; tmdb?: number };
   [key: string]: any;
 }
 
 const FRIBB_URL = "https://raw.githubusercontent.com/Fribb/anime-lists/master/anime-list-mini.json";
 
-let lookupMap: Map<number, number> | null = null;
+let lookupByMal: Map<number, FribbAnimeEntry> | null = null;
+let lookupByAnilist: Map<number, FribbAnimeEntry> | null = null;
 let initPromise: Promise<void> | null = null;
 
 export async function initializeFribbMapping(): Promise<void> {
-  if (lookupMap) return;
+  if (lookupByMal) return;
   if (initPromise) return initPromise;
 
   initPromise = (async () => {
@@ -20,14 +24,22 @@ export async function initializeFribbMapping(): Promise<void> {
       if (!res.ok) throw new Error("Failed to fetch Fribb mapping.");
       const jsonData = await res.json() as FribbAnimeEntry[];
       
-      const map = new Map<number, number>();
+      const malMap = new Map<number, FribbAnimeEntry>();
+      const anilistMap = new Map<number, FribbAnimeEntry>();
+
       for (const entry of jsonData) {
-        if (typeof entry.mal_id === "number" && typeof entry.anilist_id === "number") {
-          map.set(entry.mal_id, entry.anilist_id);
+        if (typeof entry.mal_id === "number") {
+          malMap.set(entry.mal_id, entry.extra || entry); // Fribb sometimes puts IDs in root, sometimes in extra
+          // Actually, let's just store the whole entry
+          malMap.set(entry.mal_id, entry);
+        }
+        if (typeof entry.anilist_id === "number") {
+          anilistMap.set(entry.anilist_id, entry);
         }
       }
-      lookupMap = map;
-      console.log("Fribb mapping initialized with", map.size, "entries.");
+      lookupByMal = malMap;
+      lookupByAnilist = anilistMap;
+      console.log("Fribb mapping initialized with", malMap.size, "entries.");
     } catch (error) {
       console.error("Error initializing Fribb mapping:", error);
     } finally {
@@ -39,8 +51,16 @@ export async function initializeFribbMapping(): Promise<void> {
 }
 
 export function getAniListId(malId: number): number | null {
-  if (!lookupMap) {
-    return null;
-  }
-  return lookupMap.get(malId) || null;
+  if (!lookupByMal) return null;
+  return lookupByMal.get(malId)?.anilist_id || null;
+}
+
+export function getFribbEntryByMal(malId: number): FribbAnimeEntry | null {
+  if (!lookupByMal) return null;
+  return lookupByMal.get(malId) || null;
+}
+
+export function getFribbEntryByAnilist(anilistId: number): FribbAnimeEntry | null {
+  if (!lookupByAnilist) return null;
+  return lookupByAnilist.get(anilistId) || null;
 }

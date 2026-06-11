@@ -8,6 +8,7 @@ import { AniListAnime } from "../types";
 import { fetchAnimeDetails } from "../services/anilist";
 import { getTMDBMapping } from "../services/mapping";
 import { initializeFribbMapping, getAniListId } from "../services/fribb";
+import EpisodeThumbnailItem from "./EpisodeThumbnailItem";
 import { 
   addToWatchHistory, 
   getEpisodeProgress,
@@ -706,7 +707,6 @@ export default function WatchPage({
                         const epData = episodesMap[currentRange]?.find(e => Number(e.mal_id) === Number(epNum)) || episodesMap[currentRange]?.[(epNum - 1) % 100];
                         const anivexaEp = anivexaEpisodes.find(e => Number(e.number) === Number(epNum)) || anivexaEpisodes[epNum - 1];
                         const epTitleStr = epData?.title || anivexaEp?.title || "";
-                        const epImage = anivexaEp?.image || (isAnivexaLoading ? "" : (anime.coverImage.medium || anime.coverImage.large));
                         const epAired = epData?.aired || anivexaEp?.airDate;
                         
                         let badge = null;
@@ -727,11 +727,14 @@ export default function WatchPage({
                               }`}
                             >
                               <div className="relative w-[120px] aspect-video bg-[#212121] rounded-md overflow-hidden flex-shrink-0">
-                                <LazyImage
-                                  src={epImage}
+                                <EpisodeThumbnailItem
+                                  animeId={anime.anilistId || anime.id}
+                                  season={seasonNumber}
+                                  episode={epNum}
+                                  fallbackImages={[anime.bannerImage || "", anime.coverImage?.extraLarge || "", anime.coverImage?.large || ""]}
+                                  animeTitle={anime.title.english || anime.title.romaji}
                                   alt={`Episode ${epNum}`}
                                   className={`w-full h-full object-cover ${isActive ? "opacity-100" : "opacity-80 group-hover:opacity-100 transition-opacity"}`}
-                                  referrerPolicy="no-referrer"
                                 />
                                 {isActive && (
                                   <div className="absolute inset-0 bg-white/10 flex items-center justify-center">

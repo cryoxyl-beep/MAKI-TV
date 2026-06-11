@@ -10,6 +10,7 @@ import { getEpisodeProgress } from "../utils";
 import SkeletonLoader from "./SkeletonLoader";
 import { Check, Star, Play, Info, Plus, X } from "lucide-react";
 import LazyImage from "./LazyImage";
+import EpisodeThumbnailItem from "./EpisodeThumbnailItem";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLibrary } from "../hooks/useLibrary";
 
@@ -327,7 +328,6 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
                   const watchProgress = getEpisodeProgress(anime.id, 1, episodeNum);
                   const anivexaEp = anivexaEpisodes.find(e => e.number === episodeNum);
                   const epTitleStr = anivexaEp?.title || `${mainTitle.replace(/Season \d+/gi, "").trim()} - Episode ${episodeNum}`;
-                  const epImage = anivexaEp?.image || (isAnivexaLoading ? "" : (banner || profileAvatar));
                   
                   return (
                     <motion.div
@@ -340,11 +340,14 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
                       className="group cursor-pointer flex flex-col gap-2 rounded-xl transition-all"
                     >
                       <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-white/[0.03] border border-white/[0.05] group-hover:border-white/[0.2] group-hover:shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all">
-                        <LazyImage
-                          src={epImage}
+                        <EpisodeThumbnailItem
+                          animeId={anime.anilistId || anime.id}
+                          season={1}
+                          episode={episodeNum}
+                          fallbackImages={[anime.bannerImage || "", anime.coverImage?.extraLarge || "", anime.coverImage?.large || ""]}
+                          animeTitle={mainTitle}
                           alt={`Ep ${episodeNum}`}
                           className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500 pointer-events-none"
-                          referrerPolicy="no-referrer"
                         />
                         {/* Gradient overlay for text */}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
