@@ -241,6 +241,7 @@ export default function App() {
           {activePage === "home" && (
             <HomeFeed
               onSelectAnime={handleOpenChannel}
+              onWatchEpisode={handleOpenEpisode}
               searchQuery={searchQuery}
               onClearSearch={() => setSearchQuery("")}
             />
@@ -257,6 +258,7 @@ export default function App() {
               </div>
               <HomeFeed
                 onSelectAnime={handleOpenChannel}
+                onWatchEpisode={handleOpenEpisode}
                 searchQuery=""
               />
             </div>

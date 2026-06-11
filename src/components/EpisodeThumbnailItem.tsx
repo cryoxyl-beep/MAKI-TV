@@ -22,7 +22,7 @@ interface EpisodeThumbnailItemProps {
  * A wrapper component that handles the tiered loading of episode thumbnails.
  * Follows the priority: TVDB (from pre-fetched map) -> TMDB -> Anivexa -> AniList Fallback
  */
-export default function EpisodeThumbnailItem({
+export const EpisodeThumbnailItem = React.memo(({
   animeId,
   season,
   episode,
@@ -31,7 +31,7 @@ export default function EpisodeThumbnailItem({
   className,
   animeTitle,
   tvdbThumbnailMap
-}: EpisodeThumbnailItemProps) {
+}: EpisodeThumbnailItemProps) => {
   const [thumbnailSrc, setThumbnailSrc] = useState<string>("");
 
   useEffect(() => {
@@ -71,4 +71,6 @@ export default function EpisodeThumbnailItem({
       referrerPolicy="no-referrer"
     />
   );
-}
+});
+
+export default EpisodeThumbnailItem;

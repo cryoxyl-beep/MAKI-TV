@@ -14,15 +14,18 @@ import { RefreshCw, Play } from "lucide-react";
 import PremiumHero from "./PremiumHero";
 import { rankSearchMatch } from "../utils/search";
 import ShelfScroller from "./ShelfScroller";
+import WatchHistory from "./WatchHistory";
 
 interface HomeFeedProps {
   onSelectAnime: (id: number) => void;
+  onWatchEpisode: (animeId: number, seasonNumber: number, episodeNumber: number) => void;
   searchQuery?: string;
   onClearSearch?: () => void;
 }
 
 export default function HomeFeed({
   onSelectAnime,
+  onWatchEpisode,
   searchQuery = "",
   onClearSearch,
 }: HomeFeedProps) {
@@ -127,7 +130,10 @@ export default function HomeFeed({
     <div className="w-full min-h-screen bg-transparent pb-20">
       {/* Premium Hero Banner */}
       {!searchQuery && selectedCategory === "All" && (
+        <>
           <PremiumHero onSelectAnime={onSelectAnime} />
+          <WatchHistory onWatchEpisode={onWatchEpisode} />
+        </>
       )}
 
       {/* Dynamic Header details when query is running */}

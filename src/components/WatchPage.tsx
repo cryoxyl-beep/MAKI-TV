@@ -674,7 +674,7 @@ export default function WatchPage({
                         className="custom-scrollbar"
                         style={{ height: '100%', width: '100%' }}
                         data={episodesToRender}
-                        overscan={400}
+                        overscan={50}
                         listClassName="grid grid-cols-5 sm:grid-cols-7 lg:grid-cols-6 xl:grid-cols-8 gap-2 pb-4 pt-1 px-1"
                         itemContent={(index, epNum) => {
                           const isActive = epNum === episodeNumber;
@@ -723,8 +723,8 @@ export default function WatchPage({
                       className="custom-scrollbar"
                       style={{ height: '100%', width: '100%' }}
                       data={episodesToRender}
-                      overscan={10}
-                      increaseViewportBy={300}
+                      overscan={20}
+                      increaseViewportBy={500}
                       itemContent={(index, epNum) => {
                         const isActive = epNum === episodeNumber;
                         const progressVal = progressMap[`${seasonNumber}-${epNum}`] || 0;
@@ -742,7 +742,7 @@ export default function WatchPage({
                         }
 
                         return (
-                          <div className="pb-2">
+                          <div className="pb-2 transform-gpu will-change-transform">
                             <div
                               onClick={() => onNavigateToEpisode(anime.id, seasonNumber, epNum)}
                               className={`flex flex-row gap-3 p-2 rounded-lg cursor-pointer transition-colors group relative border border-transparent ${
