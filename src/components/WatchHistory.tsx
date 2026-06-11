@@ -7,7 +7,7 @@ import React, { useState, useEffect } from "react";
 import { useLibrary } from "../hooks/useLibrary";
 import { getWatchHistory } from "../utils";
 import { WatchHistoryItem } from "../types";
-import EpisodeThumbnailItem from "./EpisodeThumbnailItem";
+import LazyImage from "./LazyImage";
 import ShelfScroller from "./ShelfScroller";
 import { Play } from "lucide-react";
 
@@ -56,14 +56,11 @@ export default function WatchHistory({ onWatchEpisode }: WatchHistoryProps) {
           >
             {/* Thumbnail Wrapper */}
             <div className="relative aspect-video w-full bg-black rounded-xl overflow-hidden border border-white/5 group-hover:border-white/20 transition-all duration-300">
-              <EpisodeThumbnailItem 
-                animeId={item.animeId}
-                season={item.seasonNumber}
-                episode={item.episodeNumber}
-                fallbackImages={[item.bannerImage || "", item.coverImage || ""]}
-                animeTitle={item.animeTitle}
+              <LazyImage 
+                src={item.thumbnailUrl || item.bannerImage || item.coverImage || ""}
                 alt={item.animeTitle}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                referrerPolicy="no-referrer"
               />
               
               {/* Dark Overlay on Hover */}

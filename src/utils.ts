@@ -99,9 +99,16 @@ export function getWatchHistory(): WatchHistoryItem[] {
 
 export function addToWatchHistory(item: Omit<WatchHistoryItem, "watchedAt">): void {
   const history = getWatchHistory();
+  
+  // Try to find if we already have this episode in history to preserve existing thumbnailUrl if not provided
+  const existing = history.find(
+    (h) => h.animeId === item.animeId && h.episodeNumber === item.episodeNumber && h.seasonNumber === item.seasonNumber
+  );
+
   const newItem: WatchHistoryItem = {
     ...item,
     watchedAt: new Date().toISOString(),
+    thumbnailUrl: item.thumbnailUrl || existing?.thumbnailUrl
   };
 
   // Remove existing history item for same anime and same episode/season if exists to put it on top

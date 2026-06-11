@@ -82,6 +82,7 @@ export interface WatchHistoryItem {
   duration: string; // Duration string e.g., "24:00"
   bannerImage?: string;
   coverImage?: string;
+  thumbnailUrl?: string;
 }
 
 export interface SubscriptionItem {

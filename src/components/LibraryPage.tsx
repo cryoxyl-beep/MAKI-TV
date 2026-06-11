@@ -149,9 +149,10 @@ export default function LibraryPage({ onWatchEpisode, onNavigateToChannel }: Lib
                                 {/* Thumbnail */}
                                 <div className="relative aspect-video w-40 sm:w-56 bg-black rounded-lg overflow-hidden shrink-0 border border-white/5">
                                   <LazyImage
-                                    src={episode.bannerImage || episode.coverImage}
+                                    src={episode.thumbnailUrl || episode.bannerImage || episode.coverImage || ""}
                                     alt={episode.animeTitle}
                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                    referrerPolicy="no-referrer"
                                   />
                                   {/* Hover states protected by pointer-events-none to prevent render flickering */}
                                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200 pointer-events-none">

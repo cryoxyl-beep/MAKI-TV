@@ -9,7 +9,7 @@ import { fetchAnimeDetails } from "../services/anilist";
 import { getTMDBMapping } from "../services/mapping";
 import { getAniListId, getFribbEntryByAnilist, initializeFribbMapping } from "../services/fribb";
 import EpisodeThumbnailItem from "./EpisodeThumbnailItem";
-import { getTVDBSeriesManifest } from "../services/thumbnails";
+import { getTVDBSeriesManifest, getEpisodeThumbnail } from "../services/thumbnails";
 import { 
   addToWatchHistory, 
   getEpisodeProgress,
@@ -78,6 +78,7 @@ export default function WatchPage({
   });
 
   const [tvdbThumbnailMap, setTvdbThumbnailMap] = useState<Record<string, string>>({});
+  const [currentEpisodeThumbnail, setCurrentEpisodeThumbnail] = useState<string | undefined>(undefined);
 
   const { isSubscribed, toggleSubscription, currentUser } = useLibrary();
 
@@ -369,6 +370,40 @@ export default function WatchPage({
     }
   }, [anime]);
 
+  useEffect(() => {
+    let mounted = true;
+    async function resolveThumbnail() {
+      if (!anime) return;
+      const src = await getEpisodeThumbnail({
+        animeId: anime.anilistId || anime.id,
+        season: seasonNumber,
+        episode: episodeNumber,
+        fallbackImages: [anime.bannerImage || "", anime.coverImage?.extraLarge || "", anime.coverImage?.large || ""],
+        animeTitle: anime.title.english || anime.title.romaji,
+        tvdbThumbnailMap
+      });
+      if (mounted && src) {
+        setCurrentEpisodeThumbnail(src);
+        
+        // Also immediately update history with the thumbnail if we already have it
+        const lastPercentProgress = getEpisodeProgress(anime.id, seasonNumber, episodeNumber);
+        addToWatchHistory({
+          animeId: anime.id,
+          animeTitle: anime.title.english || anime.title.romaji || anime.title.userPreferred || "Untitled Series",
+          episodeNumber,
+          seasonNumber,
+          progress: lastPercentProgress,
+          duration: "23:45",
+          bannerImage: anime.bannerImage,
+          coverImage: anime.coverImage.large,
+          thumbnailUrl: src
+        });
+      }
+    }
+    resolveThumbnail();
+    return () => { mounted = false; };
+  }, [anime, seasonNumber, episodeNumber, tvdbThumbnailMap]);
+
   // Update history progress as the video moves
   const handleProgressUpdate = (percent: number) => {
     if (anime) {
@@ -381,6 +416,7 @@ export default function WatchPage({
         duration: "23:45",
         bannerImage: anime.bannerImage,
         coverImage: anime.coverImage.large,
+        thumbnailUrl: currentEpisodeThumbnail
       });
     }
   };
