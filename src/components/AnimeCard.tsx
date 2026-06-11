@@ -49,19 +49,17 @@ export const AnimeCard = React.memo(({ anime, onClick, layout = "grid", index = 
   // Choose the best thumbnail. Banner image has custom 16:9 feel, but cover image is often higher quality.
   // For Youtube visual, 16:9 ratio is critical, so we use bannerImage if available, fallback to coverImage.
   const thumbnail = anime.bannerImage || anime.coverImage.extraLarge || anime.coverImage.large || "";
-  const avatar = anime.coverImage.medium || anime.coverImage.large || "";
-
+  
   // Dynamic status/season detail
   const episodesCount = anime.episodes ? `${anime.episodes} eps` : "Ongoing";
   const studioName = anime.studios?.nodes?.[0]?.name || anime.format || "Anime Studio";
-  const averageScore = anime.averageScore ? `★ ${anime.averageScore / 10}` : "★ 7.5";
 
   // Animation configuration
   const motionProps = {
     initial: { opacity: 0, y: 24 },
     whileInView: { opacity: 1, y: 0 },
     viewport: { once: true, amount: 0.1 },
-    transition: { duration: 0.5, ease: [0.25, 0.1, 0.25, 1], delay: Math.min(index * 0.05, 0.3) }
+    transition: { duration: 0.4, ease: [0.25, 0.1, 0.25, 1], delay: Math.min(index * 0.03, 0.2) }
   };
 
   // Layout specific classes
@@ -208,7 +206,7 @@ export const AnimeCard = React.memo(({ anime, onClick, layout = "grid", index = 
       onClick={onClick}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className={`group relative flex flex-col cursor-pointer transition-all duration-300 ease-out sm:hover:-translate-y-[4px] active:scale-[0.97] group-hover/row:opacity-[0.85] sm:hover:!opacity-100 animate-fade-in transform-gpu will-change-[transform,opacity]`}
+      className={`group relative flex flex-col cursor-pointer transition-all duration-300 ease-out sm:hover:-translate-y-[4px] active:scale-[0.97] group-hover/row:opacity-[0.85] sm:hover:!opacity-100 transform-gpu will-change-[transform,opacity]`}
       style={{ 
         width: "200px", 
       }}
@@ -282,6 +280,9 @@ export const AnimeCard = React.memo(({ anime, onClick, layout = "grid", index = 
       </div>
     </motion.div>
   );
+}, (prev, next) => {
+  // Only re-render if core data changes. This prevents the "blanking" caused by unstable function references in loops.
+  return prev.anime.id === next.anime.id && prev.layout === next.layout && prev.index === next.index;
 });
 
 export default AnimeCard;

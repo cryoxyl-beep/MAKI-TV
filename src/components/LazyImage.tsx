@@ -14,6 +14,10 @@ interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   referrerPolicy?: React.HTMLAttributeReferrerPolicy;
 }
 
+// A simple global cache to track URLs that have already loaded successfully in this session.
+// This prevents "flickering" or "re-fading" when components re-render or remount during scrolling.
+const LOADED_IMAGES_CACHE = new Set<string>();
+
 export default function LazyImage({
   src,
   alt,
@@ -22,22 +26,28 @@ export default function LazyImage({
   onLoadComplete,
   ...props
 }: LazyImageProps) {
-  const [shouldLoad, setShouldLoad] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const isAlreadyLoaded = LOADED_IMAGES_CACHE.has(src);
+  const [shouldLoad, setShouldLoad] = useState(isAlreadyLoaded);
+  const [isLoaded, setIsLoaded] = useState(isAlreadyLoaded);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  // Reset loaded status when source changes
+  // Reset loaded status ONLY if src changes to a completely different URL
   const prevSrcRef = useRef<string>(src);
   useEffect(() => {
     if (prevSrcRef.current !== src) {
-      if (src) setIsLoaded(false);
+      if (src && !LOADED_IMAGES_CACHE.has(src)) {
+        setIsLoaded(false);
+      } else if (LOADED_IMAGES_CACHE.has(src)) {
+        setIsLoaded(true);
+        setShouldLoad(true);
+      }
       prevSrcRef.current = src;
     }
   }, [src]);
 
   useEffect(() => {
-    // If IntersectionObserver is not supported, load immediately as fallback
-    if (typeof window === "undefined" || !("IntersectionObserver" in window)) {
+    // If already loaded in cache or intersection not supported, skip observer
+    if (isAlreadyLoaded || typeof window === "undefined" || !("IntersectionObserver" in window)) {
       setShouldLoad(true);
       return;
     }
@@ -52,8 +62,8 @@ export default function LazyImage({
         });
       },
       {
-        // Start loading when 500px before entering the viewport to prevent pop-in
-        rootMargin: "500px 0px 500px 0px",
+        // Aggressive pre-loading to ensure smooth high-speed scrolling
+        rootMargin: "800px 0px 800px 0px",
       }
     );
 
@@ -90,6 +100,7 @@ export default function LazyImage({
           alt={alt}
           onLoad={() => {
             setIsLoaded(true);
+            if (src) LOADED_IMAGES_CACHE.add(src);
             if (onLoadComplete) onLoadComplete();
           }}
           className={`transition-opacity duration-500 ease-out z-0 relative ${

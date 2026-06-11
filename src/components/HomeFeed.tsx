@@ -132,7 +132,11 @@ export default function HomeFeed({
     }
   }
 
-    // All fetched animes are feedAnimes now
+    const handleCardClick = useCallback((id: number) => {
+    onSelectAnime(id);
+  }, [onSelectAnime]);
+
+  // All fetched animes are feedAnimes now
   const feedAnimes = animeList;
 
   return (
@@ -171,7 +175,7 @@ export default function HomeFeed({
                   {newReleases.slice(0, 15).map((anime, index) => {
                     return (
                       <div key={`${anime.id}-${index}`} className="snap-start shrink-0">
-                        <AnimeCard anime={anime} onClick={() => onSelectAnime(anime.id)} layout="grid" index={index} />
+                        <AnimeCard anime={anime} onClick={() => handleCardClick(anime.id)} layout="grid" index={index} />
                       </div>
                     );
                   })}
@@ -194,7 +198,7 @@ export default function HomeFeed({
                   const isLastElement = index === Math.min(feedAnimes.length - 1, 14);
                   return (
                     <div key={`${anime.id}-${index}`} ref={isLastElement ? lastAnimeElementRef : null} className="snap-start shrink-0">
-                      <AnimeCard anime={anime} onClick={() => onSelectAnime(anime.id)} layout="grid" index={index} />
+                      <AnimeCard anime={anime} onClick={() => handleCardClick(anime.id)} layout="grid" index={index} />
                     </div>
                   );
                 })}
@@ -223,7 +227,7 @@ export default function HomeFeed({
                 >
                   <AnimeCard
                     anime={anime}
-                    onClick={() => onSelectAnime(anime.id)}
+                    onClick={() => handleCardClick(anime.id)}
                     layout="grid"
                     index={index}
                   />
