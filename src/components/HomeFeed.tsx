@@ -71,6 +71,11 @@ export default function HomeFeed({
         rightSection.style.pointerEvents = 'auto';
       }
     }
+
+    // Cleanup on unmount just in case
+    return () => {
+      document.documentElement.classList.remove("splash-active");
+    };
   }, [showSplash, splashFading]);
 
   useEffect(() => {
@@ -79,6 +84,7 @@ export default function HomeFeed({
       // Or if we already showed it, do nothing.
       if (showSplash && !hasShownSplash) {
          setSplashFading(true);
+         document.documentElement.classList.remove("splash-active");
          setTimeout(() => {
            setShowSplash(false);
            hasShownSplash = true;
@@ -89,6 +95,7 @@ export default function HomeFeed({
     
     if (!isLoading && !isNewReleasesLoading && !isLibraryLoading && isHeroReady) {
       setSplashFading(true);
+      document.documentElement.classList.remove("splash-active");
       setTimeout(() => {
         setShowSplash(false);
         hasShownSplash = true;
