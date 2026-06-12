@@ -180,6 +180,7 @@ export default function PremiumHero({ onSelectAnime }: PremiumHeroProps) {
               <HeroSlide 
                 trailer={trailer} 
                 isActive={isActiveSlide} 
+                isFirstSlide={idx === 0}
                 onSelect={() => onSelectAnime(trailer.malId)}
                 onEnded={() => {
                   if (swiperInstance) {
@@ -199,8 +200,11 @@ export default function PremiumHero({ onSelectAnime }: PremiumHeroProps) {
   );
 }
 
-function HeroSlide({ trailer, isActive, onSelect, onEnded }: { trailer: HeroTrailer; isActive: boolean; onSelect: () => void; onEnded: () => void; }) {
+let isAppInitialLoadCompleted = false;
+
+function HeroSlide({ trailer, isActive, isFirstSlide, onSelect, onEnded }: { trailer: HeroTrailer; isActive: boolean; isFirstSlide?: boolean; onSelect: () => void; onEnded: () => void; }) {
   const [videoReady, setVideoReady] = useState(false);
+  const [useBanner, setUseBanner] = useState(() => isFirstSlide && !isAppInitialLoadCompleted);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [metadata, setMetadata] = useState<AniListAnime | null>(null);
   const { isSubscribed, toggleSubscription, currentUser } = useLibrary();
@@ -245,6 +249,17 @@ function HeroSlide({ trailer, isActive, onSelect, onEnded }: { trailer: HeroTrai
     };
   }, [isActive]);
 
+  const handleVideoReady = () => {
+    if (isActive) {
+      setVideoReady(true);
+      if (useBanner) {
+        isAppInitialLoadCompleted = true;
+        // Turn off the banner fully after the 400ms CSS fade-out completes
+        setTimeout(() => setUseBanner(false), 500);
+      }
+    }
+  };
+
   const cleanDescription = metadata?.description?.replace(/<[^>]*>?/gm, '') || "";
 
   const handleSelectClick = (e: React.MouseEvent) => {
@@ -277,24 +292,26 @@ function HeroSlide({ trailer, isActive, onSelect, onEnded }: { trailer: HeroTrai
     <div 
       className={`w-full h-full relative overflow-hidden bg-[#09090b] isolation-auto transition-all duration-500 ${isActive ? 'pointer-events-auto opacity-100 z-10' : 'pointer-events-none opacity-0 z-0'}`}
     >
-      <img
-        src={trailer.heroBanner || trailer.trailerUrl.replace('.mp4', '.jpg')}
-        alt={trailer.title}
-        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[400ms] ease-in-out ${videoReady ? 'opacity-0' : 'opacity-100'}`}
-        style={{ transform: "scale(1.08)" }}
-        loading="eager"
-      />
+      {useBanner && (
+        <img
+          src={trailer.heroBanner || trailer.trailerUrl.replace('.mp4', '.jpg')}
+          alt={trailer.title}
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[400ms] ease-in-out ${videoReady ? 'opacity-0' : 'opacity-100'}`}
+          style={{ transform: "scale(1.08)" }}
+          loading="eager"
+        />
+      )}
 
       <video
         ref={videoRef}
         src={trailer.trailerUrl}
-        className={`absolute inset-0 w-full h-full object-cover transform scale-100 md:scale-[1.08] transition-opacity duration-[400ms] ease-in-out ${videoReady ? 'opacity-100' : 'opacity-0'}`}
+        className={`absolute inset-0 w-full h-full object-cover transform scale-100 md:scale-[1.08] transition-opacity duration-[400ms] ease-in-out ${useBanner ? (videoReady ? 'opacity-100' : 'opacity-0') : 'opacity-100'}`}
         muted
         playsInline
         onEnded={onEnded}
         preload={isActive ? "auto" : "metadata"}
-        onLoadedData={() => { if (isActive) setVideoReady(true); }}
-        onCanPlay={() => { if (isActive) setVideoReady(true); }}
+        onLoadedData={handleVideoReady}
+        onCanPlay={handleVideoReady}
         onPlaying={() => setVideoReady(true)}
       />
 
