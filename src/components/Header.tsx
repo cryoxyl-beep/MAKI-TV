@@ -291,7 +291,7 @@ export default function Header({
             </div>
 
             {/* Right section: Search input & User Profile */}
-            <div className="flex-1 flex items-center justify-end gap-4 lg:gap-6">
+            <div id="header-actions-section" className="flex-1 flex items-center justify-end gap-4 lg:gap-6 transition-opacity duration-300">
               {/* Desktop & Tablet Search Bar */}
               <form
                 onSubmit={handleSubmit}

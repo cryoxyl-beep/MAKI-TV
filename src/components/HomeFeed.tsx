@@ -50,6 +50,8 @@ export default function HomeFeed({
 
   useEffect(() => {
     const leftSection = document.getElementById('header-logo-section');
+    const rightSection = document.getElementById('header-actions-section');
+    
     if (leftSection) {
       if (showSplash && !splashFading) {
         leftSection.style.opacity = '0';
@@ -57,6 +59,16 @@ export default function HomeFeed({
       } else {
         leftSection.style.opacity = '1';
         leftSection.style.pointerEvents = 'auto';
+      }
+    }
+    
+    if (rightSection) {
+      if (showSplash && !splashFading) {
+        rightSection.style.opacity = '0';
+        rightSection.style.pointerEvents = 'none';
+      } else {
+        rightSection.style.opacity = '1';
+        rightSection.style.pointerEvents = 'auto';
       }
     }
   }, [showSplash, splashFading]);
