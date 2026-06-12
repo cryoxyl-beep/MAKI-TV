@@ -1,5 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
-import { collection, getDocs, query, orderBy } from "firebase/firestore";
+import { collection, getDocs, query, orderBy, updateDoc, doc } from "firebase/firestore";
+
+const HERO_BANNERS: Record<string, string> = {
+  "Chainsaw Man Reze Arc": "https://res.cloudinary.com/dgymbeaxk/image/upload/v1780651845/68fb908b62946_t6p1op.jpg",
+  "Blue Box": "https://res.cloudinary.com/dgymbeaxk/image/upload/v1780653215/66dc0cea17539_r3c2xn.jpg",
+  "Witch Hat Atelier": "https://res.cloudinary.com/dgymbeaxk/image/upload/v1781279218/69d425be0eaf9_mrvkhi.jpg",
+  "Re:Zero Season 4": "https://res.cloudinary.com/dgymbeaxk/image/upload/v1780652972/66fc81bc5bbfe_fn7ypm.jpg",
+  "That Time I Got Reincarnated as a Slime Season 4": "https://res.cloudinary.com/dgymbeaxk/image/upload/v1781279286/60be23b659daf_nlezah.jpg",
+  "The Fragrant Flower Blooms With Dignity": "https://res.cloudinary.com/dgymbeaxk/image/upload/v1780653267/6869550eddf14_hpy73y.jpg"
+};
 import { db } from "../lib/firebase";
 import { Play, Bookmark, Check } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -78,6 +87,7 @@ interface HeroTrailer {
   logoUrl: string;
   order: number;
   active: boolean;
+  heroBanner?: string;
 }
 
 interface PremiumHeroProps {
@@ -113,8 +123,15 @@ export default function PremiumHero({ onSelectAnime }: PremiumHeroProps) {
         );
         const snapshot = await getDocs(q);
         const data: HeroTrailer[] = [];
-        snapshot.forEach((doc) => {
-          const trailer = doc.data() as HeroTrailer;
+        snapshot.forEach((docSnap) => {
+          const trailer = docSnap.data() as HeroTrailer;
+          
+          // One-off migration logic to add heroBanner to Firestore docs gracefully
+          if (trailer.title && HERO_BANNERS[trailer.title] && trailer.heroBanner !== HERO_BANNERS[trailer.title]) {
+            updateDoc(docSnap.ref, { heroBanner: HERO_BANNERS[trailer.title] }).catch(() => {});
+            trailer.heroBanner = HERO_BANNERS[trailer.title];
+          }
+
           if (trailer.active) {
             data.push(trailer);
           }
@@ -260,23 +277,23 @@ function HeroSlide({ trailer, isActive, onSelect, onEnded }: { trailer: HeroTrai
     <div 
       className={`w-full h-full relative overflow-hidden bg-[#09090b] isolation-auto transition-all duration-500 ${isActive ? 'pointer-events-auto opacity-100 z-10' : 'pointer-events-none opacity-0 z-0'}`}
     >
-      {trailer.trailerUrl && (
-        <img
-          src={trailer.trailerUrl.replace('.mp4', '.jpg')}
-          alt={trailer.title}
-          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[1000ms] ${videoReady ? 'opacity-0' : 'opacity-100'}`}
-          style={{ transform: "scale(1.08)" }}
-        />
-      )}
+      <img
+        src={trailer.heroBanner || trailer.trailerUrl.replace('.mp4', '.jpg')}
+        alt={trailer.title}
+        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[400ms] ease-in-out ${videoReady ? 'opacity-0' : 'opacity-100'}`}
+        style={{ transform: "scale(1.08)" }}
+        loading="eager"
+      />
 
       <video
         ref={videoRef}
         src={trailer.trailerUrl}
-        className={`absolute inset-0 w-full h-full object-cover transform scale-100 md:scale-[1.08] transition-opacity duration-[1000ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${videoReady ? 'opacity-100' : 'opacity-0'}`}
+        className={`absolute inset-0 w-full h-full object-cover transform scale-100 md:scale-[1.08] transition-opacity duration-[400ms] ease-in-out ${videoReady ? 'opacity-100' : 'opacity-0'}`}
         muted
         playsInline
         onEnded={onEnded}
         preload={isActive ? "auto" : "metadata"}
+        onLoadedData={() => { if (isActive) setVideoReady(true); }}
         onCanPlay={() => { if (isActive) setVideoReady(true); }}
         onPlaying={() => setVideoReady(true)}
       />
