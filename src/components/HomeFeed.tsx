@@ -15,6 +15,9 @@ import PremiumHero from "./PremiumHero";
 import { rankSearchMatch } from "../utils/search";
 import ShelfScroller from "./ShelfScroller";
 import WatchHistory from "./WatchHistory";
+import { useLibrary } from "../hooks/useLibrary";
+
+let hasShownSplash = false;
 
 interface HomeFeedProps {
   onSelectAnime: (id: number) => void;
@@ -39,6 +42,47 @@ export default function HomeFeed({
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const observer = useRef<IntersectionObserver | null>(null);
+
+  const { isLoading: isLibraryLoading } = useLibrary();
+  const [isHeroReady, setIsHeroReady] = useState(false);
+  const [showSplash, setShowSplash] = useState(!hasShownSplash);
+  const [splashFading, setSplashFading] = useState(false);
+
+  useEffect(() => {
+    const leftSection = document.getElementById('header-logo-section');
+    if (leftSection) {
+      if (showSplash && !splashFading) {
+        leftSection.style.opacity = '0';
+        leftSection.style.pointerEvents = 'none';
+      } else {
+        leftSection.style.opacity = '1';
+        leftSection.style.pointerEvents = 'auto';
+      }
+    }
+  }, [showSplash, splashFading]);
+
+  useEffect(() => {
+    if (hasShownSplash || searchQuery || selectedCategory !== "All") {
+      // If we are searching or in another category, don't hold the splash screen.
+      // Or if we already showed it, do nothing.
+      if (showSplash && !hasShownSplash) {
+         setSplashFading(true);
+         setTimeout(() => {
+           setShowSplash(false);
+           hasShownSplash = true;
+         }, 300);
+      }
+      return;
+    }
+    
+    if (!isLoading && !isNewReleasesLoading && !isLibraryLoading && isHeroReady) {
+      setSplashFading(true);
+      setTimeout(() => {
+        setShowSplash(false);
+        hasShownSplash = true;
+      }, 300);
+    }
+  }, [isLoading, isNewReleasesLoading, isLibraryLoading, isHeroReady, showSplash, searchQuery, selectedCategory]);
 
   const lastAnimeElementRef = useCallback(
     (node: HTMLDivElement) => {
@@ -140,14 +184,25 @@ export default function HomeFeed({
   const feedAnimes = animeList;
 
   return (
-    <div className="w-full min-h-screen bg-transparent pb-20">
-      {/* Premium Hero Banner */}
-      {!searchQuery && selectedCategory === "All" && (
-        <>
-          <PremiumHero onSelectAnime={onSelectAnime} />
-          <WatchHistory onWatchEpisode={onWatchEpisode} />
-        </>
+    <>
+      {showSplash && (
+        <div className={`fixed inset-0 z-[100] bg-black flex items-center justify-center pointer-events-none transition-opacity duration-300 ease-in-out ${splashFading ? "opacity-0" : "opacity-100"}`}>
+          <div className="flex flex-col items-center justify-center animate-pulse">
+            <span className="text-4xl md:text-5xl font-black tracking-wider bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-transparent opacity-90 transition-opacity">
+              miyoro
+            </span>
+          </div>
+        </div>
       )}
+
+      <div className={`w-full min-h-screen bg-transparent pb-20 transition-opacity duration-300 ease-in-out ${showSplash && !splashFading ? "opacity-0" : "opacity-100"}`}>
+        {/* Premium Hero Banner */}
+        {!searchQuery && selectedCategory === "All" && (
+          <>
+            <PremiumHero onSelectAnime={onSelectAnime} onHeroLoad={() => setIsHeroReady(true)} />
+            <WatchHistory onWatchEpisode={onWatchEpisode} />
+          </>
+        )}
 
       {/* Dynamic Header details when query is running */}
       {searchQuery && (
@@ -280,5 +335,6 @@ export default function HomeFeed({
         </div>
       )}
     </div>
+    </>
   );
 }

@@ -92,9 +92,10 @@ interface HeroTrailer {
 
 interface PremiumHeroProps {
   onSelectAnime: (id: number) => void;
+  onHeroLoad?: () => void;
 }
 
-export default function PremiumHero({ onSelectAnime }: PremiumHeroProps) {
+export default function PremiumHero({ onSelectAnime, onHeroLoad }: PremiumHeroProps) {
   const [trailers, setTrailers] = useState<HeroTrailer[]>([]);
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
   const [swiperInstance, setSwiperInstance] = useState<SwiperType | null>(null);
@@ -138,9 +139,13 @@ export default function PremiumHero({ onSelectAnime }: PremiumHeroProps) {
         });
         if (mounted) {
           setTrailers(data);
+          if (data.length === 0) {
+            onHeroLoad?.();
+          }
         }
       } catch (err) {
         console.error("Failed to fetch hero trailers", err);
+        if (mounted) onHeroLoad?.();
       }
     };
     fetchTrailers();
@@ -182,6 +187,7 @@ export default function PremiumHero({ onSelectAnime }: PremiumHeroProps) {
                 isActive={isActiveSlide} 
                 isFirstSlide={idx === 0}
                 onSelect={() => onSelectAnime(trailer.malId)}
+                onHeroLoad={idx === 0 ? onHeroLoad : undefined}
                 onEnded={() => {
                   if (swiperInstance) {
                     if (swiperInstance.isEnd) {
@@ -202,7 +208,7 @@ export default function PremiumHero({ onSelectAnime }: PremiumHeroProps) {
 
 let isAppInitialLoadCompleted = false;
 
-function HeroSlide({ trailer, isActive, isFirstSlide, onSelect, onEnded }: { trailer: HeroTrailer; isActive: boolean; isFirstSlide?: boolean; onSelect: () => void; onEnded: () => void; }) {
+function HeroSlide({ trailer, isActive, isFirstSlide, onSelect, onEnded, onHeroLoad }: { trailer: HeroTrailer; isActive: boolean; isFirstSlide?: boolean; onSelect: () => void; onEnded: () => void; onHeroLoad?: () => void; }) {
   const [videoReady, setVideoReady] = useState(false);
   const [useBanner, setUseBanner] = useState(() => isFirstSlide && !isAppInitialLoadCompleted);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -252,6 +258,7 @@ function HeroSlide({ trailer, isActive, isFirstSlide, onSelect, onEnded }: { tra
   const handleVideoReady = () => {
     if (isActive) {
       setVideoReady(true);
+      onHeroLoad?.();
       if (useBanner) {
         isAppInitialLoadCompleted = true;
         // Turn off the banner fully after the 400ms CSS fade-out completes
@@ -299,6 +306,8 @@ function HeroSlide({ trailer, isActive, isFirstSlide, onSelect, onEnded }: { tra
           className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[400ms] ease-in-out ${videoReady ? 'opacity-0' : 'opacity-100'}`}
           style={{ transform: "scale(1.08)" }}
           loading="eager"
+          onLoad={() => onHeroLoad?.()}
+          onError={() => onHeroLoad?.()} // Fallback just in case
         />
       )}
 
