@@ -105,39 +105,73 @@ export default function SkeletonLoader({ type = "grid" }: SkeletonLoaderProps) {
   // 5. CHANNEL LAYOUT SKELETON (Used on premium channel page details fetch)
   if (type === "channel") {
     return (
-      <div className="w-full select-none bg-transparent">
-        {/* Banner shimmer - matches banner aspect/heights */}
-        <div className="w-full h-40 sm:h-56 md:h-64 shimmer-bone relative border-b border-white/[0.05]" />
+      <div className="w-full min-h-screen select-none bg-transparent relative">
+        {/* Hero Atmosphere Shimmer */}
+        <div className="absolute top-0 left-0 right-0 h-[480px] z-0 overflow-hidden pointer-events-none shimmer-bone opacity-20" />
         
-        {/* Channel details header */}
-        <div className="max-w-6xl mx-auto px-4 md:px-6 py-6 flex flex-col md:flex-row gap-5 items-start mt-[-24px] relative z-10">
-          <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full shimmer-bone ring-4 ring-[#09090b] flex-shrink-0" />
-          <div className="flex-1 space-y-3 pt-4">
-            <div className="h-7 shimmer-bone rounded-md w-1/3" />
-            <div className="h-4 shimmer-bone rounded-md w-1/4" />
-            <div className="h-3.5 shimmer-bone rounded w-1/2" />
-          </div>
-          <div className="w-28 h-9 shimmer-bone rounded-full mt-4 self-end md:self-center" />
-        </div>
-
-        {/* Tab system shimmer */}
-        <div className="max-w-6xl mx-auto px-4 md:px-6 border-b border-white/[0.05] flex gap-8 py-3">
-          <div className="w-20 h-6 shimmer-bone rounded-md" />
-          <div className="w-20 h-6 shimmer-bone rounded-md" />
-        </div>
-
-        {/* Body content shimmer - Episode grids */}
-        <div className="max-w-6xl mx-auto px-4 md:px-6 py-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="p-3 bg-white/[0.01] border border-white/[0.04] rounded-2xl space-y-3">
-                <div className="aspect-video w-full rounded-xl shimmer-bone" />
-                <div className="space-y-2">
-                  <div className="h-3.5 shimmer-bone rounded w-5/6" />
-                  <div className="h-3 shimmer-bone rounded w-1/2" />
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-32 relative z-10">
+          <div className="flex flex-col md:flex-row gap-8 lg:gap-12">
+            
+            {/* LEFT COLUMN */}
+            <div className="w-full md:w-[220px] lg:w-[260px] flex-shrink-0 flex flex-col gap-6 relative">
+              <div className="w-48 sm:w-full mx-auto md:mx-0">
+                <div className="aspect-[2/3] rounded-xl shimmer-bone border border-white/[0.1] shadow-2xl" />
+                <div className="mt-4 flex flex-col gap-2">
+                  <div className="w-full py-2.5 h-[42px] shimmer-bone rounded-lg border border-white/[0.05]" />
+                </div>
+                <div className="mt-6 flex flex-col gap-4">
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="flex flex-col gap-1.5">
+                      <div className="h-3 shimmer-bone rounded w-16" />
+                      <div className="h-3.5 shimmer-bone rounded w-24" />
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
+            </div>
+
+            {/* RIGHT COLUMN */}
+            <div className="flex-1 min-w-0 flex flex-col">
+              <div className="h-4 shimmer-bone rounded w-24 mb-4" />
+              <div className="h-10 sm:h-12 shimmer-bone rounded w-[300px] sm:w-[500px] lg:w-[600px] mb-6" />
+              
+              <div className="flex flex-wrap gap-2 mb-6">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="h-6 w-16 flex-shrink-0 shimmer-bone rounded bg-white/[0.06] border border-white/[0.08]" />
+                ))}
+              </div>
+
+              <div className="flex items-center gap-3 mb-6">
+                <div className="h-12 w-[160px] rounded-full shimmer-bone flex-shrink-0 border border-transparent" />
+                <div className="w-12 h-12 rounded-full shimmer-bone flex-shrink-0 border border-white/5" />
+              </div>
+
+              <div className="mb-8 max-w-4xl space-y-2">
+                <div className="h-4 shimmer-bone rounded w-full" />
+                <div className="h-4 shimmer-bone rounded w-11/12" />
+                <div className="h-4 shimmer-bone rounded w-10/12" />
+                <div className="h-4 shimmer-bone rounded w-[150px] mt-4" />
+              </div>
+
+              <div className="flex items-center gap-6 sm:gap-8 border-b border-white/[0.08] mb-6">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="pb-3 w-16 sm:w-20">
+                    <div className="h-4 shimmer-bone rounded w-full" />
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 sm:gap-5 pb-10">
+                {[...Array(12)].map((_, i) => (
+                  <div key={i} className="flex flex-col gap-2 rounded-xl">
+                    <div className="relative aspect-video w-full rounded-xl overflow-hidden shimmer-bone border border-white/[0.05]" />
+                    <div className="px-1 mt-0.5">
+                      <div className="h-4 shimmer-bone rounded w-4/5" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -147,56 +181,69 @@ export default function SkeletonLoader({ type = "grid" }: SkeletonLoaderProps) {
   // 6. WATCH VIEWPORT MULTI-PANEL SKELETON (Used on video watch loads)
   if (type === "watch") {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-12 gap-6 select-none bg-transparent">
-        {/* Left player column */}
-        <div className="lg:col-span-8 flex flex-col gap-4">
-          <div className="w-full aspect-video shimmer-bone rounded-2xl border border-white/[0.05]" />
-          <div className="space-y-1.5 mt-2">
-            <div className="h-3.5 shimmer-bone rounded-md w-[200px]" />
-            <div className="h-6 shimmer-bone rounded-md w-11/12" />
+      <div className="w-full bg-[#0f0f0f] pb-20 pt-14 select-none z-10 relative text-[#f1f1f1] min-h-screen">
+        {/* Header Breadcrumbs area shimmer */}
+        <div className="h-14 w-full absolute top-0 shimmer-bone opacity-10" />
+
+        {/* MAIN ROW 1: Player & Up Next Side-by-side */}
+        <div className="max-w-[1700px] mx-auto px-4 lg:px-6 pt-6 flex flex-col lg:flex-row gap-6 lg:items-stretch">
+          {/* Left: Player */}
+          <div className="w-full lg:w-[71%] min-w-0 flex flex-col">
+            <div className="w-full aspect-video shimmer-bone rounded-none sm:rounded-2xl border border-white/5" />
           </div>
-          {/* Controls / Subscribe area */}
-          <div className="flex items-center justify-between border-b border-white/[0.05] pb-5 pt-1.5">
-            <div className="flex gap-4 items-center">
-              <div className="w-10 h-10 rounded-full shimmer-bone" />
-              <div className="space-y-1.5">
-                <div className="h-3.5 shimmer-bone rounded w-24" />
-                <div className="h-2.5 shimmer-bone rounded w-16" />
+          {/* Right: Up Next Sidebar */}
+          <div className="w-full lg:w-[29%] min-w-0 flex flex-col bg-[#121214] border border-white/5 rounded-2xl p-4 min-h-[400px]">
+            <div className="flex flex-col pb-3 border-b border-white/[0.05] gap-2">
+              <div className="h-4 shimmer-bone rounded w-1/3" />
+              <div className="h-3 shimmer-bone rounded w-2/3" />
+              <div className="flex gap-2 mt-2">
+                <div className="h-[34px] flex-1 shimmer-bone rounded-lg" />
+                <div className="h-[34px] w-8 flex-shrink-0 shimmer-bone rounded-lg" />
+                <div className="h-[34px] w-8 flex-shrink-0 shimmer-bone rounded-lg" />
               </div>
             </div>
-            <div className="flex gap-2">
-              <div className="h-9 shimmer-bone rounded-full w-20" />
-              <div className="h-9 shimmer-bone rounded-full w-24" />
+            <div className="flex flex-col gap-2 mt-3">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="flex items-start gap-4 p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                  <div className="w-[120px] aspect-video shimmer-bone rounded-md flex-shrink-0" />
+                  <div className="flex-1 py-1 space-y-3">
+                    <div className="h-3.5 w-3/4 shimmer-bone rounded" />
+                    <div className="h-3 w-1/2 shimmer-bone rounded" />
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
-          {/* Below fields - Description mock */}
-          <div className="bg-white/[0.02] rounded-xl p-4 space-y-2.5 border border-white/[0.03]">
-            <div className="h-3.5 shimmer-bone rounded w-1/4" />
-            <div className="h-3 shimmer-bone rounded w-11/12" />
-            <div className="h-3 shimmer-bone rounded w-5/6" />
           </div>
         </div>
+        
+        {/* MAIN ROW 2: Episode Controls, Info */}
+        <div className="max-w-[1700px] mx-auto px-4 lg:px-6 pb-20 flex flex-col lg:flex-row gap-6 items-start mt-6">
+          <div className="w-full lg:w-[71%] min-w-0 flex flex-col">
+            <div className="flex flex-wrap items-center justify-between mt-1 pb-2 border-b border-white/[0.05] gap-4">
+              <div className="flex gap-4">
+                <div className="w-[80px] h-[18px] shimmer-bone rounded" />
+                <div className="w-[80px] h-[18px] shimmer-bone rounded" />
+              </div>
+              <div className="w-[150px] h-[18px] shimmer-bone rounded" />
+            </div>
+            
+            <div className="mt-6 flex flex-col gap-3 pb-8 w-full">
+              <div className="h-[46px] w-full rounded-lg shimmer-bone" />
+              <div className="h-7 w-[250px] shimmer-bone rounded mt-2" />
 
-        {/* Right sidebar column - Episode selection grid */}
-        <div className="lg:col-span-4 flex flex-col gap-4">
-          <div className="h-5 shimmer-bone rounded w-1/3 mb-2" />
-          <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-4 gap-2">
-            {[...Array(12)].map((_, i) => (
-              <div key={i} className="aspect-square shimmer-bone rounded-lg flex items-center justify-center border border-white/[0.05]" />
-            ))}
-          </div>
-
-          <div className="h-5 shimmer-bone rounded w-1/2 mt-4 mb-2" />
-          {/* Recommended list skeletons */}
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="flex gap-3 bg-[#0d0d11]/20 p-2 rounded-xl border border-white/[0.02]">
-              <div className="w-24 aspect-video shimmer-bone rounded-lg" />
-              <div className="flex-1 space-y-2 flex flex-col justify-center">
-                <div className="h-3 shimmer-bone rounded w-5/6" />
-                <div className="h-2 shimmer-bone rounded w-1/2" />
+              <div className="flex flex-col xl:flex-row xl:items-center justify-between py-1 gap-4 mt-2">
+                <div className="flex items-center gap-4">
+                  <div className="w-11 h-11 rounded-full shimmer-bone flex-shrink-0" />
+                  <div className="h-5 w-[200px] shimmer-bone rounded" />
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="h-9 w-[100px] rounded-full shimmer-bone" />
+                  <div className="h-9 w-[140px] rounded-full shimmer-bone" />
+                  <div className="h-9 w-[100px] rounded-full shimmer-bone" />
+                </div>
               </div>
             </div>
-          ))}
+          </div>
         </div>
       </div>
     );

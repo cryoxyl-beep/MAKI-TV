@@ -231,11 +231,11 @@ export default function App() {
         />
       )}
 
-      <div className={`flex flex-1 ${activePage === "watch" ? "pt-0" : "pt-[56px]"} text-white z-10 relative`}>
+      <div className={`flex flex-1 ${activePage === "watch" ? "pt-0" : "pt-[56px]"} text-white relative`}>
         
         {/* 3. Right main contents stage viewport with standard padding scale */}
         <main
-          className="flex-1 min-w-0 bg-transparent pb-32 z-10 relative px-0"
+          className="flex-1 min-w-0 bg-transparent pb-32 relative px-0"
         >
           {/* RENDER LAYER 1: Home recommender Feed */}
           {activePage === "home" && (

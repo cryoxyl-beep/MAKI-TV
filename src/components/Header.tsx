@@ -271,7 +271,7 @@ export default function Header({
         ) : (
           <div className="w-full h-full flex items-center justify-between pl-6 md:pl-10 lg:pl-14 pr-6 md:pr-10 lg:pr-12 relative">
             {/* Left section: Logo */}
-            <div id="header-logo-section" className="flex-1 flex items-center gap-2 md:gap-2 transition-opacity duration-300">
+            <div id="header-logo-section" className="flex-1 flex items-center gap-2 md:gap-2 transition-opacity duration-700 ease-out">
               <button 
                 onClick={onMenuClick}
                 className="hidden md:flex p-1.5 hover:bg-white/[0.08] text-white/80 hover:text-white rounded-full transition-colors cursor-pointer"
@@ -291,7 +291,7 @@ export default function Header({
             </div>
 
             {/* Right section: Search input & User Profile */}
-            <div id="header-actions-section" className="flex-1 flex items-center justify-end gap-4 lg:gap-6 transition-opacity duration-300">
+            <div id="header-actions-section" className="flex-1 flex items-center justify-end gap-4 lg:gap-6 transition-opacity duration-700 ease-out">
               {/* Desktop & Tablet Search Bar */}
               <form
                 onSubmit={handleSubmit}
