@@ -8,6 +8,7 @@ import { SubscriptionItem } from "../types";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLibrary } from "../hooks/useLibrary";
 import { useState } from "react";
+import { getRandomFribbEntryWithAnilist } from "../services/fribb";
 
 interface SidebarProps {
   activeTab: "home" | "trending" | "subscriptions" | "library" | "schedule";
@@ -29,15 +30,6 @@ export default function Sidebar({
   onSignInClick
 }: SidebarProps) {
   const { currentUser } = useLibrary();
-  const [diagnostic, setDiagnostic] = useState<{
-    show: boolean;
-    malId?: number;
-    title?: string;
-    titleEnglish?: string;
-    titleJapanese?: string;
-    aniListResult?: any;
-    matchStatus?: string;
-  }>({ show: false });
 
   const primaryNavItems = [
     { id: "home" as const, label: "Home", icon: Home },
@@ -134,80 +126,12 @@ export default function Sidebar({
                       id={item.id === "random" ? "random-nav-btn" : undefined}
                       onClick={() => {
                         if (item.id === "random") {
-                          setDiagnostic({ show: true, matchStatus: "Fetching from Jikan API..." });
-                          fetch("https://api.jikan.moe/v4/random/anime")
-                            .then(res => res.json())
-                            .then(data => {
-                              if (data && data.data && data.data.mal_id) {
-                                const malId = data.data.mal_id;
-                                const title = data.data.title;
-                                const titleEnglish = data.data.title_english;
-                                const titleJapanese = data.data.title_japanese;
-                                
-                                setDiagnostic(prev => ({
-                                  ...prev,
-                                  malId,
-                                  title,
-                                  titleEnglish,
-                                  titleJapanese,
-                                  matchStatus: "Jikan success. Looking up AniList ID..."
-                                }));
-                                
-                                const getAniListId = async () => {
-                                  try {
-                                    // Try by MAL ID first
-                                    const r1 = await fetch("https://graphql.anilist.co", {
-                                      method: "POST",
-                                      headers: { "Content-Type": "application/json" },
-                                      body: JSON.stringify({
-                                        query: `query($idMal: Int) { Media(idMal: $idMal, type: ANIME) { id } }`,
-                                        variables: { idMal: malId }
-                                      })
-                                    });
-                                    const d1 = await r1.json();
-                                    if (d1?.data?.Media?.id) return { id: d1.data.Media.id, raw: d1, reason: "Match by MAL ID" };
-                                    
-                                    // Fallback to title search if MAL ID fails
-                                    const r2 = await fetch("https://graphql.anilist.co", {
-                                      method: "POST",
-                                      headers: { "Content-Type": "application/json" },
-                                      body: JSON.stringify({
-                                        query: `query($search: String) { Media(search: $search, type: ANIME) { id } }`,
-                                        variables: { search: title }
-                                      })
-                                    });
-                                    const d2 = await r2.json();
-                                    if (d2?.data?.Media?.id) return { id: d2.data.Media.id, raw: d2, reason: "Match by Title Fallback" };
-                                    
-                                    return { id: null, raw: { r1: d1, r2: d2 }, reason: "No matches found in AniList" };
-                                  } catch (error: any) {
-                                    console.error("AniList fetch error:", error);
-                                    return { id: null, raw: error.message, reason: "Exception during fetch" };
-                                  }
-                                };
-                                
-                                getAniListId().then(res => {
-                                  setDiagnostic(prev => ({
-                                    ...prev,
-                                    aniListResult: res.raw,
-                                    matchStatus: res.id ? `Success: ${res.reason}` : `Failed: ${res.reason}`
-                                  }));
-                                  
-                                  if (res.id) {
-                                    // Auto nav on success after short delay
-                                    setTimeout(() => {
-                                      setDiagnostic({ show: false });
-                                      onChannelClick(res.id);
-                                    }, 1500);
-                                  }
-                                });
-                              } else {
-                                setDiagnostic(prev => ({ ...prev, matchStatus: "Error: Jikan returned invalid data" }));
-                              }
-                            })
-                            .catch(err => {
-                                setDiagnostic(prev => ({ ...prev, matchStatus: `Error fetching Jikan: ${err.message}` }));
-                            });
+                          const fribbEntry = getRandomFribbEntryWithAnilist();
+                          if (fribbEntry && fribbEntry.mal_id) {
+                            onChannelClick(fribbEntry.mal_id);
+                          } else {
+                            console.warn("No valid random Fribb entry found.");
+                          }
                         } else {
                           onNavigate(item.id as any);
                         }
@@ -267,51 +191,6 @@ export default function Sidebar({
           </>
         )}
       </AnimatePresence>
-
-      {/* Diagnostic Modal for Random */}
-      {diagnostic.show && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-          <div className="bg-[#121214] border border-white/10 rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl relative">
-            <div className="p-4 border-b border-white/5 flex justify-between items-center">
-              <h2 className="text-lg font-bold text-white">Random Diagnostics</h2>
-              <button onClick={() => setDiagnostic({ show: false })} className="p-1 hover:bg-white/10 rounded-full text-white/60 hover:text-white transition-colors cursor-pointer">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-4 overflow-y-auto custom-scrollbar flex flex-col gap-4 text-sm text-gray-300">
-              <div className="bg-white/5 p-3 rounded-lg border border-white/5">
-                <h3 className="text-[#ff6b35] font-semibold mb-2 uppercase text-xs tracking-wider">Jikan Summary</h3>
-                <div className="grid grid-cols-[100px_1fr] gap-2 font-mono text-xs">
-                  <span className="text-white/50">MAL ID:</span>
-                  <span className="text-white">{diagnostic.malId || 'N/A'}</span>
-                  <span className="text-white/50">Title:</span>
-                  <span className="text-white">{diagnostic.title || 'N/A'}</span>
-                  <span className="text-white/50">English:</span>
-                  <span className="text-white">{diagnostic.titleEnglish || 'N/A'}</span>
-                  <span className="text-white/50">Japanese:</span>
-                  <span className="text-white">{diagnostic.titleJapanese || 'N/A'}</span>
-                </div>
-              </div>
-
-              <div className="bg-white/5 p-3 rounded-lg border border-white/5">
-                <h3 className="text-[#ff6b35] font-semibold mb-2 uppercase text-xs tracking-wider">Match Status</h3>
-                <div className="font-mono text-xs p-2 bg-black/40 rounded border border-white/5 whitespace-pre-wrap break-words">
-                  {diagnostic.matchStatus || 'Waiting...'}
-                </div>
-              </div>
-
-              {diagnostic.aniListResult && (
-                <div className="bg-white/5 p-3 rounded-lg border border-white/5 flex-1 min-h-0 flex flex-col">
-                  <h3 className="text-[#ff6b35] font-semibold mb-2 uppercase text-xs tracking-wider">AniList Result</h3>
-                  <div className="font-mono text-[10px] p-2 bg-black/40 rounded border border-white/5 overflow-y-auto custom-scrollbar whitespace-pre-wrap break-all flex-1">
-                    {JSON.stringify(diagnostic.aniListResult, null, 2)}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }
