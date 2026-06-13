@@ -32,14 +32,18 @@ export default async function handler(req, res) {
 
     // Forward original headers that matter
     upstreamRes.headers.forEach((value, key) => {
-      // Avoid forwarding encodings since we already decoded the body (fetch does this automatically)
-      if (key.toLowerCase() !== 'content-encoding' && key.toLowerCase() !== 'content-length') {
+      const lowerKey = key.toLowerCase();
+      // Omit all encodings, caching, and lengths to let dev server fully control it
+      if (!['content-encoding', 'content-length', 'transfer-encoding', 'connection', 'keep-alive'].includes(lowerKey)) {
         res.setHeader(key, value);
       }
     });
+
+    res.removeHeader('transfer-encoding');
+    res.removeHeader('content-length');
+    res.removeHeader('connection');
     
-    // Set proper content-length and replace CORS
-    res.setHeader('Content-Length', buffer.length.toString());
+    // Override local CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
 
