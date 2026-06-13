@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
 import HomeFeed from "./components/HomeFeed";
+import BrowseFeed from "./components/BrowseFeed";
 import ChannelPage from "./components/ChannelPage";
 import WatchPage from "./components/WatchPage";
 import LibraryPage from "./components/LibraryPage";
@@ -249,19 +250,7 @@ export default function App() {
 
           {/* RENDER LAYER 2: Trending content (Re-use feed query sorted by trendings) */}
           {activePage === "trending" && (
-            <div className="w-full min-h-screen">
-              <div className="px-4 md:px-6 pt-5 flex items-center gap-2">
-                <Flame className="w-6 h-6 text-[#ff6b35]" />
-                <h1 className="text-white text-xl sm:text-2xl font-black font-sans tracking-tight leading-none">
-                  Trending Anime Channels
-                </h1>
-              </div>
-              <HomeFeed
-                onSelectAnime={handleOpenChannel}
-                onWatchEpisode={handleOpenEpisode}
-                searchQuery=""
-              />
-            </div>
+            <BrowseFeed onSelectAnime={handleOpenChannel} />
           )}
 
           {/* RENDER LAYER 3: Subscription pages displaying all subscribed series channels */}

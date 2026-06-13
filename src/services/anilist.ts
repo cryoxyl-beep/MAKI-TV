@@ -105,7 +105,10 @@ export async function fetchAnimeFeed(category?: string, searchWord?: string, pag
         "Romance": "22", "Sci-Fi": "24", "Slice of Life": "36", "Supernatural": "37", 
         "Mystery": "7", "Sports": "30", "Suspense": "41", "Horror": "14"
       };
-      if (genreMap[category]) {
+      if (category && category.startsWith("id:")) {
+         const catId = category.split(":")[1];
+         url = `https://api.jikan.moe/v4/anime?genres=${catId}&page=${page}&limit=25&order_by=popularity`;
+      } else if (genreMap[category]) {
          url = `https://api.jikan.moe/v4/anime?genres=${genreMap[category]}&page=${page}&limit=25&order_by=popularity`;
       } else {
          url = `https://api.jikan.moe/v4/top/anime?page=${page}&limit=25`;
