@@ -13,6 +13,7 @@
   "dependencies": {
     "@google/genai": "^2.4.0",
     "@tailwindcss/vite": "^4.1.14",
+    "@vidstack/react": "^1.15.6",
     "@vitejs/plugin-react": "^5.0.4",
     "dotenv": "^17.2.3",
     "express": "^4.21.2",
@@ -25,6 +26,7 @@
     "react-dom": "^19.0.1",
     "react-virtuoso": "^4.18.7",
     "swiper": "^12.2.0",
+    "vidstack": "^1.15.6",
     "vite": "^6.2.3"
   },
   "devDependencies": {
