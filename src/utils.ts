@@ -64,6 +64,13 @@ export const storage = {
       console.error("Local storage error:", e);
     }
   },
+  remove: (key: string): void => {
+    try {
+      localStorage.removeItem(STORAGE_PREFIX + key);
+    } catch (e) {
+      console.error("Local storage error:", e);
+    }
+  },
 };
 
 export function syncToFirebase(key: string, data: any) {

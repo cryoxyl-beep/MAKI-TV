@@ -135,7 +135,11 @@ export default function Sidebar({
                 <div className="h-px bg-white/[0.05] w-full my-4" />
 
                 <button
-                  className="flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 w-full text-left group text-white/60 hover:text-white/90 hover:bg-white/[0.04]"
+                  onClick={() => {
+                    onNavigate("settings" as any);
+                    onClose?.();
+                  }}
+                  className={`flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 w-full text-left group ${activeTab === 'settings' as any ? 'bg-white/[0.08] text-white' : 'text-white/60 hover:text-white/90 hover:bg-white/[0.04]'}`}
                 >
                   <Settings className="w-5 h-5 transition-transform duration-300 group-hover:rotate-45 drop-shadow-md" />
                   <span className="font-semibold text-[15px] tracking-wide">Settings</span>

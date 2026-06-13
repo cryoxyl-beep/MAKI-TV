@@ -12,16 +12,18 @@ import ChannelPage from "./components/ChannelPage";
 import WatchPage from "./components/WatchPage";
 import LibraryPage from "./components/LibraryPage";
 import SchedulePage from "./components/SchedulePage";
+import SettingsPage from "./components/SettingsPage";
 import LazyImage from "./components/LazyImage";
 import { parseEpisodeSearch } from "./utils";
 import { fetchAnimeFeed } from "./services/anilist";
 import { Tv, Flame, Play, Sparkles, ChevronUp } from "lucide-react";
 import { useLibrary } from "./hooks/useLibrary";
+import { useSettings } from "./hooks/useSettings";
 import { initializeFribbMapping } from "./services/fribb";
 
 export default function App() {
   // Navigation states
-  const [activePage, setActivePage] = useState<"home" | "trending" | "subscriptions" | "library" | "channel" | "watch" | "schedule">("home");
+  const [activePage, setActivePage] = useState<"home" | "trending" | "subscriptions" | "library" | "channel" | "watch" | "schedule" | "settings">("home");
   const [searchQuery, setSearchQuery] = useState("");
 
   // Initialize Fribb Mapping on startup
@@ -37,6 +39,23 @@ export default function App() {
 
   // Live Subscription list via useLibrary
   const { library: subscriptionsList } = useLibrary();
+  const { settings } = useSettings();
+
+  useEffect(() => {
+    if (settings.appearance.reduceAnimations) {
+      document.body.classList.add("reduce-animations");
+    } else {
+      document.body.classList.remove("reduce-animations");
+    }
+    
+    if (settings.appearance.theme === "System") {
+      // Very basic system theme logic (Miyoro is mostly dark, we can just toggle a class if we wanted light mode)
+      // but normally we keep dark by default. Just apply a class.
+      document.body.classList.add("theme-system");
+    } else {
+      document.body.classList.remove("theme-system");
+    }
+  }, [settings.appearance]);
 
   // Update browser tab title dynamically based on activePage & searchQuery
   useEffect(() => {
@@ -135,6 +154,9 @@ export default function App() {
       } else if (hash === "#/schedule") {
         setActivePage("schedule");
         setSearchQuery("");
+      } else if (hash === "#/settings") {
+        setActivePage("settings");
+        setSearchQuery("");
       } else {
         // Default to home page
         setActivePage("home");
@@ -151,7 +173,7 @@ export default function App() {
   }, []);
 
   // Helpers to push link state
-  const handleNavigate = (page: "home" | "trending" | "subscriptions" | "library" | "schedule") => {
+  const handleNavigate = (page: "home" | "trending" | "subscriptions" | "library" | "schedule" | "settings") => {
     if (page === "home") {
       window.location.hash = "/";
     } else {
@@ -274,6 +296,11 @@ export default function App() {
           {/* RENDER LAYER 7: Schedule Page */}
           {activePage === "schedule" && (
             <SchedulePage onSelectAnime={handleOpenChannel} />
+          )}
+
+          {/* RENDER LAYER 8: Settings Page */}
+          {activePage === "settings" && (
+            <SettingsPage />
           )}
 
           {/* RENDER LAYER 5: Specific Hub Anime channel System Dashboard */}

@@ -158,3 +158,19 @@ body {
   background-size: 200% 100% !important;
   animation: shimmer 2.2s infinite linear !important;
 }
+
+body.reduce-animations *,
+body.reduce-animations *::before,
+body.reduce-animations *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+body.theme-system {
+  @media (prefers-color-scheme: light) {
+    background-color: #f4f4f5;
+    color: #18181b;
+  }
+}

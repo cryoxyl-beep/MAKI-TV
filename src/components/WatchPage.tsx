@@ -28,6 +28,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Virtuoso, VirtuosoGrid } from "react-virtuoso";
 
 import RecommendationsList from "./RecommendationsList";
+import { useSettings } from "../hooks/useSettings";
 
 interface WatchPageProps {
   animeId: number;
@@ -63,6 +64,7 @@ export default function WatchPage({
 }: WatchPageProps) {
   const [anime, setAnime] = useState<AniListAnime | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { settings } = useSettings();
   
   // Mapping States
   const [tmdbId, setTmdbId] = useState<number>(0);
@@ -70,11 +72,15 @@ export default function WatchPage({
 
   // Selected active server/provider
   const [selectedProvider, setSelectedProvider] = useState<string>(() => {
-    return localStorage.getItem("makitv_selected_provider") || "megaplay";
+    return localStorage.getItem("makitv_selected_provider") || settings.playback.defaultServer;
   });
   
   const [audioLanguage, setAudioLanguage] = useState<"sub" | "dub">(() => {
-    return (localStorage.getItem("makitv_megaplay_language") as "sub" | "dub") || "sub";
+    const raw = localStorage.getItem("makitv_megaplay_language");
+    if (raw === "sub" || raw === "dub") return raw;
+    if (settings.playback.defaultAudio === "Japanese") return "sub";
+    if (settings.playback.defaultAudio === "English Dub") return "dub";
+    return "sub";
   });
 
   const [tvdbThumbnailMap, setTvdbThumbnailMap] = useState<Record<string, string>>({});

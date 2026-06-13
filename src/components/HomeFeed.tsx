@@ -16,6 +16,7 @@ import { rankSearchMatch } from "../utils/search";
 import ShelfScroller from "./ShelfScroller";
 import WatchHistory from "./WatchHistory";
 import { useLibrary } from "../hooks/useLibrary";
+import { useSettings } from "../hooks/useSettings";
 
 let hasShownSplash = false;
 
@@ -47,6 +48,7 @@ export default function HomeFeed({
   const [isHeroReady, setIsHeroReady] = useState(false);
   const [showSplash, setShowSplash] = useState(!hasShownSplash);
   const [splashFading, setSplashFading] = useState(false);
+  const { settings } = useSettings();
 
   useEffect(() => {
     if (hasShownSplash || searchQuery || selectedCategory !== "All") {
@@ -186,8 +188,8 @@ export default function HomeFeed({
         {/* Premium Hero Banner */}
         {!searchQuery && selectedCategory === "All" && (
           <>
-            <PremiumHero onSelectAnime={onSelectAnime} onHeroLoad={() => setIsHeroReady(true)} />
-            <WatchHistory onWatchEpisode={onWatchEpisode} />
+            {settings.homepage.enableHero && <PremiumHero onSelectAnime={onSelectAnime} onHeroLoad={() => setIsHeroReady(true)} />}
+            {settings.homepage.enableContinueWatching && <WatchHistory onWatchEpisode={onWatchEpisode} />}
           </>
         )}
 
@@ -204,19 +206,45 @@ export default function HomeFeed({
       {selectedCategory === "All" && !searchQuery ? (
         <div className="flex flex-col gap-1 w-full bg-transparent pt-6 relative isolate">
           {/* New Releases shelf */}
-          {isNewReleasesLoading ? (
-            <SkeletonLoader type="shelf" />
-          ) : (
-            newReleases.length > 0 && (
+          {settings.homepage.enableRecentlyAdded && (
+            isNewReleasesLoading ? (
+              <SkeletonLoader type="shelf" />
+            ) : (
+              newReleases.length > 0 && (
+                <div className="flex flex-col gap-4 relative isolate mb-8 animate-fade-in">
+                  <div className="px-4 md:px-6 flex flex-col">
+                    <h2 className="text-2xl font-bold text-[#f1f1f1] tracking-tight">New Releases</h2>
+                    <p className="text-[13px] text-gray-400 font-medium mt-0.5">Fresh from this season</p>
+                  </div>
+                  <ShelfScroller>
+                    {newReleases.slice(0, 15).map((anime, index) => {
+                      return (
+                        <div key={`${anime.id}-${index}`} className="snap-start shrink-0">
+                          <AnimeCard anime={anime} onClick={() => handleCardClick(anime.id)} layout="grid" index={index} />
+                        </div>
+                      );
+                    })}
+                  </ShelfScroller>
+                </div>
+              )
+            )
+          )}
+
+          {/* Trending Now shelf (using already fetched feedAnimes) */}
+          {settings.homepage.enableTrending && (
+            isLoading ? (
+              <SkeletonLoader type="shelf" />
+            ) : (
               <div className="flex flex-col gap-4 relative isolate mb-8 animate-fade-in">
                 <div className="px-4 md:px-6 flex flex-col">
-                  <h2 className="text-2xl font-bold text-[#f1f1f1] tracking-tight">New Releases</h2>
-                  <p className="text-[13px] text-gray-400 font-medium mt-0.5">Fresh from this season</p>
+                  <h2 className="text-2xl font-bold text-[#f1f1f1] tracking-tight">Trending Now</h2>
+                  <p className="text-[13px] text-gray-400 font-medium mt-0.5">Most watched this week</p>
                 </div>
                 <ShelfScroller>
-                  {newReleases.slice(0, 15).map((anime, index) => {
+                  {feedAnimes.slice(0, 15).map((anime, index) => {
+                    const isLastElement = index === Math.min(feedAnimes.length - 1, 14);
                     return (
-                      <div key={`${anime.id}-${index}`} className="snap-start shrink-0">
+                      <div key={`${anime.id}-${index}`} ref={isLastElement ? lastAnimeElementRef : null} className="snap-start shrink-0">
                         <AnimeCard anime={anime} onClick={() => handleCardClick(anime.id)} layout="grid" index={index} />
                       </div>
                     );
@@ -224,28 +252,6 @@ export default function HomeFeed({
                 </ShelfScroller>
               </div>
             )
-          )}
-
-          {/* Trending Now shelf (using already fetched feedAnimes) */}
-          {isLoading ? (
-            <SkeletonLoader type="shelf" />
-          ) : (
-            <div className="flex flex-col gap-4 relative isolate mb-8 animate-fade-in">
-              <div className="px-4 md:px-6 flex flex-col">
-                <h2 className="text-2xl font-bold text-[#f1f1f1] tracking-tight">Trending Now</h2>
-                <p className="text-[13px] text-gray-400 font-medium mt-0.5">Most watched this week</p>
-              </div>
-              <ShelfScroller>
-                {feedAnimes.slice(0, 15).map((anime, index) => {
-                  const isLastElement = index === Math.min(feedAnimes.length - 1, 14);
-                  return (
-                    <div key={`${anime.id}-${index}`} ref={isLastElement ? lastAnimeElementRef : null} className="snap-start shrink-0">
-                      <AnimeCard anime={anime} onClick={() => handleCardClick(anime.id)} layout="grid" index={index} />
-                    </div>
-                  );
-                })}
-              </ShelfScroller>
-            </div>
           )}
 
           <DiscoveryShelf title="Popular This Season" subtitle="Current fan favorites" category="Currently Airing" onSelectAnime={onSelectAnime} />
