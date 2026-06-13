@@ -3,12 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Home, Flame, Clapperboard, Library, Sparkles, Calendar, Settings, Compass, Shuffle, LogIn, ChevronRight, X } from "lucide-react";
+import { Home, Flame, Clapperboard, Library, Sparkles, Calendar, Settings, Compass, LogIn, ChevronRight, X } from "lucide-react";
 import { SubscriptionItem } from "../types";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLibrary } from "../hooks/useLibrary";
 import { useState } from "react";
-import { getRandomFribbEntryWithAnilist } from "../services/fribb";
 
 interface SidebarProps {
   activeTab: "home" | "trending" | "subscriptions" | "library" | "schedule";
@@ -42,7 +41,6 @@ export default function Sidebar({
     { id: "home" as const, label: "Home", icon: Home },
     { id: "trending" as const, label: "Browse Anime", icon: Compass },
     { id: "schedule" as const, label: "Schedule", icon: Calendar },
-    { id: "random" as const, label: "Random", icon: Shuffle },
     { id: "library" as const, label: "Library", icon: Library },
   ];
 
@@ -117,24 +115,13 @@ export default function Sidebar({
               <div className="flex-1 overflow-y-auto custom-scrollbar py-6 px-3 flex flex-col gap-1 relative z-10">
                 {desktopNavItems.map((item) => {
                   const Icon = item.icon;
-                  // For random, we don't have a real route, just match others
                   const isActive = activeTab === item.id;
                   
                   return (
                     <button
                       key={item.id}
-                      id={item.id === "random" ? "random-nav-btn" : undefined}
                       onClick={() => {
-                        if (item.id === "random") {
-                          const fribbEntry = getRandomFribbEntryWithAnilist();
-                          if (fribbEntry && fribbEntry.mal_id) {
-                            onChannelClick(fribbEntry.mal_id);
-                          } else {
-                            console.warn("No valid random Fribb entry found.");
-                          }
-                        } else {
-                          onNavigate(item.id as any);
-                        }
+                        onNavigate(item.id as any);
                         onClose?.();
                       }}
                       className={`flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 w-full text-left group ${isActive ? 'bg-white/[0.08] text-white' : 'text-white/60 hover:text-white/90 hover:bg-white/[0.04]'}`}

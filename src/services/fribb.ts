@@ -64,12 +64,3 @@ export function getFribbEntryByAnilist(anilistId: number): FribbAnimeEntry | nul
   if (!lookupByAnilist) return null;
   return lookupByAnilist.get(anilistId) || null;
 }
-
-export function getRandomFribbEntryWithAnilist(): FribbAnimeEntry | null {
-  if (!lookupByAnilist || lookupByAnilist.size === 0) return null;
-  const entries = Array.from(lookupByAnilist.values());
-  const validEntries = entries.filter(e => e.anilist_id && e.mal_id);
-  if (validEntries.length === 0) return null;
-  const randomIndex = Math.floor(Math.random() * validEntries.length);
-  return validEntries[randomIndex];
-}
