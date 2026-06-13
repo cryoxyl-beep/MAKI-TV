@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useSettings, AppSettings } from "../hooks/useSettings";
 import { useLibrary } from "../hooks/useLibrary";
-import { Trash2, RotateCcw, Settings as SettingsIcon, ChevronDown, Check } from "lucide-react";
+import { Trash2, RotateCcw, ChevronDown, Check } from "lucide-react";
 import { storage } from "../utils";
 
 export default function SettingsPage() {
@@ -18,7 +18,7 @@ export default function SettingsPage() {
   };
 
   const GroupTitle = ({ title }: { title: string }) => (
-    <h3 className="text-white/40 font-bold mb-5 uppercase text-xs tracking-widest pl-1">
+    <h3 className="text-white/30 font-bold mb-5 uppercase text-[11px] tracking-widest pl-1">
       {title}
     </h3>
   );
@@ -27,48 +27,62 @@ export default function SettingsPage() {
     <div className="flex items-center justify-between py-3.5 px-1 cursor-pointer group" onClick={() => onChange(!checked)}>
       <span className="text-gray-300 text-sm font-medium group-hover:text-white transition-colors">{label}</span>
       <button 
-        className={`w-12 h-6 rounded-full transition-all duration-500 ease-out relative ${checked ? 'bg-white' : 'bg-white/10'}`}
+        className={`w-[42px] h-[24px] rounded-full transition-colors duration-300 ease-in-out relative ${checked ? 'bg-white' : 'bg-white/10'}`}
       >
-        <div className={`w-4 h-4 rounded-full absolute top-1 transition-all duration-500 ease-out shadow-sm ${checked ? 'translate-x-7 bg-black' : 'translate-x-1 bg-white/50'}`} />
+        <div className={`w-[18px] h-[18px] rounded-full absolute top-[3px] transition-all duration-300 ease-in-out shadow-sm ${checked ? 'translate-x-[21px] bg-black' : 'translate-x-[3px] bg-white/50'}`} />
       </button>
     </div>
   );
 
   const SelectRow = ({ label, value, options, onChange }: { label: string, value: string, options: {label: string, value: string}[], onChange: (v: string) => void }) => {
     const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+        if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+          setIsOpen(false);
+        }
+      };
+      
+      if (isOpen) {
+        document.addEventListener("mousedown", handleClickOutside);
+      }
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [isOpen]);
+
     return (
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3.5 px-1 gap-3 relative">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3.5 px-1 gap-3 relative" ref={dropdownRef}>
         <span className="text-gray-300 text-sm font-medium">{label}</span>
         
         <div className="relative w-full sm:w-56">
           <button 
             onClick={() => setIsOpen(!isOpen)}
-            className={`flex items-center justify-between gap-2 hover:bg-white/10 border rounded-xl px-4 py-2.5 text-sm text-white w-full transition-all duration-300 ${isOpen ? 'bg-white/10 border-white/20' : 'bg-white/5 border-white/10'}`}
+            className={`flex items-center justify-between gap-2 border rounded-xl px-4 py-2.5 text-sm text-white w-full transition-colors duration-200 ${isOpen ? 'bg-white/10 border-white/20' : 'bg-white/[0.03] border-white/10 hover:bg-white/[0.06]'}`}
           >
-            <span className="truncate text-left flex-1">{options.find(o => o.value === value)?.label || "Select..."}</span>
-            <ChevronDown className={`w-4 h-4 text-white/50 transition-transform duration-500 ease-out ${isOpen ? 'rotate-180' : ''}`} />
+            <span className="truncate text-left flex-1 font-medium">{options.find(o => o.value === value)?.label || "Select..."}</span>
+            <ChevronDown className={`w-4 h-4 text-white/50 transition-transform duration-300 ease-in-out ${isOpen ? 'rotate-180' : ''}`} />
           </button>
 
-          {isOpen && (
-            <>
-              <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-              <div className="absolute right-0 top-full mt-2 w-full bg-[#1a1a1c] border border-white/10 rounded-2xl shadow-2xl py-2 z-50 overflow-hidden animate-fade-in-up">
-                {options.map(o => (
-                  <button
-                    key={o.value}
-                    onClick={() => {
-                      onChange(o.value);
-                      setIsOpen(false);
-                    }}
-                    className="flex items-center justify-between w-full px-4 py-3 text-sm hover:bg-white/[0.08] transition-colors text-left"
-                  >
-                    <span className={value === o.value ? "text-white font-medium" : "text-gray-400"}>{o.label}</span>
-                    {value === o.value && <Check className="w-4 h-4 text-white" />}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
+          <div
+            className={`absolute right-0 top-full mt-2 w-full bg-[#151515] border border-white/10 rounded-2xl shadow-2xl py-1 z-50 overflow-hidden origin-top transition-all duration-200 ease-out ${
+              isOpen ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none'
+            }`}
+          >
+            {options.map(o => (
+              <button
+                key={o.value}
+                onClick={() => {
+                  onChange(o.value);
+                  setIsOpen(false);
+                }}
+                className="flex items-center justify-between w-full px-4 py-2.5 text-sm hover:bg-white/[0.08] transition-colors text-left"
+              >
+                <span className={value === o.value ? "text-white font-medium" : "text-gray-400"}>{o.label}</span>
+                {value === o.value && <Check className="w-4 h-4 text-white" />}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -76,17 +90,7 @@ export default function SettingsPage() {
 
   return (
     <div className="w-full min-h-screen pb-20 animate-fade-in">
-      <div className="px-5 md:px-10 pt-8 pb-12 max-w-6xl mx-auto">
-        <div className="flex items-center gap-4 mb-12">
-          <div className="p-3 bg-white/5 rounded-2xl border border-white/10 shrink-0">
-            <SettingsIcon className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-white text-3xl font-bold tracking-tight">Settings</h1>
-            <p className="text-sm text-gray-400 mt-1">Manage your application preferences and playback settings</p>
-          </div>
-        </div>
-
+      <div className="px-5 md:px-10 pt-10 pb-12 max-w-6xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-10">
           {/* Main Left Column */}
           <div className="flex flex-col gap-10">

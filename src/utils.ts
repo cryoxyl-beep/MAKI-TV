@@ -61,14 +61,12 @@ export const storage = {
     try {
       localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(value));
     } catch (e) {
-      console.error("Local storage error:", e);
     }
   },
   remove: (key: string): void => {
     try {
       localStorage.removeItem(STORAGE_PREFIX + key);
     } catch (e) {
-      console.error("Local storage error:", e);
     }
   },
 };
@@ -76,7 +74,6 @@ export const storage = {
 export function syncToFirebase(key: string, data: any) {
   if (auth && auth.currentUser && db) {
     const docRef = doc(db, "userData", auth.currentUser.uid);
-    setDoc(docRef, { [key]: data }, { merge: true }).catch((e: any) => console.error(e));
   }
 }
 

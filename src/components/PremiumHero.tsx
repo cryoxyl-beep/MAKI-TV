@@ -101,19 +101,6 @@ export default function PremiumHero({ onSelectAnime, onHeroLoad }: PremiumHeroPr
   const [swiperInstance, setSwiperInstance] = useState<SwiperType | null>(null);
 
   useEffect(() => {
-    if (trailers.length > 0 && trailers[activeSlideIndex]) {
-      const activeHero = trailers[activeSlideIndex];
-      console.log(
-        "Active Hero",
-        activeHero.title,
-        activeHero.malId,
-        activeHero.anilistId,
-        activeSlideIndex
-      );
-    }
-  }, [activeSlideIndex, trailers]);
-
-  useEffect(() => {
     let mounted = true;
     const fetchTrailers = async () => {
       if (!db) return;
@@ -144,7 +131,6 @@ export default function PremiumHero({ onSelectAnime, onHeroLoad }: PremiumHeroPr
           }
         }
       } catch (err) {
-        console.error("Failed to fetch hero trailers", err);
         if (mounted) onHeroLoad?.();
       }
     };
@@ -167,7 +153,6 @@ export default function PremiumHero({ onSelectAnime, onHeroLoad }: PremiumHeroPr
           />
         ))}
       </div>
-
       <Swiper
         modules={[EffectFade]}
         effect="fade"
@@ -206,11 +191,9 @@ export default function PremiumHero({ onSelectAnime, onHeroLoad }: PremiumHeroPr
   );
 }
 
-let isAppInitialLoadCompleted = false;
-
 function HeroSlide({ trailer, isActive, isFirstSlide, onSelect, onEnded, onHeroLoad }: { trailer: HeroTrailer; isActive: boolean; isFirstSlide?: boolean; onSelect: () => void; onEnded: () => void; onHeroLoad?: () => void; }) {
   const [videoReady, setVideoReady] = useState(false);
-  const [useBanner, setUseBanner] = useState(() => isFirstSlide && !isAppInitialLoadCompleted);
+  const [useBanner, setUseBanner] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [metadata, setMetadata] = useState<AniListAnime | null>(null);
   const { isSubscribed, toggleSubscription, currentUser } = useLibrary();
@@ -260,7 +243,6 @@ function HeroSlide({ trailer, isActive, isFirstSlide, onSelect, onEnded, onHeroL
       setVideoReady(true);
       onHeroLoad?.();
       if (useBanner) {
-        isAppInitialLoadCompleted = true;
         // Turn off the banner fully after the 400ms CSS fade-out completes
         setTimeout(() => setUseBanner(false), 500);
       }

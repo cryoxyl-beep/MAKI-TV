@@ -96,6 +96,12 @@ body {
   background-clip: padding-box;
 }
 
+/* Smooth default transition properties for entire application */
+*, *::before, *::after {
+  --tw-ease: cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
 /* Custom class for true frosted glass containers */
 .frosted-glass {
   background: rgba(15, 15, 15, 0.5) !important;

@@ -50,7 +50,6 @@ if (auth) {
           }
         }
       } catch (err) {
-        console.error("Failed to fetch user data:", err);
       } finally {
         isGlobalLoading = false;
         notifyListeners();
@@ -114,7 +113,6 @@ export function useLibrary() {
       const docRef = doc(db, "libraries", globalCurrentUser.uid);
       await setDoc(docRef, { animes: updatedLibrary }, { merge: true });
     } catch (err) {
-      console.error("Failed to update library:", err);
       // Revert if failed
       globalLibrary = library;
       notifyListeners();

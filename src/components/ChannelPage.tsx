@@ -46,7 +46,6 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
           setEpisodesPage(1); // Reset page on anime change
         }
       } catch (err) {
-        console.error("Error loading channel:", err);
       } finally {
         if (mounted) setIsLoading(false);
       }
@@ -66,7 +65,6 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
       const entry = getFribbEntryByAnilist(idToUse);
       
       if (entry?.tvdb_id) {
-        console.log(`[Thumbnail Engine] TVDB ID ${entry.tvdb_id} found. Fetching manifest...`);
         const manifest = await getTVDBSeriesManifest(entry.tvdb_id, entry.season);
         if (mounted) {
           setTvdbThumbnailMap(manifest);
@@ -113,7 +111,6 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
            }
         }
       } catch (e) {
-        console.error("Failed to fetch Anivexa episodes", e);
       } finally {
         if (mounted) setIsAnivexaLoading(false);
       }

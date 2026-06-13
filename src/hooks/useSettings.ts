@@ -99,7 +99,7 @@ if (auth) {
           }
         }
       } catch (err) {
-        console.error("Failed to fetch user settings:", err);
+        // Silently ignore
       } finally {
         notifyListeners();
       }
@@ -142,7 +142,7 @@ export function useSettings() {
         const settingsRef = doc(db, "settings", globalCurrentUser.uid);
         await setDoc(settingsRef, newSettings, { merge: true });
       } catch (err) {
-        console.error("Failed to update settings in db:", err);
+        // Silently ignore
       }
     }
   };
@@ -157,7 +157,7 @@ export function useSettings() {
         const settingsRef = doc(db, "settings", globalCurrentUser.uid);
         await setDoc(settingsRef, globalSettings, { merge: false });
       } catch (err) {
-        console.error("Failed to reset settings in db:", err);
+        // Silently ignore
       }
     }
   };

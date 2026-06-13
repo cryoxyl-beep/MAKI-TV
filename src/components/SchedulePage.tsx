@@ -172,7 +172,6 @@ export default function SchedulePage({ onSelectAnime }: SchedulePageProps) {
             });
           }
         } catch(e) {
-          console.warn("Failed to fetch anilist metadata for schedule", e);
         }
       }
       
@@ -183,7 +182,6 @@ export default function SchedulePage({ onSelectAnime }: SchedulePageProps) {
         sessionStorage.setItem(cacheKey, JSON.stringify(initAnimes));
       }
     } catch (err) {
-      console.error("Failed to fetch schedule", err);
     } finally {
       setIsLoading(false);
     }

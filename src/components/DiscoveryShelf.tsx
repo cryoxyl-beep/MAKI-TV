@@ -25,7 +25,6 @@ const DiscoveryShelf = React.memo(({ title, subtitle, category, onSelectAnime }:
           setAnimes(data.slice(0, 15)); // Take top 15 for shelf
         }
       } catch (e) {
-        console.error(e);
       } finally {
         if (mounted) setLoading(false);
       }

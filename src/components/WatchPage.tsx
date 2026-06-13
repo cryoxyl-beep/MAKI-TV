@@ -103,7 +103,6 @@ export default function WatchPage({
   useEffect(() => {
     if (anime) {
       if (!anime.anilistId && ["vidnest", "animepahe", "anineko", "animegg"].includes(selectedProvider)) {
-        console.warn("Missing AniList mapping for MAL ID:", anime.id, "- disabling AniList-based providers");
         setSelectedProvider("megaplay");
       }
     }
@@ -133,7 +132,6 @@ export default function WatchPage({
       const entry = getFribbEntryByAnilist(idToUse);
       
       if (entry?.tvdb_id) {
-        console.log(`[Thumbnail Engine] TVDB ID ${entry.tvdb_id} found. Fetching manifest...`);
         const manifest = await getTVDBSeriesManifest(entry.tvdb_id, entry.season);
         if (mounted) {
           setTvdbThumbnailMap(manifest);
@@ -180,7 +178,6 @@ export default function WatchPage({
            }
         }
       } catch (e) {
-        console.error("Failed to fetch Anivexa episodes", e);
       } finally {
         if (mounted) setIsAnivexaLoading(false);
       }
@@ -318,7 +315,6 @@ export default function WatchPage({
           }
         }
       } catch (err) {
-        console.error("Error loading watch channel:", err);
       } finally {
         if (mounted) setIsLoading(false);
       }
@@ -341,7 +337,6 @@ export default function WatchPage({
           }
         }
       } catch (e) {
-        console.error("Failed to fetch episodes list", e);
       }
     }
     fetchEpisodesPage(currentRange);
@@ -362,7 +357,6 @@ export default function WatchPage({
           }
         }
       } catch (e) {
-        console.error("Failed to fetch episode details", e);
       }
     }
     fetchEpisodeDetails();

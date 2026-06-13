@@ -108,7 +108,6 @@ export default function Header({
       await signInWithGoogle();
       setShowAuthModal(false);
     } catch (error) {
-      console.error("Sign in failed:", error);
     }
   };
 
@@ -117,7 +116,6 @@ export default function Header({
       await signOut();
       setShowAuthModal(false);
     } catch (error) {
-      console.error("Sign out failed:", error);
     }
   };
 

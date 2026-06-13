@@ -64,9 +64,6 @@ export async function fetchAniList(query: string, variables: any = {}): Promise<
   const json = await response.json();
   const matchedMalId = variables?.idMal || variables?.malId;
   if (matchedMalId === 57555) {
-    console.log("malId", matchedMalId);
-    console.log("response.data", json.data);
-    console.log("response.data.Media", json.data?.Media);
   }
   if (json.errors) {
     throw new Error(`AniList API Error: ${json.errors[0].message}`);
@@ -353,7 +350,6 @@ export async function fetchAnimeDetails(id: number): Promise<AniListAnime | null
        if (imgData.Media.bannerImage) aniListBanner = imgData.Media.bannerImage;
     }
   } catch (err) {
-      console.warn("Failed to fetch AniList images", err);
   }
 
   const result = {

@@ -58,14 +58,9 @@ export default function VideoPlayer({
   const [dynamicEmbedUrl, setDynamicEmbedUrl] = useState<string>("");
   const [dynamicEmbedError, setDynamicEmbedError] = useState<boolean>(false);
 
-  console.log("VideoPlayer render");
-  console.log("selectedProvider", selectedProvider);
-  console.log("dynamicEmbedUrl", dynamicEmbedUrl);
 
   useEffect(() => {
     if (selectedProvider === "animegg" && dynamicEmbedUrl) {
-      console.log("GG iframe mounted", dynamicEmbedUrl);
-      return () => console.log("GG iframe unmounted");
     }
   }, [selectedProvider, dynamicEmbedUrl]);
 
@@ -86,9 +81,7 @@ export default function VideoPlayer({
   const handleIframeLoad = () => {
     if (selectedProvider === "megaplay" || selectedProvider === "origami") {
       const isOrigami = selectedProvider === "origami";
-      console.log(`[${isOrigami ? "Origami" : "MegaPlay"}] iframe loaded`);
       if (!watchdogCancelledRef.current) {
-        console.log(`[${isOrigami ? "Origami" : "MegaPlay"}] watchdog cancelled`);
         watchdogCancelledRef.current = true;
       }
       if (watchdogTimerRef.current) {
@@ -117,7 +110,6 @@ export default function VideoPlayer({
   useEffect(() => {
     if (selectedProvider === "megaplay" || selectedProvider === "origami") {
       const isOrigami = selectedProvider === "origami";
-      console.log(`[${isOrigami ? "Origami" : "MegaPlay"}] iframe created`);
       if (isOrigami) {
         setOrigamiLoadError(false);
       } else {
@@ -131,11 +123,9 @@ export default function VideoPlayer({
         clearTimeout(watchdogTimerRef.current);
       }
 
-      console.log(`[${isOrigami ? "Origami" : "MegaPlay"}] watchdog started`);
       watchdogTimerRef.current = setTimeout(() => {
         // Safe watchdog: If iframe has not loaded within 7 seconds, display a recovery card
         if (!watchdogCancelledRef.current) {
-          console.log(`[${isOrigami ? "Origami" : "MegaPlay"}] timeout card triggered`);
           if (isOrigami) {
             setOrigamiLoadError(true);
           } else {
@@ -172,7 +162,6 @@ export default function VideoPlayer({
             const stream = data.streams?.find((s: any) => s.embed?.startsWith("https://vibeplayer.site"));
             if (!stream && !canceled) {
               if (onProviderChange) {
-                console.log("Anineko stream not found, falling back to animegg");
                 onProviderChange("animegg");
               } else {
                 setDynamicEmbedError(true);
@@ -191,7 +180,6 @@ export default function VideoPlayer({
                setDynamicEmbedUrl(stream.url);
             } else if (!canceled) {
                if (onProviderChange) {
-                 console.log("AnimeGG stream not found, falling back to megaplay");
                  onProviderChange("megaplay");
                } else {
                  setDynamicEmbedError(true);
@@ -200,7 +188,6 @@ export default function VideoPlayer({
           }
         } catch (e) {
           if (!canceled) {
-             console.error(`Error resolving ${selectedProvider} embed:`, e);
              if (selectedProvider === "anineko" && onProviderChange) {
                 onProviderChange("animegg");
              } else if (selectedProvider === "animegg" && onProviderChange) {
@@ -290,7 +277,6 @@ export default function VideoPlayer({
                 });
               }
             } else if (eventType === "cinesrc:nextepisode") {
-              console.log("CineSrc PostMessage: auto-advancing next episode");
               onNextEpisode();
             }
           }
@@ -321,11 +307,9 @@ export default function VideoPlayer({
           if (isMegaPlayEvent || isOrigamiEvent) {
             const providerName = selectedProvider === "origami" ? "Origami" : "MegaPlay";
             if (!hasReceivedFirstEventRef.current) {
-              console.log(`[${providerName}] first player event received`);
               hasReceivedFirstEventRef.current = true;
             }
             if (!watchdogCancelledRef.current) {
-              console.log(`[${providerName}] watchdog cancelled`);
               watchdogCancelledRef.current = true;
             }
             if (watchdogTimerRef.current) {
@@ -334,7 +318,6 @@ export default function VideoPlayer({
             }
             if (selectedProvider === "origami") {
               if (eventType === "error") {
-                console.log("[Origami] received error event, triggering error card");
                 setOrigamiLoadError(true);
               } else {
                 setOrigamiLoadError(false);
@@ -369,7 +352,6 @@ export default function VideoPlayer({
             }
           } else if (eventType === "complete") {
             // MegaPlay auto-advance
-            console.log("MegaPlay Auto-Next postMessage event triggered.");
             onNextEpisode();
           } else if (data.type === "watching-log") {
             // MegaPlay watching-log updates
@@ -463,7 +445,6 @@ export default function VideoPlayer({
                 });
               }
             } else if (eventType === "ENDED") {
-              console.log("VidNest postMessage: auto-advancing next episode");
               onNextEpisode();
             }
           }
@@ -501,17 +482,7 @@ export default function VideoPlayer({
   // Development Logging for MegaPlay and Origami Integration
   useEffect(() => {
     if (selectedProvider === "megaplay") {
-      console.log(`[MegaPlay Integration Debug]`);
-      console.log(`Current MAL ID: ${animeId}`);
-      console.log(`Current Episode: ${episodeNumber}`);
-      console.log(`Current Language: ${audioLanguage}`);
-      console.log(`Generated MegaPlay URL: ${megaPlayUrl}`);
     } else if (selectedProvider === "origami") {
-      console.log(`[Origami Integration Debug]`);
-      console.log(`Current MAL ID: ${animeId}`);
-      console.log(`Current Episode: ${episodeNumber}`);
-      console.log(`Current Language: ${audioLanguage}`);
-      console.log(`Generated Origami URL: ${origamiUrl}`);
     }
   }, [selectedProvider, animeId, episodeNumber, audioLanguage, megaPlayUrl, origamiUrl]);
  

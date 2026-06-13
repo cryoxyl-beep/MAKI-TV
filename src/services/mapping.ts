@@ -89,7 +89,6 @@ async function queryTMDBApi(
         }
       }
     } catch (err) {
-      console.warn("TMDB request with token failed, trying alternative/backup...", err);
     }
   }
 
@@ -118,7 +117,6 @@ async function queryTMDBApi(
       }
     }
   } catch (err) {
-    console.error("Alternative TMDB Query search failed entirely:", err);
   }
 
   return null;
@@ -157,7 +155,6 @@ export async function getTMDBMapping(anime: {
         return assembleMappedObject(anime, parsed.tmdbId, parsed.type || "tv");
       }
     } catch (e) {
-      console.error("Failed to parse cached mapping from localStorage:", e);
     }
   }
 
@@ -199,7 +196,6 @@ export async function getTMDBMapping(anime: {
   } else {
     // Generate standard deterministic offset fallback to shield iframe routing block crashes
     finalTmdbId = 100000 + (anilistId % 100000);
-    console.log(`Fallback mapping triggered for ID ${anilistId}. Yielding ID: ${finalTmdbId}.`);
   }
 
   // Save resolved results to cache
@@ -207,7 +203,6 @@ export async function getTMDBMapping(anime: {
   try {
     localStorage.setItem(cacheKey, JSON.stringify(cachedData));
   } catch (err) {
-    console.warn("Failed to write TMDB mapping cache link:", err);
   }
 
   return assembleMappedObject(anime, finalTmdbId, type);

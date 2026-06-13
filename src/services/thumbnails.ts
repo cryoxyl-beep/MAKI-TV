@@ -41,7 +41,6 @@ async function loginTVDB(): Promise<string | null> {
       }
     }
   } catch (error) {
-    console.error("TVDB Login failed:", error);
   }
   return null;
 }
@@ -67,7 +66,6 @@ export async function getTVDBSeriesManifest(tvdbId: number, seasonOverrides?: { 
     }
   }
 
-  console.log(`[Thumbnail Engine] TVDB manifest request started for TVDB ID ${tvdbId}`);
   let token = await loginTVDB();
   if (!token) return {};
 
@@ -98,11 +96,9 @@ export async function getTVDBSeriesManifest(tvdbId: number, seasonOverrides?: { 
       });
 
       localStorage.setItem(cacheKey, JSON.stringify({ data: manifest, timestamp: Date.now() }));
-      console.log(`[Thumbnail Engine] TVDB manifest loaded safely. Mapped ${Object.keys(manifest).length} thumbnails.`);
       return manifest;
     }
   } catch (error) {
-    console.error("TVDB manifest fetch failed:", error);
   }
   return {};
 }
@@ -120,7 +116,6 @@ async function getTMDBThumbnail(tmdbId: number, season: number, episode: number)
       }
     }
   } catch (error) {
-    console.error("TMDB lookup failed:", error);
   }
   return null;
 }
@@ -133,14 +128,12 @@ async function getAnivexaThumbnail(anilistId: number, episode: number): Promise<
     const res = await fetch(`https://anivexa-api-nine.vercel.app/episodes/${anilistId}`);
     if (res.ok) {
       const data = await res.json();
-      console.log("Raw Anivexa Episode Payload Structure:", data);
       if (Array.isArray(data)) {
         const ep = data.find(e => Number(e.number) === episode);
         return ep?.image || null;
       }
     }
   } catch (error) {
-    console.error("Anivexa lookup failed:", error);
   }
   return null;
 }
@@ -169,7 +162,6 @@ export async function getEpisodeThumbnail(options: {
   if (tvdbThumbnailMap) {
     const tvdbUrl = tvdbThumbnailMap[`${mappedTvdbSeason}_${episode}`];
     if (tvdbUrl) {
-      console.log(`[Thumbnail Engine] Episode ${episode} resolved seamlessly from TVDB state dictionary cache.`);
       localStorage.setItem(cacheKey, tvdbUrl);
       return tvdbUrl;
     }

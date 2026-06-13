@@ -104,6 +104,8 @@ export default function App() {
     });
   };
 
+  const [homeRefreshTrigger, setHomeRefreshTrigger] = useState(0);
+
   // Browser state routing via hash listeners (e.g. #/channel/32, #/watch/12/1/4)
   useEffect(() => {
     const handleHashChange = () => {
@@ -175,6 +177,9 @@ export default function App() {
   // Helpers to push link state
   const handleNavigate = (page: "home" | "trending" | "subscriptions" | "library" | "schedule" | "settings") => {
     if (page === "home") {
+      if (activePage === "home") {
+        setHomeRefreshTrigger(prev => prev + 1);
+      }
       window.location.hash = "/";
     } else {
       window.location.hash = `/${page}`;
@@ -199,7 +204,6 @@ export default function App() {
           return;
         }
       } catch (err) {
-        console.error("Direct episode routing search failed:", err);
       }
     }
 
@@ -263,6 +267,7 @@ export default function App() {
           {/* RENDER LAYER 1: Home recommender Feed */}
           {activePage === "home" && (
             <HomeFeed
+              key={`home-feed-${homeRefreshTrigger}`}
               onSelectAnime={handleOpenChannel}
               onWatchEpisode={handleOpenEpisode}
               searchQuery={searchQuery}

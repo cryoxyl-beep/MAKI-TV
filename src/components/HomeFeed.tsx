@@ -18,13 +18,12 @@ import WatchHistory from "./WatchHistory";
 import { useLibrary } from "../hooks/useLibrary";
 import { useSettings } from "../hooks/useSettings";
 
-let hasShownSplash = false;
-
 interface HomeFeedProps {
   onSelectAnime: (id: number) => void;
   onWatchEpisode: (animeId: number, seasonNumber: number, episodeNumber: number) => void;
   searchQuery?: string;
   onClearSearch?: () => void;
+  key?: string | number;
 }
 
 export default function HomeFeed({
@@ -46,32 +45,28 @@ export default function HomeFeed({
 
   const { isLoading: isLibraryLoading } = useLibrary();
   const [isHeroReady, setIsHeroReady] = useState(false);
-  const [showSplash, setShowSplash] = useState(!hasShownSplash);
+  const [showSplash, setShowSplash] = useState(true);
   const [splashFading, setSplashFading] = useState(false);
   const { settings } = useSettings();
 
   useEffect(() => {
-    if (hasShownSplash || searchQuery || selectedCategory !== "All") {
-      // If we are searching or in another category, don't hold the splash screen.
-      // Or if we already showed it, do nothing.
-      if (showSplash && !hasShownSplash) {
+    if (searchQuery || selectedCategory !== "All") {
+      if (showSplash) {
          setSplashFading(true);
          setTimeout(() => {
            setShowSplash(false);
-           hasShownSplash = true;
          }, 700);
       }
       return;
     }
     
-    if (!isLoading && !isNewReleasesLoading && !isLibraryLoading && isHeroReady) {
+    if (!isLoading && !isNewReleasesLoading && !isLibraryLoading && (!settings.homepage.enableHero || isHeroReady)) {
       setSplashFading(true);
       setTimeout(() => {
         setShowSplash(false);
-        hasShownSplash = true;
       }, 700);
     }
-  }, [isLoading, isNewReleasesLoading, isLibraryLoading, isHeroReady, showSplash, searchQuery, selectedCategory]);
+  }, [isLoading, isNewReleasesLoading, isLibraryLoading, isHeroReady, showSplash, searchQuery, selectedCategory, settings.homepage.enableHero]);
 
   const lastAnimeElementRef = useCallback(
     (node: HTMLDivElement) => {

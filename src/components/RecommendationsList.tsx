@@ -117,7 +117,6 @@ export default function RecommendationsList({ anilistId, onNavigateToChannel, li
           setRecommendations(recs);
         }
       } catch (err) {
-        console.warn("Failed to fetch recs:", err);
       } finally {
         if (mounted) setIsLoading(false);
       }

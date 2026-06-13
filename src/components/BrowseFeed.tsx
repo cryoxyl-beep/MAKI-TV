@@ -35,7 +35,7 @@ export default function BrowseFeed({ onSelectAnime }: BrowseFeedProps) {
           setGenres(data.data);
         }
       })
-      .catch(console.error);
+      .catch(() => {});
   }, []);
 
   const lastAnimeElementRef = useCallback(
@@ -85,7 +85,6 @@ export default function BrowseFeed({ onSelectAnime }: BrowseFeedProps) {
         setAnimeList((prev) => [...prev, ...data]);
       }
     } catch (error) {
-      console.error(error);
     } finally {
       setIsLoading(false);
       setIsFetchingMore(false);

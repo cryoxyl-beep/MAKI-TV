@@ -19,7 +19,6 @@ export async function initializeFribbMapping(): Promise<void> {
 
   initPromise = (async () => {
     try {
-      console.log("Fetching Fribb mapping...");
       const res = await fetch(FRIBB_URL);
       if (!res.ok) throw new Error("Failed to fetch Fribb mapping.");
       const jsonData = await res.json() as FribbAnimeEntry[];
@@ -39,9 +38,7 @@ export async function initializeFribbMapping(): Promise<void> {
       }
       lookupByMal = malMap;
       lookupByAnilist = anilistMap;
-      console.log("Fribb mapping initialized with", malMap.size, "entries.");
     } catch (error) {
-      console.error("Error initializing Fribb mapping:", error);
     } finally {
       initPromise = null;
     }
