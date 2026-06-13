@@ -12,7 +12,7 @@ export default defineConfig(() => {
         name: 'api-middleware',
         configureServer(server) {
           server.middlewares.use(async (req, res, next) => {
-            if (req.url?.startsWith('/api/anizone-test')) {
+            if (req.url?.startsWith('/api/anizone-test') || req.url?.startsWith('/api/key-test')) {
               const urlObj = new URL(req.url, 'http://localhost');
               
               const vercelReq = req as any;
@@ -32,7 +32,8 @@ export default defineConfig(() => {
               };
 
               try {
-                const handler = await server.ssrLoadModule('/api/anizone-test.ts');
+                const modulePath = req.url.split('?')[0];
+                const handler = await server.ssrLoadModule(`${modulePath}.ts`);
                 await handler.default(vercelReq, vercelRes);
               } catch (err: any) {
                 console.error('API Error:', err);
