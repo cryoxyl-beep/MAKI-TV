@@ -11,7 +11,6 @@ import ChannelPage from "./components/ChannelPage";
 import WatchPage from "./components/WatchPage";
 import LibraryPage from "./components/LibraryPage";
 import SchedulePage from "./components/SchedulePage";
-import DevAnizoneLab from "./pages/DevAnizoneLab";
 import LazyImage from "./components/LazyImage";
 import { parseEpisodeSearch } from "./utils";
 import { fetchAnimeFeed } from "./services/anilist";
@@ -21,7 +20,7 @@ import { initializeFribbMapping } from "./services/fribb";
 
 export default function App() {
   // Navigation states
-  const [activePage, setActivePage] = useState<"home" | "trending" | "subscriptions" | "library" | "channel" | "watch" | "schedule" | "dev-anizone-lab">("home");
+  const [activePage, setActivePage] = useState<"home" | "trending" | "subscriptions" | "library" | "channel" | "watch" | "schedule">("home");
   const [searchQuery, setSearchQuery] = useState("");
 
   // Initialize Fribb Mapping on startup
@@ -134,9 +133,6 @@ export default function App() {
         setSearchQuery("");
       } else if (hash === "#/schedule") {
         setActivePage("schedule");
-        setSearchQuery("");
-      } else if (hash === "#/dev/anizone-lab") {
-        setActivePage("dev-anizone-lab");
         setSearchQuery("");
       } else {
         // Default to home page
@@ -312,11 +308,6 @@ export default function App() {
               onSubscriptionChanged={handleSyncSubscriptions}
               onSearch={handleSearchTrigger}
             />
-          )}
-
-          {/* RENDER LAYER 8: Dev Anizone Lab */}
-          {activePage === "dev-anizone-lab" && (
-            <DevAnizoneLab />
           )}
         </main>
       </div>
