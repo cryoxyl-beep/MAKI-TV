@@ -67,16 +67,12 @@ export default function MovieChannel() {
       {/* =============== HERO ATMOSPHERE =============== */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         {movie.backdrop_path ? (
-          <div className="absolute inset-0">
-            <LazyImage
-              src={`${TMDB_IMAGE_BASE_URL}${movie.backdrop_path}`}
-              alt={movie.title}
-              className="w-full h-full object-cover opacity-60 object-top"
-              referrerPolicy="no-referrer"
-            />
-            {/* Black blur layer over bright backdrop */}
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-[40px]" />
-          </div>
+          <img
+            src={`${TMDB_IMAGE_BASE_URL}${movie.backdrop_path}`}
+            alt={movie.title}
+            className="w-full h-full object-cover opacity-30 object-top animate-fade-in duration-500"
+            referrerPolicy="no-referrer"
+          />
         ) : (
           <div className="w-full h-full bg-white/[0.02]" />
         )}
