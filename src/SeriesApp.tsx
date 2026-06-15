@@ -28,6 +28,18 @@ export default function SeriesApp() {
   const activePage = getActiveTab();
 
   useEffect(() => {
+    if (location.pathname === "/series" || location.pathname === "/series/") {
+      document.title = "Series - Miyoro";
+    } else if (location.pathname === "/series/library") {
+      document.title = "Library - Miyoro";
+    } else if (location.pathname === "/series/settings") {
+      document.title = "Settings - Miyoro";
+    } else if (location.pathname.startsWith("/series/search")) {
+      document.title = "Search - Miyoro";
+    }
+  }, [location.pathname]);
+
+  useEffect(() => {
     const handleScroll = () => {
       setShowScrollTop(window.scrollY > 400);
     };

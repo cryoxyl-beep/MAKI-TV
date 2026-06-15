@@ -61,16 +61,18 @@ export default function AnimeApp() {
   useEffect(() => {
     if (activePage === "home") {
       if (searchQuery.trim().length > 0) {
-        document.title = "Search • Miyoro";
+        document.title = "Search - Miyoro";
       } else {
-        document.title = "Miyoro";
+        document.title = "Anime - Miyoro";
       }
     } else if (activePage === "subscriptions" || activePage === "trending") {
-      document.title = "Browse • Miyoro";
+      document.title = "Browse - Miyoro";
     } else if (activePage === "library") {
-      document.title = "Library • Miyoro";
+      document.title = "Library - Miyoro";
     } else if (activePage === "schedule") {
-      document.title = "Schedule • Miyoro";
+      document.title = "Schedule - Miyoro";
+    } else if (activePage === "settings") {
+      document.title = "Settings - Miyoro";
     }
   }, [activePage, searchQuery]);
 

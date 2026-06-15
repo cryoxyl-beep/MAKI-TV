@@ -366,7 +366,7 @@ export default function WatchPage({
   useEffect(() => {
     if (anime) {
       const titleVal = anime.title.english || anime.title.romaji || anime.title.userPreferred || "Untitled Series";
-      document.title = `${titleVal} • Miyoro`;
+      document.title = `${titleVal} - Miyoro`;
     }
   }, [anime]);
 

@@ -28,6 +28,18 @@ export default function MoviesApp() {
   const activePage = getActiveTab();
 
   useEffect(() => {
+    if (location.pathname === "/movies" || location.pathname === "/movies/") {
+      document.title = "Movies - Miyoro";
+    } else if (location.pathname === "/movies/library") {
+      document.title = "Library - Miyoro";
+    } else if (location.pathname === "/movies/settings") {
+      document.title = "Settings - Miyoro";
+    } else if (location.pathname.startsWith("/movies/search")) {
+      document.title = "Search - Miyoro";
+    }
+  }, [location.pathname]);
+
+  useEffect(() => {
     const handleScroll = () => {
       setShowScrollTop(window.scrollY > 400);
     };

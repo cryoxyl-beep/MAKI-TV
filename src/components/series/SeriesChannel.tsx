@@ -31,7 +31,7 @@ export default function SeriesChannel() {
         setLoading(true);
         const data = await getTVDetails(parseInt(tmdbId, 10));
         setSeries(data);
-        document.title = `${data.name} • Series`;
+        document.title = `${data.name} - Miyoro`;
         
         // Find the first season that actually has episodes
         const initialSeason = data.seasons.find(s => s.season_number > 0) || data.seasons[0];

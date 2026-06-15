@@ -48,7 +48,7 @@ export default function MovieWatch() {
         setLoading(true);
         const data = await getMovieDetails(parseInt(tmdbId, 10));
         setMovie(data);
-        document.title = `${data.title} • Movie`;
+        document.title = `${data.title} - Miyoro`;
       } catch (error) {
         console.error("Failed to fetch movie details:", error);
       } finally {

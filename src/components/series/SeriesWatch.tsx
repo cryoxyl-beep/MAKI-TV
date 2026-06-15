@@ -63,7 +63,7 @@ export default function SeriesWatch() {
         setLoading(true);
         const data = await getTVDetails(parseInt(tmdbId, 10));
         setSeries(data);
-        document.title = `${data.name} S${seasonNum}E${episodeNum} • Series`;
+        document.title = `${data.name} S${seasonNum}E${episodeNum} - Miyoro`;
       } catch (error) {
         console.error("Failed to fetch series details:", error);
       }
