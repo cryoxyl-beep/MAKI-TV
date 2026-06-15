@@ -78,7 +78,9 @@ export const storage = {
 export function syncToFirebase(key: string, data: any) {
   if (auth && auth.currentUser && db) {
     const docRef = doc(db, "userData", auth.currentUser.uid);
-    setDoc(docRef, { [key]: data }, { merge: true }).catch((err) => {
+    // Sanitize data to remove any undefined values which crash Firebase
+    const sanitizedData = JSON.parse(JSON.stringify(data));
+    setDoc(docRef, { [key]: sanitizedData }, { merge: true }).catch((err) => {
       console.error("Firebase sync error:", err);
     });
   }
@@ -131,13 +133,13 @@ export function getMovieHistory(): MovieHistoryItem[] {
 
 export function addToMovieHistory(item: Omit<MovieHistoryItem, "watchedAt">): void {
   const history = getUnifiedHistory();
-  const newItem: WatchHistoryItem = {
+  const newItem = {
     ...item,
-    type: 'movie',
+    type: 'movie' as const,
     watchedAt: new Date().toISOString()
   };
   const filtered = history.filter((h) => !(h.type === 'movie' && h.tmdbId === item.tmdbId));
-  filtered.unshift(newItem);
+  filtered.unshift(newItem as any);
   const newHistory = filtered.slice(0, 300);
   storage.set("history", newHistory);
   syncToFirebase("history", newHistory);
@@ -162,13 +164,13 @@ export function getSeriesHistory(): SeriesHistoryItem[] {
 
 export function addToSeriesHistory(item: Omit<SeriesHistoryItem, "watchedAt">): void {
   const history = getUnifiedHistory();
-  const newItem: WatchHistoryItem = {
+  const newItem = {
     ...item,
-    type: 'series',
+    type: 'series' as const,
     watchedAt: new Date().toISOString()
   };
-  const filtered = history.filter((h) => !(h.type === 'series' && h.tmdbId === item.tmdbId));
-  filtered.unshift(newItem);
+  const filtered = history.filter((h) => !(h.type === 'series' && h.tmdbId === item.tmdbId && h.seasonNumber === item.seasonNumber && h.episodeNumber === item.episodeNumber));
+  filtered.unshift(newItem as any);
   const newHistory = filtered.slice(0, 300);
   storage.set("history", newHistory);
   syncToFirebase("history", newHistory);

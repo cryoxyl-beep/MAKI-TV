@@ -67,7 +67,8 @@ const syncToFirebase = async () => {
     if (!globalCurrentUser || !db) return;
     const docRef = doc(db, "seriesData", globalCurrentUser.uid);
     try {
-        await setDoc(docRef, { library: globalLibrary, watchLater: globalWatchLater }, { merge: true });
+        const payload = JSON.parse(JSON.stringify({ library: globalLibrary, watchLater: globalWatchLater }));
+        await setDoc(docRef, payload, { merge: true });
     } catch(err) {}
 };
 
