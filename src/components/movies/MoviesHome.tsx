@@ -260,48 +260,65 @@ export default function MoviesHome() {
         {/* Sections */}
         <div className="flex flex-col gap-10 mt-2 px-0 py-0">
           {movieHistory.length > 0 && (
-            <div className="flex flex-col gap-4 relative isolate mb-4 animate-fade-in">
+            <div className="flex flex-col gap-4 relative isolate mb-8 animate-fade-in group/history">
               <div className="px-4 md:px-6 flex flex-col">
-                <h2 className="text-xl md:text-2xl font-bold text-[#f1f1f1] tracking-tight">
+                <h2 className="text-2xl font-bold text-[#f1f1f1] tracking-tight">
                   Continue Watching
                 </h2>
+                <p className="text-[13px] text-gray-400 font-medium mt-0.5">Resume where you left off</p>
               </div>
               <ShelfScroller>
                 {movieHistory.map((item, idx) => (
                   <Link
                     key={`${item.id}-${idx}`}
                     to={`/movies/watch/${item.id}`}
-                    className="relative shrink-0 w-[240px] md:w-[280px] aspect-video rounded-xl overflow-hidden group cursor-pointer bg-white/5 border border-white/10"
+                    className="snap-start shrink-0 w-64 md:w-72 flex flex-col gap-2 cursor-pointer group"
                   >
-                    <LazyImage
-                      src={
-                        item.backdropImage
-                          ? `${TMDB_IMAGE_BASE_URL}${item.backdropImage.replace(`${TMDB_IMAGE_BASE_URL_W500}`, "")}`
-                          : item.posterImage
-                            ? `${TMDB_IMAGE_BASE_URL}${item.posterImage.replace(`${TMDB_IMAGE_BASE_URL_W500}`, "")}`
-                            : ""
-                      }
-                      alt={item.title}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 opacity-70 group-hover:opacity-100 pointer-events-none"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
-                    <div className="absolute bottom-0 left-0 w-full p-4 flex flex-col gap-2 pointer-events-none">
-                      <h3 className="text-sm font-bold text-white truncate drop-shadow-md">
+                    {/* Thumbnail Wrapper */}
+                    <div className="relative aspect-video w-full bg-black rounded-xl overflow-hidden border border-white/5 group-hover:border-white/20 transition-all duration-300">
+                      <LazyImage
+                        src={
+                          item.backdropImage
+                            ? `${TMDB_IMAGE_BASE_URL}${item.backdropImage.replace(`${TMDB_IMAGE_BASE_URL_W500}`, "")}`
+                            : item.posterImage
+                              ? `${TMDB_IMAGE_BASE_URL}${item.posterImage.replace(`${TMDB_IMAGE_BASE_URL_W500}`, "")}`
+                              : ""
+                        }
+                        alt={item.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      
+                      {/* Dark Overlay on Hover */}
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-300 pointer-events-none">
+                        <div className="p-3 bg-white/10 backdrop-blur-md rounded-full shadow-2xl transform scale-90 group-hover:scale-100 transition-all duration-300">
+                          <Play className="w-5 h-5 fill-white text-white ml-0.5" />
+                        </div>
+                      </div>
+
+                      {/* MOVIE Badge */}
+                      <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/60 backdrop-blur-md rounded text-[10px] font-bold text-white border border-white/10 uppercase tracking-widest z-10">
+                        MOVIE
+                      </div>
+
+                      {/* Progress Bar */}
+                      {item.progress > 0 && (
+                        <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20 z-20">
+                          <div
+                            style={{ width: `${item.progress}%` }}
+                            className="bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.8)] h-full transition-all duration-500"
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex flex-col px-1">
+                      <h3 className="text-white font-bold text-sm leading-tight truncate group-hover:text-gray-200 transition-colors">
                         {item.title}
                       </h3>
-                      <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-rose-500"
-                          style={{
-                            width: `${Math.min(100, Math.max(0, item.progress))}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10">
-                      <div className="p-3 bg-white/10 backdrop-blur-md rounded-full shadow-2xl transform scale-90 group-hover:scale-100 transition-all duration-300">
-                        <Play className="w-5 h-5 fill-white text-white ml-0.5" />
-                      </div>
+                      <p className="text-gray-400 text-xs font-medium mt-1">
+                        Movie
+                      </p>
                     </div>
                   </Link>
                 ))}
