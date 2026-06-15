@@ -165,7 +165,9 @@ export interface MovieHistoryItem {
 }
 
 export function getMovieHistory(): MovieHistoryItem[] {
-  return getUnifiedHistory().filter(h => h.type === 'movie') as any as MovieHistoryItem[];
+  return getUnifiedHistory().filter(
+    (h) => h.type === "movie",
+  ) as any as MovieHistoryItem[];
 }
 
 export function addToMovieHistory(
@@ -174,10 +176,12 @@ export function addToMovieHistory(
   const history = getUnifiedHistory();
   const newItem = {
     ...item,
-    type: 'movie' as const,
+    type: "movie" as const,
     watchedAt: new Date().toISOString(),
   };
-  const filtered = history.filter((h) => !(h.type === 'movie' && h.tmdbId === item.tmdbId));
+  const filtered = history.filter(
+    (h) => !(h.type === "movie" && h.tmdbId === item.tmdbId),
+  );
   filtered.unshift(newItem as any);
   const newHistory = filtered.slice(0, 300);
   storage.set("history", newHistory);
@@ -198,7 +202,9 @@ export interface SeriesHistoryItem {
 }
 
 export function getSeriesHistory(): SeriesHistoryItem[] {
-  return getUnifiedHistory().filter(h => h.type === 'series') as any as SeriesHistoryItem[];
+  return getUnifiedHistory().filter(
+    (h) => h.type === "series",
+  ) as any as SeriesHistoryItem[];
 }
 
 export function addToSeriesHistory(
@@ -207,13 +213,13 @@ export function addToSeriesHistory(
   const history = getUnifiedHistory();
   const newItem = {
     ...item,
-    type: 'series' as const,
+    type: "series" as const,
     watchedAt: new Date().toISOString(),
   };
   const filtered = history.filter(
     (h) =>
       !(
-        h.type === 'series' &&
+        h.type === "series" &&
         h.tmdbId === item.tmdbId &&
         h.seasonNumber === item.seasonNumber &&
         h.episodeNumber === item.episodeNumber
@@ -261,6 +267,47 @@ export function addToWatchHistory(
   const newHistory = filtered.slice(0, 300); // keep last 300
   storage.set("history", newHistory); // keep last 300
   syncToFirebase("history", newHistory);
+}
+
+export function mergeFirebaseHistory(firebaseHistory: any[]) {
+  if (
+    !firebaseHistory ||
+    !Array.isArray(firebaseHistory) ||
+    firebaseHistory.length === 0
+  ) {
+    return;
+  }
+  const localHistory = getUnifiedHistory();
+  if (localHistory.length === 0) {
+    storage.set("history", firebaseHistory.slice(0, 300));
+    return;
+  }
+
+  const combined = [...localHistory, ...firebaseHistory];
+  combined.sort(
+    (a, b) =>
+      new Date(b.watchedAt || 0).getTime() -
+      new Date(a.watchedAt || 0).getTime(),
+  );
+
+  const unique: WatchHistoryItem[] = [];
+  const seen = new Set();
+
+  for (const item of combined) {
+    let key = "";
+    if (item.type === "movie") {
+      key = `movie_${item.tmdbId}`;
+    } else if (item.type === "series") {
+      key = `series_${item.tmdbId}_${item.seasonNumber}_${item.episodeNumber}`;
+    } else {
+      key = `anime_${item.animeId}_${item.seasonNumber}_${item.episodeNumber}`;
+    }
+    if (!seen.has(key)) {
+      seen.add(key);
+      unique.push(item);
+    }
+  }
+  storage.set("history", unique.slice(0, 300));
 }
 
 // Get the last progress of a specific episode

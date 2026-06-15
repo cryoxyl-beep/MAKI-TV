@@ -3,7 +3,7 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { auth, db } from "../lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { TMDBMovie } from "../services/tmdb";
-import { storage } from "../utils";
+import { storage, mergeFirebaseHistory } from "../utils";
 
 export interface MovieLibraryItem {
   id: number;
@@ -53,14 +53,18 @@ if (auth) {
           const userRef = doc(db, "userData", user.uid);
           const userSnap = await getDoc(userRef);
           if (userSnap.exists()) {
-             const data = userSnap.data();
-             if (data.history) storage.set("history", data.history);
-             if (data.watch_later) storage.set("watch_later", data.watch_later);
-             if (data.unified_watch_states) storage.set("unified_watch_states", data.unified_watch_states);
+            const data = userSnap.data();
+            if (data.history) mergeFirebaseHistory(data.history);
+            if (data.watch_later) storage.set("watch_later", data.watch_later);
+            if (data.unified_watch_states)
+              storage.set("unified_watch_states", data.unified_watch_states);
           }
         }
       } catch (err) {
-        console.error("[useMoviesData] Failed to fetch user moviesData from Firestore:", err);
+        console.error(
+          "[useMoviesData] Failed to fetch user moviesData from Firestore:",
+          err,
+        );
       } finally {
         isGlobalLoading = false;
         notifyListeners();
@@ -75,20 +79,25 @@ if (auth) {
 }
 
 const syncToFirebase = async () => {
-    if (!globalCurrentUser || !db) return;
-    const docRef = doc(db, "moviesData", globalCurrentUser.uid);
-    try {
-        const payload = JSON.parse(JSON.stringify({ library: globalLibrary, watchLater: globalWatchLater }));
-        await setDoc(docRef, payload, { merge: true });
-    } catch(err) {
-        console.error("[useMoviesData] Failed to sync to Firestore:", err);
-    }
+  if (!globalCurrentUser || !db) return;
+  const docRef = doc(db, "moviesData", globalCurrentUser.uid);
+  try {
+    const payload = JSON.parse(
+      JSON.stringify({ library: globalLibrary, watchLater: globalWatchLater }),
+    );
+    await setDoc(docRef, payload, { merge: true });
+  } catch (err) {
+    console.error("[useMoviesData] Failed to sync to Firestore:", err);
+  }
 };
 
 export function useMoviesData() {
   const [library, setLibrary] = useState<MovieLibraryItem[]>(globalLibrary);
-  const [watchLater, setWatchLater] = useState<MovieWatchLaterItem[]>(globalWatchLater);
-  const [currentUser, setCurrentUser] = useState<User | null>(globalCurrentUser);
+  const [watchLater, setWatchLater] =
+    useState<MovieWatchLaterItem[]>(globalWatchLater);
+  const [currentUser, setCurrentUser] = useState<User | null>(
+    globalCurrentUser,
+  );
   const [isLoading, setIsLoading] = useState(isGlobalLoading);
 
   useEffect(() => {
@@ -106,7 +115,8 @@ export function useMoviesData() {
   }, []);
 
   const isInLibrary = (id: number) => library.some((item) => item.id === id);
-  const isInWatchLater = (id: number) => watchLater.some((item) => item.id === id);
+  const isInWatchLater = (id: number) =>
+    watchLater.some((item) => item.id === id);
 
   const toggleLibrary = async (movie: TMDBMovie) => {
     if (!globalCurrentUser) {
@@ -115,15 +125,18 @@ export function useMoviesData() {
     }
     const exists = isInLibrary(movie.id);
     if (exists) {
-        globalLibrary = globalLibrary.filter((item) => item.id !== movie.id);
+      globalLibrary = globalLibrary.filter((item) => item.id !== movie.id);
     } else {
-        globalLibrary = [{
-            id: movie.id,
-            title: movie.title,
-            posterPath: movie.poster_path || "",
-            backdropPath: movie.backdrop_path || "",
-            addedAt: new Date().toISOString()
-        }, ...globalLibrary];
+      globalLibrary = [
+        {
+          id: movie.id,
+          title: movie.title,
+          posterPath: movie.poster_path || "",
+          backdropPath: movie.backdrop_path || "",
+          addedAt: new Date().toISOString(),
+        },
+        ...globalLibrary,
+      ];
     }
     notifyListeners();
     await syncToFirebase();
@@ -137,15 +150,20 @@ export function useMoviesData() {
     }
     const exists = isInWatchLater(movie.id);
     if (exists) {
-        globalWatchLater = globalWatchLater.filter((item) => item.id !== movie.id);
+      globalWatchLater = globalWatchLater.filter(
+        (item) => item.id !== movie.id,
+      );
     } else {
-        globalWatchLater = [{
-            id: movie.id,
-            title: movie.title,
-            posterPath: movie.poster_path || "",
-            backdropPath: movie.backdrop_path || "",
-            addedAt: new Date().toISOString()
-        }, ...globalWatchLater];
+      globalWatchLater = [
+        {
+          id: movie.id,
+          title: movie.title,
+          posterPath: movie.poster_path || "",
+          backdropPath: movie.backdrop_path || "",
+          addedAt: new Date().toISOString(),
+        },
+        ...globalWatchLater,
+      ];
     }
     notifyListeners();
     await syncToFirebase();

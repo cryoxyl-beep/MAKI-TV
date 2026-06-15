@@ -3,7 +3,7 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { auth, db } from "../lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { AniListAnime } from "../types";
-import { storage } from "../utils";
+import { storage, mergeFirebaseHistory } from "../utils";
 
 export interface LibraryItem {
   animeId: number;
@@ -44,14 +44,18 @@ if (auth) {
           const userRef = doc(db, "userData", user.uid);
           const userSnap = await getDoc(userRef);
           if (userSnap.exists()) {
-             const data = userSnap.data();
-             if (data.history) storage.set("history", data.history);
-             if (data.watch_later) storage.set("watch_later", data.watch_later);
-             if (data.unified_watch_states) storage.set("unified_watch_states", data.unified_watch_states);
+            const data = userSnap.data();
+            if (data.history) mergeFirebaseHistory(data.history);
+            if (data.watch_later) storage.set("watch_later", data.watch_later);
+            if (data.unified_watch_states)
+              storage.set("unified_watch_states", data.unified_watch_states);
           }
         }
       } catch (err) {
-        console.error("[useLibrary] Failed to fetch user library/history from Firestore:", err);
+        console.error(
+          "[useLibrary] Failed to fetch user library/history from Firestore:",
+          err,
+        );
       } finally {
         isGlobalLoading = false;
         notifyListeners();
@@ -66,7 +70,9 @@ if (auth) {
 
 export function useLibrary() {
   const [library, setLibrary] = useState<LibraryItem[]>(globalLibrary);
-  const [currentUser, setCurrentUser] = useState<User | null>(globalCurrentUser);
+  const [currentUser, setCurrentUser] = useState<User | null>(
+    globalCurrentUser,
+  );
   const [isLoading, setIsLoading] = useState(isGlobalLoading);
 
   useEffect(() => {
@@ -98,7 +104,11 @@ export function useLibrary() {
       updatedLibrary = [
         {
           animeId: anime.id,
-          animeTitle: anime.title.english || anime.title.romaji || anime.title.userPreferred || "Untitled Anime",
+          animeTitle:
+            anime.title.english ||
+            anime.title.romaji ||
+            anime.title.userPreferred ||
+            "Untitled Anime",
           coverImage: anime.coverImage.large || anime.coverImage.medium || "",
           bannerImage: anime.bannerImage || "",
           subscribedAt: new Date().toISOString(),
