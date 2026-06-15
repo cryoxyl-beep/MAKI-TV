@@ -14,7 +14,7 @@ interface VideoPlayerProps {
   episodeNumber: number;
   seasonNumber: number;
   animeTitle: string;
-  onProgressUpdate: (percentage: number, currentTime?: number, duration?: number) => void;
+  onProgressUpdate: (percentage: number) => void;
   savedProgress?: number;
   selectedProvider: string;
   audioLanguage?: "sub" | "dub";
@@ -26,7 +26,6 @@ interface VideoPlayerProps {
   englishTitle?: string;
   romajiTitle?: string;
   synonyms?: string[];
-  isAnime?: boolean;
 }
 
 export default function VideoPlayer({
@@ -47,7 +46,6 @@ export default function VideoPlayer({
   englishTitle,
   romajiTitle,
   synonyms,
-  isAnime = true,
 }: VideoPlayerProps) {
   const [iframeLoading, setIframeLoading] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -264,21 +262,19 @@ export default function VideoPlayer({
               const dur = parseFloat(data.duration || 0);
               if (dur > 0) {
                 const percent = parseFloat(((cur / dur) * 100).toFixed(1));
-                onProgressUpdate(percent, cur, dur);
+                onProgressUpdate(percent);
                 
-                if (isAnime) {
-                  saveUnifiedWatchState({
-                    anilistId: animeId,
-                    tmdbId: tmdbId,
-                    title: animeTitle,
-                    provider: selectedProvider,
-                    progress: { watched: cur, duration: dur },
-                    last_season_watched: seasonNumber,
-                    last_episode_watched: episodeNumber,
-                    percentage: percent,
-                    updatedAt: new Date().toISOString()
-                  });
-                }
+                saveUnifiedWatchState({
+                  anilistId: animeId,
+                  tmdbId: tmdbId,
+                  title: animeTitle,
+                  provider: selectedProvider,
+                  progress: { watched: cur, duration: dur },
+                  last_season_watched: seasonNumber,
+                  last_episode_watched: episodeNumber,
+                  percentage: percent,
+                  updatedAt: new Date().toISOString()
+                });
               }
             } else if (eventType === "cinesrc:nextepisode") {
               onNextEpisode();
@@ -340,21 +336,19 @@ export default function VideoPlayer({
               const percent = data.percent !== undefined 
                 ? parseFloat(data.percent) 
                 : parseFloat(((cur / dur) * 100).toFixed(1));
-              onProgressUpdate(percent, cur, dur);
+              onProgressUpdate(percent);
               
-              if (isAnime) {
-                saveUnifiedWatchState({
-                  anilistId: animeId,
-                  tmdbId: tmdbId,
-                  title: animeTitle,
-                  provider: selectedProvider,
-                  progress: { watched: cur, duration: dur },
-                  last_season_watched: seasonNumber,
-                  last_episode_watched: episodeNumber,
-                  percentage: percent,
-                  updatedAt: new Date().toISOString()
-                });
-              }
+              saveUnifiedWatchState({
+                anilistId: animeId,
+                tmdbId: tmdbId,
+                title: animeTitle,
+                provider: selectedProvider,
+                progress: { watched: cur, duration: dur },
+                last_season_watched: seasonNumber,
+                last_episode_watched: episodeNumber,
+                percentage: percent,
+                updatedAt: new Date().toISOString()
+              });
             }
           } else if (eventType === "complete") {
             // MegaPlay auto-advance
@@ -365,21 +359,19 @@ export default function VideoPlayer({
             const dur = parseFloat(data.duration || 0);
             if (dur > 0) {
               const percent = parseFloat(((cur / dur) * 100).toFixed(1));
-              onProgressUpdate(percent, cur, dur);
+              onProgressUpdate(percent);
               
-              if (isAnime) {
-                saveUnifiedWatchState({
-                  anilistId: animeId,
-                  tmdbId: tmdbId,
-                  title: animeTitle,
-                  provider: selectedProvider,
-                  progress: { watched: cur, duration: dur },
-                  last_season_watched: seasonNumber,
-                  last_episode_watched: episodeNumber,
-                  percentage: percent,
-                  updatedAt: new Date().toISOString()
-                });
-              }
+              saveUnifiedWatchState({
+                anilistId: animeId,
+                tmdbId: tmdbId,
+                title: animeTitle,
+                provider: selectedProvider,
+                progress: { watched: cur, duration: dur },
+                last_season_watched: seasonNumber,
+                last_episode_watched: episodeNumber,
+                percentage: percent,
+                updatedAt: new Date().toISOString()
+              });
             }
           } else if (eventType === "PLAYER_EVENT" || data.event === "PLAYER_EVENT") {
             const cur = parseFloat(data.currentTime || data.time || 0);
@@ -387,21 +379,19 @@ export default function VideoPlayer({
             
             if (dur > 0) {
               const percent = parseFloat(((cur / dur) * 100).toFixed(1));
-              onProgressUpdate(percent, cur, dur);
+              onProgressUpdate(percent);
               
-              if (isAnime) {
-                saveUnifiedWatchState({
-                  anilistId: animeId,
-                  tmdbId: tmdbId,
-                  title: animeTitle,
-                  provider: selectedProvider,
-                  progress: { watched: cur, duration: dur },
-                  last_season_watched: seasonNumber,
-                  last_episode_watched: episodeNumber,
-                  percentage: percent,
-                  updatedAt: new Date().toISOString()
-                });
-              }
+              saveUnifiedWatchState({
+                anilistId: animeId,
+                tmdbId: tmdbId,
+                title: animeTitle,
+                provider: selectedProvider,
+                progress: { watched: cur, duration: dur },
+                last_season_watched: seasonNumber,
+                last_episode_watched: episodeNumber,
+                percentage: percent,
+                updatedAt: new Date().toISOString()
+              });
             }
           } else if (eventType === "MEDIA_DATA" || data.mediaData) {
             const mediaObj = data.mediaData || data;
@@ -409,21 +399,19 @@ export default function VideoPlayer({
             const dur = parseFloat(mediaObj.duration || 0);
             if (dur > 0) {
               const percent = parseFloat(((cur / dur) * 100).toFixed(1));
-              onProgressUpdate(percent, cur, dur);
+              onProgressUpdate(percent);
               
-              if (isAnime) {
-                saveUnifiedWatchState({
-                  anilistId: animeId,
-                  tmdbId: tmdbId,
-                  title: animeTitle,
-                  provider: selectedProvider,
-                  progress: { watched: cur, duration: dur },
-                  last_season_watched: seasonNumber,
-                  last_episode_watched: episodeNumber,
-                  percentage: percent,
-                  updatedAt: new Date().toISOString()
-                });
-              }
+              saveUnifiedWatchState({
+                anilistId: animeId,
+                tmdbId: tmdbId,
+                title: animeTitle,
+                provider: selectedProvider,
+                progress: { watched: cur, duration: dur },
+                last_season_watched: seasonNumber,
+                last_episode_watched: episodeNumber,
+                percentage: percent,
+                updatedAt: new Date().toISOString()
+              });
             }
           }
         }
@@ -443,20 +431,18 @@ export default function VideoPlayer({
               const dur = parseFloat(data.duration);
               if (dur > 0) {
                 const percent = parseFloat(((cur / dur) * 100).toFixed(1));
-                onProgressUpdate(percent, cur, dur);
-                if (isAnime) {
-                  saveUnifiedWatchState({
-                    anilistId: animeId,
-                    tmdbId: tmdbId,
-                    title: animeTitle,
-                    provider: selectedProvider,
-                    progress: { watched: cur, duration: dur },
-                    last_season_watched: seasonNumber,
-                    last_episode_watched: episodeNumber,
-                    percentage: percent,
-                    updatedAt: new Date().toISOString()
-                  });
-                }
+                onProgressUpdate(percent);
+                saveUnifiedWatchState({
+                  anilistId: animeId,
+                  tmdbId: tmdbId,
+                  title: animeTitle,
+                  provider: selectedProvider,
+                  progress: { watched: cur, duration: dur },
+                  last_season_watched: seasonNumber,
+                  last_episode_watched: episodeNumber,
+                  percentage: percent,
+                  updatedAt: new Date().toISOString()
+                });
               }
             } else if (eventType === "ENDED") {
               onNextEpisode();

@@ -99,7 +99,7 @@ export default function SettingsPage() {
               <GroupTitle title="Playback" />
               <div className="flex flex-col gap-1">
                 <SelectRow 
-                  label="Default Start Server (Anime)" 
+                  label="Default Start Server" 
                   value={settings.playback.defaultServer}
                   options={[
                     {label: "AnimeGG (GG)", value: "animegg"},
@@ -107,29 +107,12 @@ export default function SettingsPage() {
                     {label: "Kyou", value: "megaplay"},
                     {label: "Kami", value: "origami"},
                     {label: "Haya", value: "vidnest"},
-                    {label: "Miru", value: "animepahe"}
+                    {label: "Miru", value: "animepahe"},
+                    {label: "Taberu", value: "cinesrc"},
+                    {label: "Matsuri", value: "vidfast"},
+                    {label: "Onigiri", value: "movies111"}
                   ]}
                   onChange={(v) => handleUpdate("playback", "defaultServer", v)}
-                />
-                <SelectRow 
-                  label="Default Start Server (Movies)" 
-                  value={settings.playback.defaultServerMovies || "cinesrc"}
-                  options={[
-                    {label: "Taberu", value: "cinesrc"},
-                    {label: "Matsuri", value: "vidfast"},
-                    {label: "Onigiri", value: "movies111"}
-                  ]}
-                  onChange={(v) => handleUpdate("playback", "defaultServerMovies", v)}
-                />
-                <SelectRow 
-                  label="Default Start Server (Series)" 
-                  value={settings.playback.defaultServerSeries || "cinesrc"}
-                  options={[
-                    {label: "Taberu", value: "cinesrc"},
-                    {label: "Matsuri", value: "vidfast"},
-                    {label: "Onigiri", value: "movies111"}
-                  ]}
-                  onChange={(v) => handleUpdate("playback", "defaultServerSeries", v)}
                 />
                 <SelectRow 
                   label="Default Audio Track" 
