@@ -207,7 +207,7 @@ export default function SeriesWatch() {
         onSearch={() => navigate("/series")}
         onNavigateHome={() => navigate("/series")}
         breadcrumbs={[
-          { label: "Series", onClick: () => navigate("/series"), color: accentColor },
+          { label: "Home", onClick: () => navigate("/series"), color: accentColor },
           { label: series.name, onClick: () => navigate(`/series/show/${series.id}`), color: accentColor },
           { label: `S${seasonNum} E${episodeNum}` }
         ]}

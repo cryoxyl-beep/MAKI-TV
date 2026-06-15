@@ -138,7 +138,7 @@ export default function MovieWatch() {
         onNavigateHome={() => navigate("/movies")}
         breadcrumbs={[
           {
-            label: "Movies",
+            label: "Home",
             onClick: () => navigate("/movies"),
             color: accentColor,
           },
