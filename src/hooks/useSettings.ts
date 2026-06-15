@@ -7,6 +7,8 @@ import { storage } from "../utils";
 export interface AppSettings {
   playback: {
     defaultServer: string;
+    defaultServerMovies: string;
+    defaultServerSeries: string;
     defaultAudio: "Japanese" | "English Dub" | "Auto";
     defaultSubtitle: "English" | "None" | "Auto";
     autoPlayNext: boolean;
@@ -38,6 +40,8 @@ export interface AppSettings {
 export const defaultSettings: AppSettings = {
   playback: {
     defaultServer: "animegg",
+    defaultServerMovies: "cinesrc",
+    defaultServerSeries: "cinesrc",
     defaultAudio: "Auto",
     defaultSubtitle: "Auto",
     autoPlayNext: true,

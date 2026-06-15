@@ -101,6 +101,60 @@ export function getWatchHistory(): WatchHistoryItem[] {
   return storage.get<WatchHistoryItem[]>("history", []);
 }
 
+export interface MovieHistoryItem {
+  tmdbId: number;
+  title: string;
+  watchedAt: string;
+  provider: string;
+  progress: number; // percentage
+  duration?: number;
+  posterPath?: string;
+  backdropPath?: string;
+}
+
+export function getMovieHistory(): MovieHistoryItem[] {
+  return storage.get<MovieHistoryItem[]>("movie_history", []);
+}
+
+export function addToMovieHistory(item: Omit<MovieHistoryItem, "watchedAt">): void {
+  const history = getMovieHistory();
+  const newItem: MovieHistoryItem = {
+    ...item,
+    watchedAt: new Date().toISOString()
+  };
+  const filtered = history.filter((h) => h.tmdbId !== item.tmdbId);
+  filtered.unshift(newItem);
+  storage.set("movie_history", filtered.slice(0, 100));
+}
+
+export interface SeriesHistoryItem {
+  tmdbId: number;
+  title: string;
+  seasonNumber: number;
+  episodeNumber: number;
+  watchedAt: string;
+  provider: string;
+  progress: number;
+  duration?: number;
+  posterPath?: string;
+  backdropPath?: string;
+}
+
+export function getSeriesHistory(): SeriesHistoryItem[] {
+  return storage.get<SeriesHistoryItem[]>("series_history", []);
+}
+
+export function addToSeriesHistory(item: Omit<SeriesHistoryItem, "watchedAt">): void {
+  const history = getSeriesHistory();
+  const newItem: SeriesHistoryItem = {
+    ...item,
+    watchedAt: new Date().toISOString()
+  };
+  const filtered = history.filter((h) => h.tmdbId !== item.tmdbId);
+  filtered.unshift(newItem);
+  storage.set("series_history", filtered.slice(0, 100));
+}
+
 export function addToWatchHistory(item: Omit<WatchHistoryItem, "watchedAt">): void {
   const history = getWatchHistory();
   

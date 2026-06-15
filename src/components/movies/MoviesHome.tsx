@@ -12,6 +12,7 @@ import {
 } from "../../services/tmdb";
 import MovieCard from "./MovieCard";
 import LazyImage from "../LazyImage";
+import { getMovieHistory, MovieHistoryItem } from "../../utils";
 
 export default function MoviesHome() {
   const [trending, setTrending] = useState<TMDBMovie[]>([]);
@@ -19,6 +20,7 @@ export default function MoviesHome() {
   const [topRated, setTopRated] = useState<TMDBMovie[]>([]);
   const [upcoming, setUpcoming] = useState<TMDBMovie[]>([]);
   const [loading, setLoading] = useState(true);
+  const [movieHistory, setMovieHistory] = useState<MovieHistoryItem[]>([]);
 
   // Use the first trending movie as the hero banner
   const heroMovie = trending.length > 0 ? trending[0] : null;
@@ -36,6 +38,7 @@ export default function MoviesHome() {
         setPopular(popularData.results);
         setTopRated(topRatedData.results);
         setUpcoming(upcomingData.results);
+        setMovieHistory(getMovieHistory().slice(0, 10)); // up to 10 recents
       } catch (error) {
         console.error("Failed to fetch movies:", error);
       } finally {
@@ -118,10 +121,6 @@ export default function MoviesHome() {
                   View Details
                 </button>
               </Link>
-              <button className="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold backdrop-blur-md transition-colors cursor-pointer border border-white/10">
-                <Plus className="w-5 h-5" />
-                Library
-              </button>
             </motion.div>
           </div>
         </div>
@@ -129,6 +128,35 @@ export default function MoviesHome() {
 
       {/* Sections */}
       <div className="flex flex-col gap-10 mt-8 px-4 md:px-8">
+        {movieHistory.length > 0 && (
+          <div className="flex flex-col gap-4">
+            <h2 className="text-xl md:text-2xl font-bold text-white tracking-tight">Continue Watching</h2>
+            <div className="flex gap-4 overflow-x-auto custom-scrollbar pb-4 -mx-4 px-4 md:mx-0 md:px-0">
+              {movieHistory.map((item) => (
+                <Link key={item.tmdbId} to={`/movies/watch/${item.tmdbId}`} className="relative shrink-0 w-[240px] md:w-[280px] aspect-video rounded-xl overflow-hidden group cursor-pointer bg-white/5 border border-white/10">
+                  <LazyImage 
+                    src={item.backdropPath ? `${TMDB_IMAGE_BASE_URL}${item.backdropPath}` : (item.posterPath ? `${TMDB_IMAGE_BASE_URL}${item.posterPath}` : "")}
+                    alt={item.title}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 opacity-70 group-hover:opacity-100"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                  <div className="absolute bottom-0 left-0 w-full p-4 flex flex-col gap-2">
+                    <h3 className="text-sm font-bold text-white truncate drop-shadow-md">{item.title}</h3>
+                    <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden">
+                      <div className="h-full bg-rose-500" style={{ width: `${Math.min(100, Math.max(0, item.progress))}%` }} />
+                    </div>
+                  </div>
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="w-12 h-12 rounded-full bg-rose-500/90 text-white flex items-center justify-center shadow-[0_0_20px_rgba(244,63,94,0.5)]">
+                      <Play className="w-5 h-5 fill-current ml-1" />
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
         <MovieSection title="Trending Now" movies={trending.slice(1)} />
         <MovieSection title="Popular Movies" movies={popular} />
         <MovieSection title="Top Rated" movies={topRated} />
