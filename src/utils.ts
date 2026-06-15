@@ -78,6 +78,9 @@ export const storage = {
 export function syncToFirebase(key: string, data: any) {
   if (auth && auth.currentUser && db) {
     const docRef = doc(db, "userData", auth.currentUser.uid);
+    setDoc(docRef, { [key]: data }, { merge: true }).catch((err) => {
+      console.error("Firebase sync error:", err);
+    });
   }
 }
 
@@ -98,6 +101,7 @@ export function saveUnifiedWatchState(state: UnifiedWatchState): void {
     updatedAt: new Date().toISOString()
   };
   storage.set("unified_watch_states", states);
+  syncToFirebase("unified_watch_states", states);
 }
 
 // 1. History Persistence Helpers
@@ -128,7 +132,9 @@ export function addToMovieHistory(item: Omit<MovieHistoryItem, "watchedAt">): vo
   };
   const filtered = history.filter((h) => h.tmdbId !== item.tmdbId);
   filtered.unshift(newItem);
-  storage.set("movie_history", filtered.slice(0, 100));
+  const newHistory = filtered.slice(0, 100);
+  storage.set("movie_history", newHistory);
+  syncToFirebase("movie_history", newHistory);
 }
 
 export interface SeriesHistoryItem {
@@ -156,7 +162,9 @@ export function addToSeriesHistory(item: Omit<SeriesHistoryItem, "watchedAt">): 
   };
   const filtered = history.filter((h) => h.tmdbId !== item.tmdbId);
   filtered.unshift(newItem);
-  storage.set("series_history", filtered.slice(0, 100));
+  const newHistory = filtered.slice(0, 100);
+  storage.set("series_history", newHistory);
+  syncToFirebase("series_history", newHistory);
 }
 
 export function addToWatchHistory(item: Omit<WatchHistoryItem, "watchedAt">): void {

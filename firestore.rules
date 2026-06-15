@@ -32,6 +32,16 @@ service cloud.firestore {
       allow read, write: if isOwner(userId);
     }
 
+    // Account-scoped Movies Data
+    match /moviesData/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Account-scoped Series Data
+    match /seriesData/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
     // Account-scoped User Data (history, watch_later lists)
     match /userData/{userId} {
       allow read, write: if isOwner(userId);
