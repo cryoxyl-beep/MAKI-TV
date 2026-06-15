@@ -25,23 +25,31 @@ export interface UnifiedWatchState {
 export function formatRelativeDate(isoString: string): string {
   const date = new Date(isoString);
   const now = new Date();
-  
+
   // Reset times to compare days accurately
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const targetDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  
+  const targetDate = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+  );
+
   const diffTime = today.getTime() - targetDate.getTime();
   const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-  
+
   const day = targetDate.getDate();
-  const monthName = targetDate.toLocaleDateString("en-US", { month: "short" }).toUpperCase();
+  const monthName = targetDate
+    .toLocaleDateString("en-US", { month: "short" })
+    .toUpperCase();
   const dateFormatted = `${day} ${monthName}`;
-  const dayName = targetDate.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
-  
+  const dayName = targetDate
+    .toLocaleDateString("en-US", { weekday: "long" })
+    .toUpperCase();
+
   if (diffDays <= 0) return `TODAY • ${dateFormatted}`;
   if (diffDays === 1) return `YESTERDAY • ${dateFormatted}`;
   if (diffDays > 1 && diffDays <= 6) return `${dayName} • ${dateFormatted}`;
-  
+
   return dateFormatted;
 }
 
@@ -84,29 +92,43 @@ export function syncToFirebase(key: string, data: any) {
     const docRef = doc(db, "userData", uid);
     // Sanitize data to remove any undefined values which crash Firebase
     const sanitizedData = JSON.parse(JSON.stringify(data));
-    
+
     // Add diagnostic logging requested by user
     const payloadSize = new Blob([JSON.stringify(sanitizedData)]).size;
-    console.log(`[Firestore Sync] PATH: userData/${uid} | UID: ${uid} | KEY: ${key} | PAYLOAD SIZE: ${payloadSize} bytes`);
-    
+    console.log(
+      `[Firestore Sync] PATH: userData/${uid} | UID: ${uid} | KEY: ${key} | PAYLOAD SIZE: ${payloadSize} bytes`,
+    );
+
     setDoc(docRef, { [key]: sanitizedData }, { merge: true })
       .then(() => {
-        console.log(`[Firestore Sync Success] Successfully synced ${key} to userData/${uid}`);
+        console.log(
+          `[Firestore Sync Success] Successfully synced ${key} to userData/${uid}`,
+        );
       })
       .catch((err) => {
-        console.error(`[Firestore Sync Error] Failed to sync ${key} to userData/${uid}:`, err);
+        console.error(
+          `[Firestore Sync Error] Failed to sync ${key} to userData/${uid}:`,
+          err,
+        );
       });
   } else {
-    console.warn(`[Firestore Sync Warning] Cannot sync ${key}. Auth/DB not ready or no current user.`);
+    console.warn(
+      `[Firestore Sync Warning] Cannot sync ${key}. Auth/DB not ready or no current user.`,
+    );
   }
 }
 
 // Unified Watch Progress Tracking Getter/Setters
 export function getUnifiedWatchStates(): Record<number, UnifiedWatchState> {
-  return storage.get<Record<number, UnifiedWatchState>>("unified_watch_states", {});
+  return storage.get<Record<number, UnifiedWatchState>>(
+    "unified_watch_states",
+    {},
+  );
 }
 
-export function getUnifiedWatchState(anilistId: number): UnifiedWatchState | null {
+export function getUnifiedWatchState(
+  anilistId: number,
+): UnifiedWatchState | null {
   const states = getUnifiedWatchStates();
   return states[anilistId] || null;
 }
@@ -115,7 +137,7 @@ export function saveUnifiedWatchState(state: UnifiedWatchState): void {
   const states = getUnifiedWatchStates();
   states[state.anilistId] = {
     ...state,
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
   };
   storage.set("unified_watch_states", states);
   syncToFirebase("unified_watch_states", states);
@@ -128,7 +150,7 @@ export function getUnifiedHistory(): WatchHistoryItem[] {
 }
 
 export function getWatchHistory(): WatchHistoryItem[] {
-  return getUnifiedHistory().filter(h => !h.type || h.type === 'anime');
+  return getUnifiedHistory().filter((h) => !h.type || h.type === "anime");
 }
 
 export interface MovieHistoryItem {
@@ -143,21 +165,21 @@ export interface MovieHistoryItem {
 }
 
 export function getMovieHistory(): MovieHistoryItem[] {
-  return getUnifiedHistory().filter(h => h.type === 'movie') as any as MovieHistoryItem[];
+  return storage.get<MovieHistoryItem[]>("movie_history", []);
 }
 
-export function addToMovieHistory(item: Omit<MovieHistoryItem, "watchedAt">): void {
-  const history = getUnifiedHistory();
+export function addToMovieHistory(
+  item: Omit<MovieHistoryItem, "watchedAt">,
+): void {
+  const history = getMovieHistory();
   const newItem = {
     ...item,
-    type: 'movie' as const,
-    watchedAt: new Date().toISOString()
+    watchedAt: new Date().toISOString(),
   };
-  const filtered = history.filter((h) => !(h.type === 'movie' && h.tmdbId === item.tmdbId));
+  const filtered = history.filter((h) => h.tmdbId !== item.tmdbId);
   filtered.unshift(newItem as any);
   const newHistory = filtered.slice(0, 300);
-  storage.set("history", newHistory);
-  syncToFirebase("history", newHistory);
+  storage.set("movie_history", newHistory);
 }
 
 export interface SeriesHistoryItem {
@@ -174,41 +196,60 @@ export interface SeriesHistoryItem {
 }
 
 export function getSeriesHistory(): SeriesHistoryItem[] {
-  return getUnifiedHistory().filter(h => h.type === 'series') as any as SeriesHistoryItem[];
+  return storage.get<SeriesHistoryItem[]>("series_history", []);
 }
 
-export function addToSeriesHistory(item: Omit<SeriesHistoryItem, "watchedAt">): void {
-  const history = getUnifiedHistory();
+export function addToSeriesHistory(
+  item: Omit<SeriesHistoryItem, "watchedAt">,
+): void {
+  const history = getSeriesHistory();
   const newItem = {
     ...item,
-    type: 'series' as const,
-    watchedAt: new Date().toISOString()
+    watchedAt: new Date().toISOString(),
   };
-  const filtered = history.filter((h) => !(h.type === 'series' && h.tmdbId === item.tmdbId && h.seasonNumber === item.seasonNumber && h.episodeNumber === item.episodeNumber));
+  const filtered = history.filter(
+    (h) =>
+      !(
+        h.tmdbId === item.tmdbId &&
+        h.seasonNumber === item.seasonNumber &&
+        h.episodeNumber === item.episodeNumber
+      ),
+  );
   filtered.unshift(newItem as any);
   const newHistory = filtered.slice(0, 300);
-  storage.set("history", newHistory);
-  syncToFirebase("history", newHistory);
+  storage.set("series_history", newHistory);
 }
 
-export function addToWatchHistory(item: Omit<WatchHistoryItem, "watchedAt">): void {
+export function addToWatchHistory(
+  item: Omit<WatchHistoryItem, "watchedAt">,
+): void {
   const history = getUnifiedHistory();
-  
+
   // Try to find if we already have this episode in history to preserve existing thumbnailUrl if not provided
   const existing = history.find(
-    (h) => (!h.type || h.type === 'anime') && h.animeId === item.animeId && h.episodeNumber === item.episodeNumber && h.seasonNumber === item.seasonNumber
+    (h) =>
+      (!h.type || h.type === "anime") &&
+      h.animeId === item.animeId &&
+      h.episodeNumber === item.episodeNumber &&
+      h.seasonNumber === item.seasonNumber,
   );
 
   const newItem: WatchHistoryItem = {
     ...item,
-    type: 'anime',
+    type: "anime",
     watchedAt: new Date().toISOString(),
-    thumbnailUrl: item.thumbnailUrl || existing?.thumbnailUrl
+    thumbnailUrl: item.thumbnailUrl || existing?.thumbnailUrl,
   };
 
   // Remove existing history item for same anime and same episode/season if exists to put it on top
   const filtered = history.filter(
-    (h) => !((!h.type || h.type === 'anime') && h.animeId === item.animeId && h.episodeNumber === item.episodeNumber && h.seasonNumber === item.seasonNumber)
+    (h) =>
+      !(
+        (!h.type || h.type === "anime") &&
+        h.animeId === item.animeId &&
+        h.episodeNumber === item.episodeNumber &&
+        h.seasonNumber === item.seasonNumber
+      ),
   );
 
   filtered.unshift(newItem); // put on top
@@ -218,10 +259,17 @@ export function addToWatchHistory(item: Omit<WatchHistoryItem, "watchedAt">): vo
 }
 
 // Get the last progress of a specific episode
-export function getEpisodeProgress(animeId: number, seasonNumber: number, episodeNumber: number): number {
+export function getEpisodeProgress(
+  animeId: number,
+  seasonNumber: number,
+  episodeNumber: number,
+): number {
   const history = getWatchHistory();
   const found = history.find(
-    (h) => h.animeId === animeId && h.seasonNumber === seasonNumber && h.episodeNumber === episodeNumber
+    (h) =>
+      h.animeId === animeId &&
+      h.seasonNumber === seasonNumber &&
+      h.episodeNumber === episodeNumber,
   );
   return found ? found.progress : 0;
 }
@@ -248,7 +296,11 @@ export function toggleSubscription(anime: AniListAnime): boolean {
       ...subs,
       {
         animeId: anime.id,
-        animeTitle: anime.title.english || anime.title.romaji || anime.title.userPreferred || "Untitled Anime",
+        animeTitle:
+          anime.title.english ||
+          anime.title.romaji ||
+          anime.title.userPreferred ||
+          "Untitled Anime",
         coverImage: anime.coverImage.large || anime.coverImage.medium,
         bannerImage: anime.bannerImage,
         subscribedAt: new Date().toISOString(),
@@ -275,16 +327,38 @@ export function getWatchLater(): WatchLaterItem[] {
   return storage.get<WatchLaterItem[]>("watch_later", []);
 }
 
-export function isWatchLater(animeId: number, seasonNumber: number, episodeNumber: number): boolean {
-  return getWatchLater().some((i) => i.animeId === animeId && i.seasonNumber === seasonNumber && i.episodeNumber === episodeNumber);
+export function isWatchLater(
+  animeId: number,
+  seasonNumber: number,
+  episodeNumber: number,
+): boolean {
+  return getWatchLater().some(
+    (i) =>
+      i.animeId === animeId &&
+      i.seasonNumber === seasonNumber &&
+      i.episodeNumber === episodeNumber,
+  );
 }
 
-export function toggleWatchLater(item: Omit<WatchLaterItem, "savedAt">): boolean {
+export function toggleWatchLater(
+  item: Omit<WatchLaterItem, "savedAt">,
+): boolean {
   const items = getWatchLater();
-  const exists = isWatchLater(item.animeId, item.seasonNumber, item.episodeNumber);
-  
+  const exists = isWatchLater(
+    item.animeId,
+    item.seasonNumber,
+    item.episodeNumber,
+  );
+
   if (exists) {
-    const newLater = items.filter((i) => !(i.animeId === item.animeId && i.seasonNumber === item.seasonNumber && i.episodeNumber === item.episodeNumber));
+    const newLater = items.filter(
+      (i) =>
+        !(
+          i.animeId === item.animeId &&
+          i.seasonNumber === item.seasonNumber &&
+          i.episodeNumber === item.episodeNumber
+        ),
+    );
     storage.set("watch_later", newLater);
     syncToFirebase("watch_later", newLater);
     return false;
@@ -313,9 +387,13 @@ export function buildSeasonsList(anime: AniListAnime): SeasonInfo[] {
   // We want to construct an ordered list of seasons
   // The current anime itself is one of them.
   // We inspect its relations to find "PREQUEL", "SEQUEL", and compile them.
-  
-  const currentTitle = anime.title.english || anime.title.romaji || anime.title.userPreferred || "Main Series";
-  
+
+  const currentTitle =
+    anime.title.english ||
+    anime.title.romaji ||
+    anime.title.userPreferred ||
+    "Main Series";
+
   const seasons: {
     animeId: number;
     title: string;
@@ -329,25 +407,61 @@ export function buildSeasonsList(anime: AniListAnime): SeasonInfo[] {
   // Add relations
   if (anime.relations?.edges) {
     const edges = anime.relations.edges;
-    
+
     // Sort and filtering of relation items
     edges.forEach((edge) => {
       const node = edge.node;
       if (node.type === "ANIME") {
-        const title = node.title.english || node.title.romaji || node.title.userPreferred || "Alternative Series";
-        const cover = node.coverImage.extraLarge || node.coverImage.large || node.coverImage.medium || "";
+        const title =
+          node.title.english ||
+          node.title.romaji ||
+          node.title.userPreferred ||
+          "Alternative Series";
+        const cover =
+          node.coverImage.extraLarge ||
+          node.coverImage.large ||
+          node.coverImage.medium ||
+          "";
         const banner = node.bannerImage || "";
         const episodes = node.episodes || 12;
         const pop = node.popularity || 0;
 
         if (edge.relationType === "PREQUEL") {
-          seasons.push({ animeId: node.id, title, coverImage: cover, bannerImage: banner, episodesCount: episodes, role: "prequel", popularity: pop });
+          seasons.push({
+            animeId: node.id,
+            title,
+            coverImage: cover,
+            bannerImage: banner,
+            episodesCount: episodes,
+            role: "prequel",
+            popularity: pop,
+          });
         } else if (edge.relationType === "SEQUEL") {
-          seasons.push({ animeId: node.id, title, coverImage: cover, bannerImage: banner, episodesCount: episodes, role: "sequel", popularity: pop });
-        } else if (edge.relationType === "ALTERNATIVE" || edge.relationType === "SIDE_STORY" || edge.relationType === "PARENT") {
+          seasons.push({
+            animeId: node.id,
+            title,
+            coverImage: cover,
+            bannerImage: banner,
+            episodesCount: episodes,
+            role: "sequel",
+            popularity: pop,
+          });
+        } else if (
+          edge.relationType === "ALTERNATIVE" ||
+          edge.relationType === "SIDE_STORY" ||
+          edge.relationType === "PARENT"
+        ) {
           // Avoid clutter unless popular
           if (pop > 1000) {
-            seasons.push({ animeId: node.id, title, coverImage: cover, bannerImage: banner, episodesCount: episodes, role: "alternative", popularity: pop });
+            seasons.push({
+              animeId: node.id,
+              title,
+              coverImage: cover,
+              bannerImage: banner,
+              episodesCount: episodes,
+              role: "alternative",
+              popularity: pop,
+            });
           }
         }
       }
@@ -355,12 +469,22 @@ export function buildSeasonsList(anime: AniListAnime): SeasonInfo[] {
   }
 
   // Deduplicate by animeId just in case
-  const uniqueSeasons = seasons.filter((s, index, self) => self.findIndex((u) => u.animeId === s.animeId) === index);
+  const uniqueSeasons = seasons.filter(
+    (s, index, self) =>
+      self.findIndex((u) => u.animeId === s.animeId) === index,
+  );
 
   // Group roles
-  const prequels = uniqueSeasons.filter((s) => s.role === "prequel").sort((a, b) => a.animeId - b.animeId);
-  const sequels = uniqueSeasons.filter((s) => s.role === "sequel").sort((a, b) => a.animeId - b.animeId);
-  const alternatives = uniqueSeasons.filter((s) => s.role === "alternative").sort((a, b) => b.popularity - a.popularity).slice(0, 2); // limit to 2 alternatives
+  const prequels = uniqueSeasons
+    .filter((s) => s.role === "prequel")
+    .sort((a, b) => a.animeId - b.animeId);
+  const sequels = uniqueSeasons
+    .filter((s) => s.role === "sequel")
+    .sort((a, b) => a.animeId - b.animeId);
+  const alternatives = uniqueSeasons
+    .filter((s) => s.role === "alternative")
+    .sort((a, b) => b.popularity - a.popularity)
+    .slice(0, 2); // limit to 2 alternatives
 
   // Combine into direct sequence
   // Order: prequels -> current -> sequels -> alternatives
@@ -369,7 +493,11 @@ export function buildSeasonsList(anime: AniListAnime): SeasonInfo[] {
     {
       animeId: anime.id,
       title: currentTitle,
-      coverImage: anime.coverImage.extraLarge || anime.coverImage.large || anime.coverImage.medium || "",
+      coverImage:
+        anime.coverImage.extraLarge ||
+        anime.coverImage.large ||
+        anime.coverImage.medium ||
+        "",
       bannerImage: anime.bannerImage || "",
       episodesCount: anime.episodes || 12,
       role: "current",
@@ -402,29 +530,73 @@ export const ANIME_VIDEO_CLIPS: AnimeVideoLoop[] = [
   {
     url: "https://assets.mixkit.co/videos/preview/mixkit-star-trails-over-dense-forest-41582-large.mp4", // Starry cinematic sky
     subtitles: [
-      { time: 2, text: "Long ago, the world was filled with magical elements...", jpn: "遥か昔、世界は魔法、元素で満ちていた……" },
-      { time: 6, text: "But shadows began rising from the dark abyss.", jpn: "しかし、深淵より闇の影が立ち上がった。" },
-      { time: 10, text: "Can our young hero unlock the ultimate standard?", jpn: "若き勇者は究極の規格を解放できるのか？" },
-      { time: 15, text: "Find out in this incredible adventure of MakiTV!", jpn: "MakiTVの素晴らしい冒険で、真実を見届けよ！" },
-      { time: 20, text: "This is my absolute standard, my ultimate destiny!", jpn: "これが私の絶対的な基準であり、究極の運命だ！" }
+      {
+        time: 2,
+        text: "Long ago, the world was filled with magical elements...",
+        jpn: "遥か昔、世界は魔法、元素で満ちていた……",
+      },
+      {
+        time: 6,
+        text: "But shadows began rising from the dark abyss.",
+        jpn: "しかし、深淵より闇の影が立ち上がった。",
+      },
+      {
+        time: 10,
+        text: "Can our young hero unlock the ultimate standard?",
+        jpn: "若き勇者は究極の規格を解放できるのか？",
+      },
+      {
+        time: 15,
+        text: "Find out in this incredible adventure of MakiTV!",
+        jpn: "MakiTVの素晴らしい冒険で、真実を見届けよ！",
+      },
+      {
+        time: 20,
+        text: "This is my absolute standard, my ultimate destiny!",
+        jpn: "これが私の絶対的な基準であり、究極の運命だ！",
+      },
     ],
   },
   {
     url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4", // generic funny clip
     subtitles: [
-      { time: 3, text: "The forest of spirits awakened in spring...", jpn: "春、精霊たちの森が目覚めた……" },
-      { time: 8, text: "They lived in pure joy and tranquility.", jpn: "彼らは純粋な喜びと静寂の中で暮らしていた。" },
-      { time: 15, text: "Until the supreme guardian arrived!", jpn: "至高の守護者が現れるその時まで！" },
-    ]
+      {
+        time: 3,
+        text: "The forest of spirits awakened in spring...",
+        jpn: "春、精霊たちの森が目覚めた……",
+      },
+      {
+        time: 8,
+        text: "They lived in pure joy and tranquility.",
+        jpn: "彼らは純粋な喜びと静寂の中で暮らしていた。",
+      },
+      {
+        time: 15,
+        text: "Until the supreme guardian arrived!",
+        jpn: "至高の守護者が現れるその時まで！",
+      },
+    ],
   },
   {
     url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4", // tech/modern loop
     subtitles: [
-      { time: 3, text: "In the cybernetic neon landscape of Neo-Tokyo...", jpn: "ネオ・東京のサイバーパンクなネオン街で……" },
-      { time: 8, text: "Every code line tells a story of dreams and nightmares.", jpn: "すべてのコードが夢と悪夢の物語を語る。" },
-      { time: 14, text: "The standard is set! Proceed with caution.", jpn: "基準は設定された！厳重に警戒せよ。" },
-    ]
-  }
+      {
+        time: 3,
+        text: "In the cybernetic neon landscape of Neo-Tokyo...",
+        jpn: "ネオ・東京のサイバーパンクなネオン街で……",
+      },
+      {
+        time: 8,
+        text: "Every code line tells a story of dreams and nightmares.",
+        jpn: "すべてのコードが夢と悪夢の物語を語る。",
+      },
+      {
+        time: 14,
+        text: "The standard is set! Proceed with caution.",
+        jpn: "基準は設定された！厳重に警戒せよ。",
+      },
+    ],
+  },
 ];
 
 export function getClipsByAnimeId(animeId: number): AnimeVideoLoop {
@@ -441,7 +613,7 @@ interface ParsedEpisodeQuery {
 
 export function parseEpisodeSearch(query: string): ParsedEpisodeQuery | null {
   const normalized = query.toLowerCase().trim();
-  
+
   const epRegex = /\b(?:episodes?|ep\.?|e)\s*[:#-]?\s*(\d+)\b/i;
   const seasonRegex = /\b(?:seasons?|s\.?)\s*[:#-]?\s*(\d+)\b/i;
 

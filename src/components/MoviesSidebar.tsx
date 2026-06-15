@@ -15,7 +15,7 @@ export default function MoviesSidebar({
   onNavigate,
   isOpen,
   onClose,
-  onSignInClick
+  onSignInClick,
 }: MoviesSidebarProps) {
   const primaryNavItems = [
     { id: "home" as const, label: "Home", icon: Home },
@@ -51,7 +51,9 @@ export default function MoviesSidebar({
                   transition={{ type: "spring", stiffness: 300, damping: 20 }}
                 />
               )}
-              <Icon className={`w-5.5 h-5.5 transition-all duration-300 relative z-30 group-hover:scale-110 ${isActive ? "text-white" : "text-white/60 group-hover:text-white/90"}`} />
+              <Icon
+                className={`w-5.5 h-5.5 transition-all duration-300 relative z-30 group-hover:scale-110 ${isActive ? "text-white" : "text-white/60 group-hover:text-white/90"}`}
+              />
             </button>
           );
         })}
@@ -68,7 +70,7 @@ export default function MoviesSidebar({
               onClick={onClose}
               className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] hidden md:block"
             />
-            
+
             <motion.aside
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
@@ -80,12 +82,14 @@ export default function MoviesSidebar({
 
               <div className="p-6 pb-2 pt-8 flex items-center justify-between relative z-10">
                 <div className="flex flex-col">
-                  <span className="text-xl md:text-2xl font-black tracking-wider bg-gradient-to-r from-rose-500 via-rose-400 to-rose-300 bg-clip-text text-transparent">
+                  <span className="text-xl md:text-2xl font-black tracking-wider bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-transparent">
                     miyoro
                   </span>
-                  <span className="text-xs text-white/50 font-bold tracking-widest uppercase">Movies</span>
+                  <span className="text-xs text-white/50 font-bold tracking-widest uppercase">
+                    Movies
+                  </span>
                 </div>
-                <button 
+                <button
                   onClick={onClose}
                   className="p-2 text-white/50 hover:text-white hover:bg-white/[0.05] rounded-full transition-colors cursor-pointer"
                 >
@@ -97,7 +101,7 @@ export default function MoviesSidebar({
                 {desktopNavItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = activeTab === item.id;
-                  
+
                   return (
                     <button
                       key={item.id}
@@ -105,10 +109,14 @@ export default function MoviesSidebar({
                         onNavigate(item.id);
                         onClose?.();
                       }}
-                      className={`flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 w-full text-left group ${isActive ? 'bg-white/[0.08] text-rose-400' : 'text-white/60 hover:text-white/90 hover:bg-white/[0.04]'}`}
+                      className={`flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 w-full text-left group ${isActive ? "bg-white/[0.08] text-rose-400" : "text-white/60 hover:text-white/90 hover:bg-white/[0.04]"}`}
                     >
-                      <Icon className={`w-5 h-5 transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110'} drop-shadow-md`} />
-                      <span className="font-semibold text-[15px] tracking-wide">{item.label}</span>
+                      <Icon
+                        className={`w-5 h-5 transition-transform duration-300 ${isActive ? "scale-110" : "group-hover:scale-110"} drop-shadow-md`}
+                      />
+                      <span className="font-semibold text-[15px] tracking-wide">
+                        {item.label}
+                      </span>
                     </button>
                   );
                 })}
@@ -120,13 +128,14 @@ export default function MoviesSidebar({
                     onNavigate("settings");
                     onClose?.();
                   }}
-                  className={`flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 w-full text-left group ${activeTab === 'settings' ? 'bg-white/[0.08] text-rose-400' : 'text-white/60 hover:text-white/90 hover:bg-white/[0.04]'}`}
+                  className={`flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 w-full text-left group ${activeTab === "settings" ? "bg-white/[0.08] text-rose-400" : "text-white/60 hover:text-white/90 hover:bg-white/[0.04]"}`}
                 >
                   <Settings className="w-5 h-5 transition-transform duration-300 group-hover:rotate-45 drop-shadow-md" />
-                  <span className="font-semibold text-[15px] tracking-wide">Settings</span>
+                  <span className="font-semibold text-[15px] tracking-wide">
+                    Settings
+                  </span>
                 </button>
               </div>
-
             </motion.aside>
           </>
         )}
