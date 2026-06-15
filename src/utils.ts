@@ -105,8 +105,13 @@ export function saveUnifiedWatchState(state: UnifiedWatchState): void {
 }
 
 // 1. History Persistence Helpers
-export function getWatchHistory(): WatchHistoryItem[] {
+// Returns the single unified history array
+export function getUnifiedHistory(): WatchHistoryItem[] {
   return storage.get<WatchHistoryItem[]>("history", []);
+}
+
+export function getWatchHistory(): WatchHistoryItem[] {
+  return getUnifiedHistory().filter(h => !h.type || h.type === 'anime');
 }
 
 export interface MovieHistoryItem {
@@ -121,20 +126,21 @@ export interface MovieHistoryItem {
 }
 
 export function getMovieHistory(): MovieHistoryItem[] {
-  return storage.get<MovieHistoryItem[]>("movie_history", []);
+  return getUnifiedHistory().filter(h => h.type === 'movie') as any as MovieHistoryItem[];
 }
 
 export function addToMovieHistory(item: Omit<MovieHistoryItem, "watchedAt">): void {
-  const history = getMovieHistory();
-  const newItem: MovieHistoryItem = {
+  const history = getUnifiedHistory();
+  const newItem: WatchHistoryItem = {
     ...item,
+    type: 'movie',
     watchedAt: new Date().toISOString()
   };
-  const filtered = history.filter((h) => h.tmdbId !== item.tmdbId);
+  const filtered = history.filter((h) => !(h.type === 'movie' && h.tmdbId === item.tmdbId));
   filtered.unshift(newItem);
-  const newHistory = filtered.slice(0, 100);
-  storage.set("movie_history", newHistory);
-  syncToFirebase("movie_history", newHistory);
+  const newHistory = filtered.slice(0, 300);
+  storage.set("history", newHistory);
+  syncToFirebase("history", newHistory);
 }
 
 export interface SeriesHistoryItem {
@@ -151,44 +157,46 @@ export interface SeriesHistoryItem {
 }
 
 export function getSeriesHistory(): SeriesHistoryItem[] {
-  return storage.get<SeriesHistoryItem[]>("series_history", []);
+  return getUnifiedHistory().filter(h => h.type === 'series') as any as SeriesHistoryItem[];
 }
 
 export function addToSeriesHistory(item: Omit<SeriesHistoryItem, "watchedAt">): void {
-  const history = getSeriesHistory();
-  const newItem: SeriesHistoryItem = {
+  const history = getUnifiedHistory();
+  const newItem: WatchHistoryItem = {
     ...item,
+    type: 'series',
     watchedAt: new Date().toISOString()
   };
-  const filtered = history.filter((h) => h.tmdbId !== item.tmdbId);
+  const filtered = history.filter((h) => !(h.type === 'series' && h.tmdbId === item.tmdbId));
   filtered.unshift(newItem);
-  const newHistory = filtered.slice(0, 100);
-  storage.set("series_history", newHistory);
-  syncToFirebase("series_history", newHistory);
+  const newHistory = filtered.slice(0, 300);
+  storage.set("history", newHistory);
+  syncToFirebase("history", newHistory);
 }
 
 export function addToWatchHistory(item: Omit<WatchHistoryItem, "watchedAt">): void {
-  const history = getWatchHistory();
+  const history = getUnifiedHistory();
   
   // Try to find if we already have this episode in history to preserve existing thumbnailUrl if not provided
   const existing = history.find(
-    (h) => h.animeId === item.animeId && h.episodeNumber === item.episodeNumber && h.seasonNumber === item.seasonNumber
+    (h) => (!h.type || h.type === 'anime') && h.animeId === item.animeId && h.episodeNumber === item.episodeNumber && h.seasonNumber === item.seasonNumber
   );
 
   const newItem: WatchHistoryItem = {
     ...item,
+    type: 'anime',
     watchedAt: new Date().toISOString(),
     thumbnailUrl: item.thumbnailUrl || existing?.thumbnailUrl
   };
 
   // Remove existing history item for same anime and same episode/season if exists to put it on top
   const filtered = history.filter(
-    (h) => !(h.animeId === item.animeId && h.episodeNumber === item.episodeNumber && h.seasonNumber === item.seasonNumber)
+    (h) => !((!h.type || h.type === 'anime') && h.animeId === item.animeId && h.episodeNumber === item.episodeNumber && h.seasonNumber === item.seasonNumber)
   );
 
   filtered.unshift(newItem); // put on top
-  const newHistory = filtered.slice(0, 100);
-  storage.set("history", newHistory); // keep last 100
+  const newHistory = filtered.slice(0, 300); // keep last 300
+  storage.set("history", newHistory); // keep last 300
   syncToFirebase("history", newHistory);
 }
 

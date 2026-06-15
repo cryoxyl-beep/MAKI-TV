@@ -73,16 +73,27 @@ export interface AniListAnime {
 }
 
 export interface WatchHistoryItem {
-  animeId: number;
-  animeTitle: string;
-  episodeNumber: number;
-  seasonNumber: number;
+  type?: 'anime' | 'movie' | 'series';
+  // Common
   watchedAt: string; // ISO Date String
   progress: number; // 0 to 100
-  duration: string; // Duration string e.g., "24:00"
+  duration?: string | number; // Duration string e.g., "24:00"
+
+  // Anime
+  animeId?: number;
+  animeTitle?: string;
+  episodeNumber?: number;
+  seasonNumber?: number;
   bannerImage?: string;
   coverImage?: string;
   thumbnailUrl?: string;
+
+  // Movie/Series
+  tmdbId?: number;
+  title?: string;
+  provider?: string;
+  posterPath?: string;
+  backdropPath?: string;
 }
 
 export interface SubscriptionItem {
