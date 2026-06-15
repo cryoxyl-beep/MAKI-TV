@@ -165,21 +165,23 @@ export interface MovieHistoryItem {
 }
 
 export function getMovieHistory(): MovieHistoryItem[] {
-  return storage.get<MovieHistoryItem[]>("movie_history", []);
+  return getUnifiedHistory().filter(h => h.type === 'movie') as any as MovieHistoryItem[];
 }
 
 export function addToMovieHistory(
   item: Omit<MovieHistoryItem, "watchedAt">,
 ): void {
-  const history = getMovieHistory();
+  const history = getUnifiedHistory();
   const newItem = {
     ...item,
+    type: 'movie' as const,
     watchedAt: new Date().toISOString(),
   };
-  const filtered = history.filter((h) => h.tmdbId !== item.tmdbId);
+  const filtered = history.filter((h) => !(h.type === 'movie' && h.tmdbId === item.tmdbId));
   filtered.unshift(newItem as any);
   const newHistory = filtered.slice(0, 300);
-  storage.set("movie_history", newHistory);
+  storage.set("history", newHistory);
+  syncToFirebase("history", newHistory);
 }
 
 export interface SeriesHistoryItem {
@@ -196,20 +198,22 @@ export interface SeriesHistoryItem {
 }
 
 export function getSeriesHistory(): SeriesHistoryItem[] {
-  return storage.get<SeriesHistoryItem[]>("series_history", []);
+  return getUnifiedHistory().filter(h => h.type === 'series') as any as SeriesHistoryItem[];
 }
 
 export function addToSeriesHistory(
   item: Omit<SeriesHistoryItem, "watchedAt">,
 ): void {
-  const history = getSeriesHistory();
+  const history = getUnifiedHistory();
   const newItem = {
     ...item,
+    type: 'series' as const,
     watchedAt: new Date().toISOString(),
   };
   const filtered = history.filter(
     (h) =>
       !(
+        h.type === 'series' &&
         h.tmdbId === item.tmdbId &&
         h.seasonNumber === item.seasonNumber &&
         h.episodeNumber === item.episodeNumber
@@ -217,7 +221,8 @@ export function addToSeriesHistory(
   );
   filtered.unshift(newItem as any);
   const newHistory = filtered.slice(0, 300);
-  storage.set("series_history", newHistory);
+  storage.set("history", newHistory);
+  syncToFirebase("history", newHistory);
 }
 
 export function addToWatchHistory(
