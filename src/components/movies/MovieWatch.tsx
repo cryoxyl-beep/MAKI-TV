@@ -12,6 +12,7 @@ import SkeletonLoader from "../SkeletonLoader";
 import LazyImage from "../LazyImage";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, Info, Bookmark, Clock, Flag } from "lucide-react";
+import { useMoviesData } from "../../hooks/useMoviesData";
 
 const MOVIE_PROVIDERS = [
   { id: "vidfast", label: "Matsuri" },
@@ -19,45 +20,13 @@ const MOVIE_PROVIDERS = [
   { id: "cinesrc", label: "Taberu" },
 ];
 
-function isMovieInLibrary(id: number) {
-  const lib = storage.get<number[]>("movie_library_ids", []);
-  return lib.includes(id);
-}
-
-function toggleMovieLibrary(id: number) {
-  let lib = storage.get<number[]>("movie_library_ids", []);
-  if (lib.includes(id)) {
-    lib = lib.filter((x) => x !== id);
-  } else {
-    lib.push(id);
-  }
-  storage.set("movie_library_ids", lib);
-}
-
-function isMovieWatchLater(id: number) {
-  const wl = storage.get<number[]>("movie_watch_later_ids", []);
-  return wl.includes(id);
-}
-
-function toggleMovieWatchLaterState(id: number) {
-  let wl = storage.get<number[]>("movie_watch_later_ids", []);
-  if (wl.includes(id)) {
-    wl = wl.filter((x) => x !== id);
-  } else {
-    wl.push(id);
-  }
-  storage.set("movie_watch_later_ids", wl);
-}
-
 export default function MovieWatch() {
   const { tmdbId } = useParams();
   const navigate = useNavigate();
+  const { isInLibrary, toggleLibrary, isInWatchLater, toggleWatchLater } = useMoviesData();
 
   const [movie, setMovie] = useState<TMDBMovieDetails | null>(null);
   const [loading, setLoading] = useState(true);
-
-  const [isBookmarked, setIsBookmarked] = useState(false);
-  const [isWatchLater, setIsWatchLater] = useState(false);
 
   const getSettings = () => storage.get<any>("miyoro_settings", null);
   const defaultProvider =
@@ -102,24 +71,15 @@ export default function MovieWatch() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  useEffect(() => {
+  const handleToggleBookmark = async () => {
     if (movie) {
-      setIsBookmarked(isMovieInLibrary(movie.id));
-      setIsWatchLater(isMovieWatchLater(movie.id));
-    }
-  }, [movie]);
-
-  const handleToggleBookmark = () => {
-    if (movie) {
-      toggleMovieLibrary(movie.id);
-      setIsBookmarked(isMovieInLibrary(movie.id));
+      await toggleLibrary(movie as any);
     }
   };
 
-  const handleToggleWatchLater = () => {
+  const handleToggleWatchLater = async () => {
     if (movie) {
-      toggleMovieWatchLaterState(movie.id);
-      setIsWatchLater(isMovieWatchLater(movie.id));
+      await toggleWatchLater(movie as any);
     }
   };
 
@@ -128,7 +88,7 @@ export default function MovieWatch() {
     storage.update("miyoro_settings", (prev: any) => ({
       ...prev,
       playback: { ...prev?.playback, defaultServerMovies: pid },
-    }));
+    }), {});
     setIsServerDropdownOpen(false);
   };
 
@@ -242,12 +202,12 @@ export default function MovieWatch() {
                       onClick={handleToggleBookmark}
                       className="p-1.5 text-white/50 hover:text-white hover:scale-110 active:scale-95 transition-all duration-150"
                       title={
-                        isBookmarked ? "Remove Bookmark" : "Bookmark Movie"
+                        movie && isInLibrary(movie.id) ? "Remove Bookmark" : "Bookmark Movie"
                       }
                     >
                       <Bookmark
                         className="w-4.5 h-4.5"
-                        fill={isBookmarked ? "currentColor" : "none"}
+                        fill={movie && isInLibrary(movie.id) ? "currentColor" : "none"}
                       />
                     </button>
                   </div>
@@ -303,7 +263,7 @@ export default function MovieWatch() {
                 <button
                   onClick={handleToggleWatchLater}
                   className={`flex items-center gap-2 text-[13px] font-semibold px-4 py-2 rounded-full transition-colors whitespace-nowrap ${
-                    isWatchLater
+                    isInWatchLater(movie.id)
                       ? "bg-white text-black hover:bg-gray-200"
                       : "bg-white/[0.08] text-white hover:bg-white/[0.12]"
                   }`}

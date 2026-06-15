@@ -21,21 +21,7 @@ import SeriesCard from "./SeriesCard";
 import LazyImage from "../LazyImage";
 import ShelfScroller from "../ShelfScroller";
 import { getSeriesHistory, SeriesHistoryItem, storage } from "../../utils";
-
-// Simple local library for series
-function isSeriesInLibrary(id: number) {
-  const lib = storage.get<number[]>("series_library_ids", []);
-  return lib.includes(id);
-}
-function toggleSeriesLibrary(id: number) {
-  let lib = storage.get<number[]>("series_library_ids", []);
-  if (lib.includes(id)) {
-    lib = lib.filter((x) => x !== id);
-  } else {
-    lib.push(id);
-  }
-  storage.set("series_library_ids", lib);
-}
+import { useSeriesData } from "../../hooks/useSeriesData";
 
 const HeroNavDot: React.FC<{
   isActive: boolean;
@@ -89,6 +75,7 @@ const HeroNavDot: React.FC<{
 };
 
 export default function SeriesHome() {
+  const { isInLibrary, toggleLibrary } = useSeriesData();
   const [trending, setTrending] = useState<TMDBTVShow[]>([]);
   const [popular, setPopular] = useState<TMDBTVShow[]>([]);
   const [topRated, setTopRated] = useState<TMDBTVShow[]>([]);
@@ -189,7 +176,7 @@ export default function SeriesHome() {
             >
               {heroSeries.map((series, idx) => {
                 const backdrop = `${TMDB_IMAGE_BASE_URL}${series.backdrop_path || series.poster_path}`;
-                const subscribed = isSeriesInLibrary(series.id);
+                const subscribed = isInLibrary(series.id);
 
                 return (
                   <SwiperSlide key={series.id}>
@@ -245,9 +232,8 @@ export default function SeriesHome() {
                               </button>
 
                               <button
-                                onClick={() => {
-                                  toggleSeriesLibrary(series.id);
-                                  setLibraryUpdateKey((prev) => prev + 1);
+                                onClick={async () => {
+                                  await toggleLibrary(series as any);
                                 }}
                                 className={`px-6 py-2.5 md:px-8 md:py-3 bg-white/[0.08] hover:bg-white/[0.12] backdrop-blur-[20px] border ${subscribed ? "border-white/[0.4]" : "border-white/[0.15]"} text-white font-bold rounded-md flex items-center gap-2 shadow-[0_8px_32px_rgba(0,0,0,0.2)] hover:shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer group`}
                               >

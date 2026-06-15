@@ -6,29 +6,15 @@ import LazyImage from "../LazyImage";
 import { storage } from "../../utils";
 import { motion, AnimatePresence } from "framer-motion";
 import SkeletonLoader from "../SkeletonLoader";
-
-function isSeriesInLibrary(id: number) {
-  const lib = storage.get<number[]>("series_library_ids", []);
-  return lib.includes(id);
-}
-
-function toggleSeriesLibrary(id: number) {
-  let lib = storage.get<number[]>("series_library_ids", []);
-  if (lib.includes(id)) {
-    lib = lib.filter(x => x !== id);
-  } else {
-    lib.push(id);
-  }
-  storage.set("series_library_ids", lib);
-}
+import { useSeriesData } from "../../hooks/useSeriesData";
 
 export default function SeriesChannel() {
   const { tmdbId } = useParams();
   const navigate = useNavigate();
+  const { isInLibrary, toggleLibrary } = useSeriesData();
   const [series, setSeries] = useState<TMDBTVDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
-  const [libraryUpdateKey, setLibraryUpdateKey] = useState(0);
   
   const [selectedSeason, setSelectedSeason] = useState<number>(1);
   const [seasonDetails, setSeasonDetails] = useState<TMDBSeasonDetails | null>(null);
@@ -95,7 +81,7 @@ export default function SeriesChannel() {
     );
   }
 
-  const subscribed = isSeriesInLibrary(series.id);
+  const subscribed = isInLibrary(series.id);
 
   return (
     <div className="relative z-10 w-full bg-[#09090b] min-h-screen select-none pb-20 font-sans group/page -mt-[56px]">
@@ -205,9 +191,8 @@ export default function SeriesChannel() {
               </button>
               
               <button 
-                onClick={() => {
-                  toggleSeriesLibrary(series.id);
-                  setLibraryUpdateKey(prev => prev + 1);
+                onClick={async () => {
+                  await toggleLibrary(series as any);
                 }}
                 className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 border border-white/5 flex items-center justify-center transition-all text-white active:scale-95 cursor-pointer"
                 title={subscribed ? "Remove from Library" : "Add to Library"}

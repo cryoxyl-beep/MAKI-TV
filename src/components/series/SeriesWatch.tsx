@@ -9,6 +9,7 @@ import LazyImage from "../LazyImage";
 import { motion, AnimatePresence } from "framer-motion";
 import { Virtuoso, VirtuosoGrid } from "react-virtuoso";
 import { Play, ChevronLeft, ChevronRight, ChevronDown, Grid, List, Search, Info, Bookmark, Clock, Flag } from "lucide-react";
+import { useSeriesData } from "../../hooks/useSeriesData";
 
 const SERIES_PROVIDERS = [
   { id: "vidfast", label: "Matsuri" },
@@ -16,39 +17,10 @@ const SERIES_PROVIDERS = [
   { id: "cinesrc", label: "Taberu" }
 ];
 
-function isSeriesInLibrary(id: number) {
-  const lib = storage.get<number[]>("series_library_ids", []);
-  return lib.includes(id);
-}
-
-function toggleSeriesLibrary(id: number) {
-  let lib = storage.get<number[]>("series_library_ids", []);
-  if (lib.includes(id)) {
-    lib = lib.filter(x => x !== id);
-  } else {
-    lib.push(id);
-  }
-  storage.set("series_library_ids", lib);
-}
-
-function isSeriesWatchLater(id: number) {
-  const wl = storage.get<number[]>("series_watch_later_ids", []);
-  return wl.includes(id);
-}
-
-function toggleSeriesWatchLaterState(id: number) {
-  let wl = storage.get<number[]>("series_watch_later_ids", []);
-  if (wl.includes(id)) {
-    wl = wl.filter(x => x !== id);
-  } else {
-    wl.push(id);
-  }
-  storage.set("series_watch_later_ids", wl);
-}
-
 export default function SeriesWatch() {
   const { tmdbId, season, episode } = useParams();
   const navigate = useNavigate();
+  const { isInLibrary, toggleLibrary, isInWatchLater, toggleWatchLater } = useSeriesData();
   const seasonNum = parseInt(season || "1", 10);
   const episodeNum = parseInt(episode || "1", 10);
 
@@ -68,31 +40,19 @@ export default function SeriesWatch() {
   const serverDropdownRef = useRef<HTMLDivElement>(null);
   const episodeDropdownRef = useRef<HTMLDivElement>(null);
 
-  const [isBookmarked, setIsBookmarked] = useState(false);
-  const [isWatchLater, setIsWatchLater] = useState(false);
-
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [tmdbId, season, episode]);
 
-  useEffect(() => {
+  const handleToggleBookmark = async () => {
     if (series) {
-      setIsBookmarked(isSeriesInLibrary(series.id));
-      setIsWatchLater(isSeriesWatchLater(series.id));
-    }
-  }, [series]);
-
-  const handleToggleBookmark = () => {
-    if (series) {
-      toggleSeriesLibrary(series.id);
-      setIsBookmarked(isSeriesInLibrary(series.id));
+      await toggleLibrary(series as any);
     }
   };
 
-  const handleToggleWatchLater = () => {
+  const handleToggleWatchLater = async () => {
     if (series) {
-      toggleSeriesWatchLaterState(series.id);
-      setIsWatchLater(isSeriesWatchLater(series.id));
+      await toggleWatchLater(series as any);
     }
   };
 
@@ -146,7 +106,7 @@ export default function SeriesWatch() {
 
   const handleSelectProvider = (pid: string) => {
     setSelectedProvider(pid);
-    storage.update("miyoro_settings", (prev: any) => ({ ...prev, playback: { ...prev?.playback, defaultServerSeries: pid } }));
+    storage.update("miyoro_settings", (prev: any) => ({ ...prev, playback: { ...prev?.playback, defaultServerSeries: pid } }), {});
     setIsServerDropdownOpen(false);
   };
 
@@ -435,9 +395,9 @@ export default function SeriesWatch() {
                     <button 
                        onClick={handleToggleBookmark}
                        className="p-1.5 text-white/50 hover:text-white hover:scale-110 active:scale-95 transition-all duration-150"
-                       title={isBookmarked ? "Remove Bookmark" : "Bookmark Series"}
+                       title={isInLibrary(series.id) ? "Remove Bookmark" : "Bookmark Series"}
                     >
-                      <Bookmark className="w-4.5 h-4.5" fill={isBookmarked ? "currentColor" : "none"} />
+                      <Bookmark className="w-4.5 h-4.5" fill={isInLibrary(series.id) ? "currentColor" : "none"} />
                     </button>
                   </div>
                 </div>
@@ -480,7 +440,7 @@ export default function SeriesWatch() {
                 <button 
                   onClick={handleToggleWatchLater} 
                   className={`flex items-center gap-2 text-[13px] font-semibold px-4 py-2 rounded-full transition-colors whitespace-nowrap ${
-                    isWatchLater ? "bg-white text-black hover:bg-gray-200" : "bg-white/[0.08] text-white hover:bg-white/[0.12]"
+                    isInWatchLater(series.id) ? "bg-white text-black hover:bg-gray-200" : "bg-white/[0.08] text-white hover:bg-white/[0.12]"
                   }`}
                 >
                   <Clock className="w-4 h-4" fill="none" /> 

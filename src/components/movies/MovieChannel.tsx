@@ -10,28 +10,14 @@ import {
 import LazyImage from "../LazyImage";
 import SkeletonLoader from "../SkeletonLoader";
 import { storage } from "../../utils";
-
-function isMovieInLibrary(id: number) {
-  const lib = storage.get<number[]>("movie_library_ids", []);
-  return lib.includes(id);
-}
-
-function toggleMovieLibrary(id: number) {
-  let lib = storage.get<number[]>("movie_library_ids", []);
-  if (lib.includes(id)) {
-    lib = lib.filter((x) => x !== id);
-  } else {
-    lib.push(id);
-  }
-  storage.set("movie_library_ids", lib);
-}
+import { useMoviesData } from "../../hooks/useMoviesData";
 
 export default function MovieChannel() {
   const { tmdbId } = useParams();
   const navigate = useNavigate();
+  const { isInLibrary, toggleLibrary } = useMoviesData();
   const [movie, setMovie] = useState<TMDBMovieDetails | null>(null);
   const [loading, setLoading] = useState(true);
-  const [libraryUpdateKey, setLibraryUpdateKey] = useState(0);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -74,7 +60,7 @@ export default function MovieChannel() {
     );
   }
 
-  const subscribed = isMovieInLibrary(movie.id);
+  const subscribed = isInLibrary(movie.id);
 
   return (
     <div className="fixed inset-0 z-10 w-full bg-[#09090b] select-none font-sans overflow-hidden">
@@ -157,9 +143,8 @@ export default function MovieChannel() {
                 </button>
 
                 <button
-                  onClick={() => {
-                    toggleMovieLibrary(movie.id);
-                    setLibraryUpdateKey((prev) => prev + 1);
+                  onClick={async () => {
+                    await toggleLibrary(movie as any);
                   }}
                   className={`px-8 py-3.5 rounded-full backdrop-blur-md border border-white/10 hover:border-white/20 flex items-center justify-center transition-all hover:-translate-y-0.5 active:translate-y-0 cursor-pointer shadow-lg ${subscribed ? "bg-white/10 text-white" : "bg-white/[0.04] text-white/90"}`}
                 >
