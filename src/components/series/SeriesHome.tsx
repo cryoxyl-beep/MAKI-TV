@@ -266,18 +266,18 @@ export default function SeriesHome() {
                 </h2>
               </div>
               <ShelfScroller>
-                {seriesHistory.map((item) => (
+                {seriesHistory.map((item, idx) => (
                   <Link
-                    key={item.tmdbId}
-                    to={`/series/watch/${item.tmdbId}/${item.seasonNumber}/${item.episodeNumber}`}
+                    key={`${item.id}-${item.seasonNumber}-${item.episodeNumber}-${idx}`}
+                    to={`/series/watch/${item.id}/${item.seasonNumber}/${item.episodeNumber}`}
                     className="relative shrink-0 w-[240px] md:w-[280px] aspect-video rounded-xl overflow-hidden group cursor-pointer bg-white/5 border border-white/10"
                   >
                     <LazyImage
                       src={
-                        item.backdropPath
-                          ? `${TMDB_IMAGE_BASE_URL}${item.backdropPath}`
-                          : item.posterPath
-                            ? `${TMDB_IMAGE_BASE_URL}${item.posterPath}`
+                        item.backdropImage
+                          ? `${TMDB_IMAGE_BASE_URL}${item.backdropImage.replace(`${TMDB_IMAGE_BASE_URL_W500}`, "")}`
+                          : item.posterImage
+                            ? `${TMDB_IMAGE_BASE_URL}${item.posterImage.replace(`${TMDB_IMAGE_BASE_URL_W500}`, "")}`
                             : ""
                       }
                       alt={item.title}

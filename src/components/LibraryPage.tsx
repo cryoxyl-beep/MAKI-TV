@@ -142,15 +142,23 @@ export default function LibraryPage({ onWatchEpisode, onNavigateToChannel }: Lib
                           <div className="flex flex-col gap-2">
                             {episodes.map((episode) => (
                               <div
-                                key={`${episode.animeId}-${episode.seasonNumber}-${episode.episodeNumber}`}
-                                onClick={() => onWatchEpisode(episode.animeId, episode.seasonNumber, episode.episodeNumber)}
+                                key={`${episode.id}-${episode.seasonNumber || 0}-${episode.episodeNumber || 0}-${episode.type}`}
+                                onClick={() => {
+                                  if (episode.type === 'movie') {
+                                    window.location.href = `/movies/watch/${episode.id}`;
+                                  } else if (episode.type === 'series') {
+                                    window.location.href = `/series/watch/${episode.id}/${episode.seasonNumber}/${episode.episodeNumber}`;
+                                  } else {
+                                    onWatchEpisode(episode.id, episode.seasonNumber || 1, episode.episodeNumber || 1);
+                                  }
+                                }}
                                 className="flex items-start sm:items-center gap-4 bg-transparent hover:bg-white/[0.03] rounded-xl p-2 cursor-pointer transition-colors group"
                               >
                                 {/* Thumbnail */}
                                 <div className="relative aspect-video w-40 sm:w-56 bg-black rounded-lg overflow-hidden shrink-0 border border-white/5">
                                   <LazyImage
-                                    src={episode.thumbnailUrl || episode.bannerImage || episode.coverImage || ""}
-                                    alt={episode.animeTitle}
+                                    src={episode.thumbnailUrl || episode.backdropImage || episode.posterImage || episode.bannerImage || episode.coverImage || ""}
+                                    alt={episode.title || episode.animeTitle}
                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                     referrerPolicy="no-referrer"
                                   />
@@ -160,6 +168,16 @@ export default function LibraryPage({ onWatchEpisode, onNavigateToChannel }: Lib
                                       <Play className="w-4 h-4 fill-white text-white drop-shadow-md ml-0.5" />
                                     </div>
                                   </div>
+                                  {episode.type === 'movie' && (
+                                    <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/60 backdrop-blur-md rounded text-[10px] font-bold text-white border border-white/10 uppercase tracking-widest z-10">
+                                      MOVIE
+                                    </div>
+                                  )}
+                                  {(episode.type === 'anime' || episode.type === 'series') && episode.episodeNumber && (
+                                    <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/60 backdrop-blur-md rounded text-[10px] font-bold text-white border border-white/10 uppercase tracking-widest z-10">
+                                      EP {episode.episodeNumber}
+                                    </div>
+                                  )}
                                   {episode.progress > 0 && (
                                     <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
                                       <div
@@ -172,15 +190,21 @@ export default function LibraryPage({ onWatchEpisode, onNavigateToChannel }: Lib
                                 {/* Info */}
                                 <div className="flex-1 min-w-0 py-1 flex flex-col justify-center h-full">
                                   <h3 className="text-white font-semibold text-sm sm:text-base leading-snug truncate group-hover:text-gray-200 transition-colors">
-                                    {episode.animeTitle}
+                                    {episode.title || episode.animeTitle}
                                   </h3>
                                   <h4 className="text-gray-400 text-xs sm:text-sm font-medium mt-1 truncate">
-                                    <EpisodeTitleLabel 
-                                      animeId={episode.animeId} 
-                                      seasonNumber={episode.seasonNumber} 
-                                      episodeNumber={episode.episodeNumber}
-                                      asFallback 
-                                    />
+                                    {episode.type === 'movie' ? (
+                                      `Movie • ${episode.provider || ''}`
+                                    ) : episode.type === 'series' ? (
+                                      `Season ${episode.seasonNumber} • Episode ${episode.episodeNumber}`
+                                    ) : (
+                                      <EpisodeTitleLabel 
+                                        animeId={episode.id} 
+                                        seasonNumber={episode.seasonNumber || 1} 
+                                        episodeNumber={episode.episodeNumber || 1}
+                                        asFallback 
+                                      />
+                                    )}
                                   </h4>
                                 </div>
                               </div>

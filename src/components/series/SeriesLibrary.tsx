@@ -123,16 +123,16 @@ export default function SeriesLibrary() {
                             {dateStr}
                           </h2>
                           <div className="flex flex-col gap-2">
-                            {items.map((item) => (
+                            {items.map((item, idx) => (
                               <div
-                                key={`${item.tmdbId}-${item.seasonNumber}-${item.episodeNumber}`}
-                                onClick={() => navigate(`/series/watch/${item.tmdbId}/${item.seasonNumber}/${item.episodeNumber}`)}
+                                key={`${item.id}-${item.seasonNumber}-${item.episodeNumber}-${idx}`}
+                                onClick={() => navigate(`/series/watch/${item.id}/${item.seasonNumber}/${item.episodeNumber}`)}
                                 className="flex items-start sm:items-center gap-4 bg-transparent hover:bg-white/[0.03] rounded-xl p-2 cursor-pointer transition-colors group"
                               >
                                 {/* Thumbnail */}
                                 <div className="relative aspect-video w-40 sm:w-56 bg-black rounded-lg overflow-hidden shrink-0 border border-white/5">
                                   <LazyImage
-                                    src={item.backdropPath ? `${TMDB_IMAGE_BASE_URL_W500}${item.backdropPath}` : ''}
+                                    src={item.backdropImage ? `${TMDB_IMAGE_BASE_URL_W500}${item.backdropImage.replace(`${TMDB_IMAGE_BASE_URL_W500}`, "")}` : ''}
                                     alt={item.title}
                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                     referrerPolicy="no-referrer"

@@ -146,54 +146,83 @@ export function saveUnifiedWatchState(state: UnifiedWatchState): void {
 // 1. History Persistence Helpers
 // Returns the single unified history array
 export function getUnifiedHistory(): WatchHistoryItem[] {
-  return storage.get<WatchHistoryItem[]>("history", []);
+  const history = storage.get<WatchHistoryItem[]>("history", []);
+  
+  // Normalize legacy data fields to unified structure dynamically
+  return history.map(item => {
+    if (!item.id && (item.animeId || item.tmdbId)) {
+      item.id = (item.animeId || item.tmdbId) as number;
+    }
+    if (!item.title && item.animeTitle) {
+      item.title = item.animeTitle;
+    }
+    if (!item.posterImage && (item.coverImage || item.posterPath)) {
+      item.posterImage = (item.coverImage || item.posterPath) as string;
+    }
+    if (!item.backdropImage && (item.bannerImage || item.backdropPath)) {
+      item.backdropImage = (item.bannerImage || item.backdropPath) as string;
+    }
+    if (!item.type) {
+      item.type = 'anime';
+    }
+    return item;
+  });
 }
 
 export function getWatchHistory(): WatchHistoryItem[] {
   return getUnifiedHistory().filter((h) => !h.type || h.type === "anime");
 }
 
-export interface MovieHistoryItem {
+export type MovieHistoryItem = WatchHistoryItem;
+
+export function getMovieHistory(): MovieHistoryItem[] {
+  return getUnifiedHistory().filter(
+    (h) => h.type === "movie",
+  );
+}
+
+export interface MovieHistoryInput {
   tmdbId: number;
   title: string;
-  watchedAt: string;
-  provider: string;
-  progress: number; // percentage
+  provider: string; // provider shouldn't be required but it's passed
+  progress: number;
   duration?: number;
   posterPath?: string;
   backdropPath?: string;
 }
 
-export function getMovieHistory(): MovieHistoryItem[] {
-  return getUnifiedHistory().filter(
-    (h) => h.type === "movie",
-  ) as any as MovieHistoryItem[];
-}
-
-export function addToMovieHistory(
-  item: Omit<MovieHistoryItem, "watchedAt">,
-): void {
+export function addToMovieHistory(item: MovieHistoryInput): void {
   const history = getUnifiedHistory();
-  const newItem = {
+  const newItem: WatchHistoryItem = {
     ...item,
-    type: "movie" as const,
+    id: item.tmdbId,
+    posterImage: item.posterPath || "",
+    backdropImage: item.backdropPath || "",
+    type: "movie",
     watchedAt: new Date().toISOString(),
   };
   const filtered = history.filter(
-    (h) => !(h.type === "movie" && h.tmdbId === item.tmdbId),
+    (h) => !(h.type === "movie" && (h.id === item.tmdbId || h.tmdbId === item.tmdbId)),
   );
-  filtered.unshift(newItem as any);
+  filtered.unshift(newItem);
   const newHistory = filtered.slice(0, 300);
   storage.set("history", newHistory);
   syncToFirebase("history", newHistory);
 }
 
-export interface SeriesHistoryItem {
+export type SeriesHistoryItem = WatchHistoryItem;
+
+export function getSeriesHistory(): SeriesHistoryItem[] {
+  return getUnifiedHistory().filter(
+    (h) => h.type === "series",
+  );
+}
+
+export interface SeriesHistoryInput {
   tmdbId: number;
   title: string;
   seasonNumber: number;
   episodeNumber: number;
-  watchedAt: string;
   provider: string;
   progress: number;
   duration?: number;
@@ -201,52 +230,61 @@ export interface SeriesHistoryItem {
   backdropPath?: string;
 }
 
-export function getSeriesHistory(): SeriesHistoryItem[] {
-  return getUnifiedHistory().filter(
-    (h) => h.type === "series",
-  ) as any as SeriesHistoryItem[];
-}
-
-export function addToSeriesHistory(
-  item: Omit<SeriesHistoryItem, "watchedAt">,
-): void {
+export function addToSeriesHistory(item: SeriesHistoryInput): void {
   const history = getUnifiedHistory();
-  const newItem = {
+  const newItem: WatchHistoryItem = {
     ...item,
-    type: "series" as const,
+    id: item.tmdbId,
+    posterImage: item.posterPath || "",
+    backdropImage: item.backdropPath || "",
+    type: "series",
     watchedAt: new Date().toISOString(),
   };
   const filtered = history.filter(
     (h) =>
       !(
         h.type === "series" &&
-        h.tmdbId === item.tmdbId &&
+        (h.id === item.tmdbId || h.tmdbId === item.tmdbId) &&
         h.seasonNumber === item.seasonNumber &&
         h.episodeNumber === item.episodeNumber
       ),
   );
-  filtered.unshift(newItem as any);
+  filtered.unshift(newItem);
   const newHistory = filtered.slice(0, 300);
   storage.set("history", newHistory);
   syncToFirebase("history", newHistory);
 }
 
-export function addToWatchHistory(
-  item: Omit<WatchHistoryItem, "watchedAt">,
-): void {
+export interface AnimeHistoryInput {
+  animeId: number;
+  animeTitle: string;
+  episodeNumber: number;
+  seasonNumber: number;
+  progress: number;
+  duration?: string | number;
+  bannerImage?: string;
+  coverImage?: string;
+  thumbnailUrl?: string;
+}
+
+export function addToWatchHistory(item: AnimeHistoryInput): void {
   const history = getUnifiedHistory();
 
   // Try to find if we already have this episode in history to preserve existing thumbnailUrl if not provided
   const existing = history.find(
     (h) =>
       (!h.type || h.type === "anime") &&
-      h.animeId === item.animeId &&
+      (h.id === item.animeId || h.animeId === item.animeId) &&
       h.episodeNumber === item.episodeNumber &&
       h.seasonNumber === item.seasonNumber,
   );
 
   const newItem: WatchHistoryItem = {
     ...item,
+    id: item.animeId,
+    title: item.animeTitle,
+    posterImage: item.coverImage || "",
+    backdropImage: item.bannerImage || "",
     type: "anime",
     watchedAt: new Date().toISOString(),
     thumbnailUrl: item.thumbnailUrl || existing?.thumbnailUrl,
@@ -257,7 +295,7 @@ export function addToWatchHistory(
     (h) =>
       !(
         (!h.type || h.type === "anime") &&
-        h.animeId === item.animeId &&
+        (h.id === item.animeId || h.animeId === item.animeId) &&
         h.episodeNumber === item.episodeNumber &&
         h.seasonNumber === item.seasonNumber
       ),

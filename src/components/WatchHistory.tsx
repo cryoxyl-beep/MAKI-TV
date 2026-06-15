@@ -50,15 +50,23 @@ export default function WatchHistory({ onWatchEpisode }: WatchHistoryProps) {
       <ShelfScroller>
         {historyItems.map((item, index) => (
           <div 
-            key={`${item.animeId}-${item.seasonNumber}-${item.episodeNumber}-${index}`}
-            onClick={() => onWatchEpisode(item.animeId, item.seasonNumber, item.episodeNumber)}
+            key={`${item.id}-${item.seasonNumber || 0}-${item.episodeNumber || 0}-${item.type}-${index}`}
+            onClick={() => {
+              if (item.type === 'movie') {
+                window.location.href = `/movies/watch/${item.id}`;
+              } else if (item.type === 'series') {
+                window.location.href = `/series/watch/${item.id}/${item.seasonNumber}/${item.episodeNumber}`;
+              } else {
+                onWatchEpisode(item.id, item.seasonNumber || 1, item.episodeNumber || 1);
+              }
+            }}
             className="snap-start shrink-0 w-64 md:w-72 flex flex-col gap-2 cursor-pointer group"
           >
             {/* Thumbnail Wrapper */}
             <div className="relative aspect-video w-full bg-black rounded-xl overflow-hidden border border-white/5 group-hover:border-white/20 transition-all duration-300">
               <LazyImage 
-                src={item.thumbnailUrl || item.bannerImage || item.coverImage || ""}
-                alt={item.animeTitle}
+                src={item.thumbnailUrl || item.backdropImage || item.posterImage || item.bannerImage || item.coverImage || ""}
+                alt={item.title}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 referrerPolicy="no-referrer"
               />
@@ -71,9 +79,17 @@ export default function WatchHistory({ onWatchEpisode }: WatchHistoryProps) {
               </div>
 
               {/* Episode Number Badge */}
-              <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/60 backdrop-blur-md rounded text-[10px] font-bold text-white border border-white/10 uppercase tracking-widest z-10">
-                EP {item.episodeNumber}
-              </div>
+              {(item.type === 'anime' || item.type === 'series') && item.episodeNumber && (
+                <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/60 backdrop-blur-md rounded text-[10px] font-bold text-white border border-white/10 uppercase tracking-widest z-10">
+                  EP {item.episodeNumber}
+                </div>
+              )}
+
+              {item.type === 'movie' && (
+                <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/60 backdrop-blur-md rounded text-[10px] font-bold text-white border border-white/10 uppercase tracking-widest z-10">
+                  MOVIE
+                </div>
+              )}
 
               {/* Progress Bar */}
               {item.progress > 0 && (
@@ -89,11 +105,18 @@ export default function WatchHistory({ onWatchEpisode }: WatchHistoryProps) {
             {/* Info */}
             <div className="flex flex-col px-1">
               <h3 className="text-white font-bold text-sm leading-tight truncate group-hover:text-gray-200 transition-colors">
-                {item.animeTitle}
+                {item.title || item.animeTitle || "Unknown"}
               </h3>
-              <p className="text-gray-400 text-xs font-medium mt-1">
-                Season {item.seasonNumber} • Episode {item.episodeNumber}
-              </p>
+              {(item.type === 'anime' || item.type === 'series') && (
+                <p className="text-gray-400 text-xs font-medium mt-1">
+                  Season {item.seasonNumber} • Episode {item.episodeNumber}
+                </p>
+              )}
+              {item.type === 'movie' && (
+                <p className="text-gray-400 text-xs font-medium mt-1">
+                  Movie
+                </p>
+              )}
             </div>
           </div>
         ))}

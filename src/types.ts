@@ -72,29 +72,31 @@ export interface AniListAnime {
   trailer?: TrailerInfo;
 }
 
-export interface WatchHistoryItem {
-  type?: 'anime' | 'movie' | 'series';
-  // Common
-  watchedAt: string; // ISO Date String
-  progress: number; // 0 to 100
-  duration?: string | number; // Duration string e.g., "24:00"
-
-  // Anime
-  animeId?: number;
-  animeTitle?: string;
+export interface UnifiedHistoryItem {
+  id: number;
+  title: string;
+  posterImage: string;
+  backdropImage: string;
+  type: 'anime' | 'movie' | 'series';
+  progress: number;
+  watchedAt: string;
+  duration?: string | number;
   episodeNumber?: number;
   seasonNumber?: number;
-  bannerImage?: string;
-  coverImage?: string;
   thumbnailUrl?: string;
-
-  // Movie/Series
-  tmdbId?: number;
-  title?: string;
   provider?: string;
+
+  // Legacy backwards compatibility
+  animeId?: number;
+  animeTitle?: string;
+  coverImage?: string;
+  bannerImage?: string;
+  tmdbId?: number;
   posterPath?: string;
   backdropPath?: string;
 }
+
+export type WatchHistoryItem = UnifiedHistoryItem;
 
 export interface SubscriptionItem {
   animeId: number;
