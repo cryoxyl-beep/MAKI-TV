@@ -1,10 +1,67 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Sparkles, Film, Tv, PlayCircle } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { curatedAnime, curatedMovies, curatedSeries } from "./LandingCurated";
+
+// Helper component for scrolling columns
+const PosterColumn = ({ 
+  items, 
+  direction = "up", 
+  speed = 40,
+  isDimmed = false,
+  isHighlighted = false
+}: { 
+  items: { title: string; posterPath: string | null }[]; 
+  direction?: "up" | "down";
+  speed?: number;
+  isDimmed?: boolean;
+  isHighlighted?: boolean;
+}) => {
+  // Extract non-null poster paths and duplicate array for infinite scroll
+  const posters = items.filter(i => i.posterPath).map(i => `https://image.tmdb.org/t/p/w500${i.posterPath}`);
+  const displayPosters = [...posters, ...posters, ...posters]; // Triplicate to ensure smooth infinite wrap
+
+  return (
+    <motion.div 
+      className="flex flex-col gap-4 relative px-2 sm:px-4 w-1/3"
+      initial={{ opacity: 0 }}
+      animate={{ 
+        opacity: isHighlighted ? 1 : isDimmed ? 0.2 : 0.6,
+        scale: isHighlighted ? 1.02 : 1,
+      }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+    >
+      <motion.div
+        className="flex flex-col gap-4"
+        animate={{
+          y: direction === "up" ? ["0%", "-33.33%"] : ["-33.33%", "0%"]
+        }}
+        transition={{
+          repeat: Infinity,
+          ease: "linear",
+          duration: speed
+        }}
+      >
+        {displayPosters.map((url, idx) => (
+          <div key={`poster-${idx}`} className="w-full relative aspect-[2/3] rounded-2xl overflow-hidden shadow-[0_0_20px_rgba(0,0,0,0.5)]">
+            <img 
+              src={url} 
+              alt="Poster" 
+              className="w-full h-full object-cover" 
+              loading={idx > 6 ? "lazy" : "eager"}
+            />
+            {/* Cinematic overlay on each poster */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/10" />
+          </div>
+        ))}
+      </motion.div>
+    </motion.div>
+  );
+};
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const [hoveredSection, setHoveredSection] = useState<"anime" | "movies" | "series" | null>(null);
 
   useEffect(() => {
     document.title = "Miyoro";
@@ -15,101 +72,126 @@ export default function LandingPage() {
   }, [navigate]);
 
   return (
-    <div className="w-full min-h-screen bg-[#09090b] text-white flex flex-col font-sans select-none antialiased relative overflow-hidden items-center justify-center">
-      {/* Frosted Glass Floating Ambient Blobs */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute top-[-10vw] left-[-10vw] w-[45vw] h-[45vw] rounded-full bg-blue-500/20 blur-[100px] opacity-60 animate-pulse"></div>
-        <div className="absolute bottom-[-10vw] right-[-10vw] w-[50vw] h-[50vw] rounded-full bg-purple-500/20 blur-[120px] opacity-50 animate-pulse" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute top-[35%] right-[5vw] w-[40vw] h-[40vw] rounded-full bg-indigo-500/20 blur-[110px] opacity-60 animate-pulse" style={{ animationDelay: '2s' }}></div>
+    <div className="w-full h-screen bg-[#060608] text-white flex font-sans select-none antialiased relative overflow-hidden">
+      
+      {/* Background glow base */}
+      <div className="absolute inset-0 z-0 bg-gradient-to-br from-indigo-900/10 via-[#060608] to-purple-900/10 pointer-events-none" />
+
+      {/* LEFT SIDE: Cinematic Posters Grid */}
+      <div className="absolute inset-0 lg:relative lg:w-[65%] xl:w-[70%] h-full flex justify-center items-center overflow-hidden z-0">
+        
+        {/* Top/Bottom edge masks for cinematic blur/fade */}
+        <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-[#060608] via-[#060608]/80 to-transparent z-10 pointer-events-none" />
+        <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#060608] via-[#060608]/90 to-transparent z-10 pointer-events-none" />
+        
+        {/* Right edge fade for desktop blending */}
+        <div className="hidden lg:block absolute inset-y-0 right-0 w-48 bg-gradient-to-l from-[#060608] to-transparent z-10 pointer-events-none" />
+        {/* Mobile full overlay to ensure readability */}
+        <div className="lg:hidden absolute inset-0 bg-black/60 z-10 pointer-events-none" />
+
+        {/* 3 Columns */}
+        <div className="relative w-full max-w-[1200px] h-[200%] flex gap-2 sm:gap-4 md:gap-8 justify-between z-0 px-4 -rotate-2 scale-110 opacity-70 lg:opacity-100">
+          
+          <PosterColumn 
+            items={curatedAnime} 
+            direction="down" 
+            speed={45} 
+            isHighlighted={hoveredSection === "anime"}
+            isDimmed={hoveredSection !== null && hoveredSection !== "anime"}
+          />
+          
+          <PosterColumn 
+            items={curatedMovies} 
+            direction="up" 
+            speed={55} 
+            isHighlighted={hoveredSection === "movies"}
+            isDimmed={hoveredSection !== null && hoveredSection !== "movies"}
+          />
+          
+          <PosterColumn 
+            items={curatedSeries} 
+            direction="down" 
+            speed={50} 
+            isHighlighted={hoveredSection === "series"}
+            isDimmed={hoveredSection !== null && hoveredSection !== "series"}
+          />
+
+        </div>
       </div>
 
-      <div className="z-10 flex flex-col items-center justify-center space-y-16 mt-[-5vh] w-full max-w-6xl px-6">
+      {/* RIGHT SIDE: Premium Hero Section */}
+      <div className="relative w-full lg:w-[35%] xl:w-[30%] h-full z-20 flex flex-col justify-center px-8 lg:px-12 lg:pr-16 xl:pr-24 lg:-ml-8 bg-transparent lg:bg-gradient-to-r lg:from-transparent lg:via-[#060608]/95 lg:to-[#060608]">
+        
         <motion.div 
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          className="text-center space-y-4"
+          className="flex flex-col space-y-12 max-w-sm mx-auto lg:mx-0 w-full"
         >
-          <div className="flex items-center justify-center gap-2 text-white/50 mb-2">
-            <Sparkles className="w-4 h-4" />
-            <span className="text-xs font-bold tracking-[0.2em] uppercase">Miyoro Multiverse</span>
+          {/* Header */}
+          <div className="space-y-6 text-center lg:text-left mb-12">
+             <h1 className="text-7xl md:text-8xl font-black tracking-tighter text-white drop-shadow-2xl">
+               Miyoro
+             </h1>
+             <p className="text-xl md:text-2xl text-white/70 font-medium tracking-tight leading-snug">
+               Every story.<br />
+               Every world.<br />
+               One destination.
+             </p>
           </div>
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-white mb-2">
-            What's your mood today?
-          </h1>
-          <p className="text-lg text-white/60 max-w-lg mx-auto">
-            Choose your destination to begin streaming.
-          </p>
+
+          <div className="w-full h-px bg-white/[0.08] mb-12 hidden lg:block" />
+
+          {/* Destination Selector */}
+          <div className="flex flex-col gap-8">
+            
+            <Link 
+              to="/anime"
+              onMouseEnter={() => setHoveredSection("anime")}
+              onMouseLeave={() => setHoveredSection(null)}
+              className="group flex items-center justify-center lg:justify-start gap-4"
+            >
+              <span className="text-lg md:text-xl font-bold tracking-[0.2em] text-white/60 group-hover:text-white transition-colors duration-500">
+                ANIME
+              </span>
+              <span className="text-xl text-white/40 group-hover:text-white group-hover:translate-x-3 transition-all duration-500">
+                →
+              </span>
+            </Link>
+
+            <Link 
+              to="/movies"
+              onMouseEnter={() => setHoveredSection("movies")}
+              onMouseLeave={() => setHoveredSection(null)}
+              className="group flex items-center justify-center lg:justify-start gap-4"
+            >
+              <span className="text-lg md:text-xl font-bold tracking-[0.2em] text-white/60 group-hover:text-white transition-colors duration-500">
+                MOVIES
+              </span>
+              <span className="text-xl text-white/40 group-hover:text-white group-hover:translate-x-3 transition-all duration-500">
+                →
+              </span>
+            </Link>
+
+            <Link 
+              to="/series"
+              onMouseEnter={() => setHoveredSection("series")}
+              onMouseLeave={() => setHoveredSection(null)}
+              className="group flex items-center justify-center lg:justify-start gap-4"
+            >
+              <span className="text-lg md:text-xl font-bold tracking-[0.2em] text-white/60 group-hover:text-white transition-colors duration-500">
+                SERIES
+              </span>
+              <span className="text-xl text-white/40 group-hover:text-white group-hover:translate-x-3 transition-all duration-500">
+                →
+              </span>
+            </Link>
+
+          </div>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 w-full">
-          {/* Anime Card */}
-          <Link to="/anime">
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.1, ease: "easeOut" }}
-              whileHover={{ y: -10, scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="relative group h-72 md:h-96 rounded-[2rem] overflow-hidden cursor-pointer"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10" />
-              <div className="absolute inset-0 bg-black/40 backdrop-blur-md border border-white/10 group-hover:border-white/20 transition-all duration-500 z-0" />
-              <div className="absolute inset-0 p-8 flex flex-col justify-end z-20">
-                <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center mb-6 text-white group-hover:scale-110 group-hover:bg-white group-hover:text-black transition-all duration-500">
-                  <PlayCircle className="w-6 h-6 stroke-[2]" />
-                </div>
-                <h2 className="text-3xl font-bold text-white mb-2 tracking-tight group-hover:translate-x-2 transition-transform duration-500">Anime</h2>
-                <p className="text-white/60 font-medium group-hover:translate-x-2 transition-transform duration-500 delay-75">The original Miyoro experience.</p>
-              </div>
-            </motion.div>
-          </Link>
-
-          {/* Movies Card */}
-          <Link to="/movies">
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-              whileHover={{ y: -10, scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="relative group h-72 md:h-96 rounded-[2rem] overflow-hidden cursor-pointer"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-rose-500/10 to-orange-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10" />
-              <div className="absolute inset-0 bg-black/40 backdrop-blur-md border border-white/10 group-hover:border-white/20 transition-all duration-500 z-0" />
-              <div className="absolute inset-0 p-8 flex flex-col justify-end z-20">
-                <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center mb-6 text-white group-hover:scale-110 group-hover:bg-rose-500 group-hover:text-white transition-all duration-500 group-hover:border-rose-400/50">
-                  <Film className="w-6 h-6 stroke-[2]" />
-                </div>
-                <h2 className="text-3xl font-bold text-white mb-2 tracking-tight group-hover:translate-x-2 transition-transform duration-500">Movies</h2>
-                <p className="text-white/60 font-medium group-hover:translate-x-2 transition-transform duration-500 delay-75">Cinematic universe.</p>
-              </div>
-            </motion.div>
-          </Link>
-
-          {/* Series Card */}
-          <Link to="/series">
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
-              whileHover={{ y: -10, scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="relative group h-72 md:h-96 rounded-[2rem] overflow-hidden cursor-pointer"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-teal-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10" />
-              <div className="absolute inset-0 bg-black/40 backdrop-blur-md border border-white/10 group-hover:border-white/20 transition-all duration-500 z-0" />
-              <div className="absolute inset-0 p-8 flex flex-col justify-end z-20">
-                <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center mb-6 text-white group-hover:scale-110 group-hover:bg-emerald-500 group-hover:text-white transition-all duration-500 group-hover:border-emerald-400/50">
-                  <Tv className="w-6 h-6 stroke-[2]" />
-                </div>
-                <h2 className="text-3xl font-bold text-white mb-2 tracking-tight group-hover:translate-x-2 transition-transform duration-500">Series</h2>
-                <p className="text-white/60 font-medium group-hover:translate-x-2 transition-transform duration-500 delay-75">Binge-worthy shows.</p>
-              </div>
-            </motion.div>
-          </Link>
-        </div>
       </div>
     </div>
   );
 }
+
