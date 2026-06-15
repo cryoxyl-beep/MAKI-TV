@@ -121,7 +121,7 @@ export default function Header({
 
   return (
     <>
-      <header className={`fixed top-0 left-0 right-0 z-50 select-none transform-gpu transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${variant === "slim" ? "h-14 bg-[#0f0f0f]/95 border-b border-white/[0.05] backdrop-blur-md" : "h-16 bg-transparent"} ${isVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0 pointer-events-none"}`}>
+      <header className={`fixed top-0 left-0 right-0 z-50 select-none transform-gpu transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${variant === "slim" ? "h-14 bg-transparent" : "h-16 bg-transparent"} ${isVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0 pointer-events-none"}`}>
         {/* Search Header for Mobile overlay */}
         {showMobileSearch ? (
           <form onSubmit={handleSubmit} className="absolute inset-0 bg-[#09090b] flex items-center px-4 gap-2 z-50">

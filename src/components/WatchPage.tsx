@@ -514,15 +514,9 @@ export default function WatchPage({
       <Header
         variant="slim"
         onSearch={onSearch}
-        onNavigateHome={() => {
-          window.history.pushState(null, "", "/");
-          window.dispatchEvent(new PopStateEvent("popstate"));
-        }}
+        onNavigateHome={() => window.location.hash = "/"}
         breadcrumbs={[
-          { label: "Home", onClick: () => {
-            window.history.pushState(null, "", "/");
-            window.dispatchEvent(new PopStateEvent("popstate"));
-          }, color: accentColor },
+          { label: "Home", onClick: () => window.location.hash = "/", color: accentColor },
           { label: mainTitle, onClick: () => onNavigateToChannel(animeId), color: accentColor },
           { label: currentEpTitle || `Episode ${episodeNumber}` }
         ]}

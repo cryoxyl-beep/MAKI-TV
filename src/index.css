@@ -55,6 +55,26 @@ body {
   background: radial-gradient(circle, rgba(239, 71, 111, 0.09) 0%, rgba(239, 71, 111, 0) 70%);
 }
 
+.movies-glass-blur-bg-1 {
+  background: radial-gradient(circle, rgba(244, 63, 94, 0.12) 0%, rgba(244, 63, 94, 0) 70%); /* rose-500 */
+}
+.movies-glass-blur-bg-2 {
+  background: radial-gradient(circle, rgba(249, 115, 22, 0.08) 0%, rgba(249, 115, 22, 0) 70%); /* orange-500 */
+}
+.movies-glass-blur-bg-3 {
+  background: radial-gradient(circle, rgba(251, 113, 133, 0.09) 0%, rgba(251, 113, 133, 0) 70%); /* rose-400 */
+}
+
+.series-glass-blur-bg-1 {
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0) 70%); /* emerald-500 */
+}
+.series-glass-blur-bg-2 {
+  background: radial-gradient(circle, rgba(20, 184, 166, 0.08) 0%, rgba(20, 184, 166, 0) 70%); /* teal-500 */
+}
+.series-glass-blur-bg-3 {
+  background: radial-gradient(circle, rgba(52, 211, 153, 0.09) 0%, rgba(52, 211, 153, 0) 70%); /* emerald-400 */
+}
+
 @keyframes pulseGlow {
   0%, 100% {
     transform: scale(1) translate(0px, 0px);
