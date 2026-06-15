@@ -79,14 +79,17 @@ export default function SeriesSidebar({
               <div className="absolute inset-0 bg-gradient-to-b from-white/[0.04] to-transparent pointer-events-none" />
 
               <div className="p-6 pb-2 pt-8 flex items-center justify-between relative z-10">
-                <div className="flex flex-col">
+                <a
+                  href="https://miyoro.vercel.app/"
+                  className="flex flex-col cursor-pointer transition-all duration-300 hover:opacity-85 active:scale-[0.98]"
+                >
                   <span className="text-xl md:text-2xl font-black tracking-wider bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-transparent">
                     miyoro
                   </span>
                   <span className="text-xs text-white/50 font-bold tracking-widest uppercase">
                     Series
                   </span>
-                </div>
+                </a>
                 <button
                   onClick={onClose}
                   className="p-2 text-white/50 hover:text-white hover:bg-white/[0.05] rounded-full transition-colors cursor-pointer"

@@ -134,9 +134,9 @@ export default function LandingPage() {
                Miyoro
              </h1>
              <p className="text-xl md:text-2xl text-white/70 font-medium tracking-tight leading-snug">
-               Every story.<br />
-               Every world.<br />
-               One destination.
+               Watch.<br />
+               Whatever.<br />
+               You Want.
              </p>
           </div>
 

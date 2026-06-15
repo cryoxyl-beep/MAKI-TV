@@ -98,11 +98,14 @@ export default function Sidebar({
 
               {/* Header */}
               <div className="p-6 pb-2 pt-8 flex items-center justify-between relative z-10">
-                <div className="flex items-center">
+                <a 
+                  href="https://miyoro.vercel.app/"
+                  className="flex items-center cursor-pointer transition-all duration-300 hover:opacity-85 active:scale-[0.98]"
+                >
                   <span className="text-xl md:text-2xl font-black tracking-wider bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-transparent">
                     miyoro
                   </span>
-                </div>
+                </a>
                 <button 
                   onClick={onClose}
                   className="p-2 text-white/50 hover:text-white hover:bg-white/[0.05] rounded-full transition-colors cursor-pointer"
