@@ -13,6 +13,7 @@ import LazyImage from "../LazyImage";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, Info, Bookmark, Clock, Flag } from "lucide-react";
 import { useMoviesData } from "../../hooks/useMoviesData";
+import { useCollections } from "../CollectionsModal";
 
 const MOVIE_PROVIDERS = [
   { id: "vidfast", label: "Matsuri" },
@@ -23,7 +24,8 @@ const MOVIE_PROVIDERS = [
 export default function MovieWatch() {
   const { tmdbId } = useParams();
   const navigate = useNavigate();
-  const { isInLibrary, toggleLibrary, isInWatchLater, toggleWatchLater } = useMoviesData();
+  const { isInLibrary, isInWatchLater, toggleWatchLater } = useMoviesData();
+  const { openCollectionsModal } = useCollections();
 
   const [movie, setMovie] = useState<TMDBMovieDetails | null>(null);
   const [loading, setLoading] = useState(true);
@@ -86,9 +88,17 @@ export default function MovieWatch() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleToggleBookmark = async () => {
+  const handleToggleBookmark = () => {
     if (movie) {
-      await toggleLibrary(movie as any);
+      openCollectionsModal({
+        id: movie.id,
+        title: movie.title,
+        posterPath: movie.poster_path || "",
+        coverImage: movie.poster_path || "",
+        backdropPath: movie.backdrop_path || "",
+        bannerImage: movie.backdrop_path || "",
+        type: "movie"
+      });
     }
   };
 
@@ -217,7 +227,7 @@ export default function MovieWatch() {
                       onClick={handleToggleBookmark}
                       className="p-1.5 text-white/50 hover:text-white hover:scale-110 active:scale-95 transition-all duration-150"
                       title={
-                        movie && isInLibrary(movie.id) ? "Remove Bookmark" : "Bookmark Movie"
+                        movie && isInLibrary(movie.id) ? "In Collections" : "Add to Collection"
                       }
                     >
                       <Bookmark

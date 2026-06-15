@@ -7,11 +7,13 @@ import { storage } from "../../utils";
 import { motion, AnimatePresence } from "framer-motion";
 import SkeletonLoader from "../SkeletonLoader";
 import { useSeriesData } from "../../hooks/useSeriesData";
+import { useCollections } from "../CollectionsModal";
 
 export default function SeriesChannel() {
   const { tmdbId } = useParams();
   const navigate = useNavigate();
-  const { isInLibrary, toggleLibrary } = useSeriesData();
+  const { isInLibrary } = useSeriesData();
+  const { openCollectionsModal } = useCollections();
   const [series, setSeries] = useState<TMDBTVDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
@@ -191,11 +193,21 @@ export default function SeriesChannel() {
               </button>
               
               <button 
-                onClick={async () => {
-                  await toggleLibrary(series as any);
+                onClick={() => {
+                  if (series) {
+                    openCollectionsModal({
+                      id: series.id,
+                      title: series.name,
+                      posterPath: series.poster_path || "",
+                      coverImage: series.poster_path || "",
+                      backdropPath: series.backdrop_path || "",
+                      bannerImage: series.backdrop_path || "",
+                      type: "series"
+                    });
+                  }
                 }}
                 className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 border border-white/5 flex items-center justify-center transition-all text-white active:scale-95 cursor-pointer"
-                title={subscribed ? "Remove from Library" : "Add to Library"}
+                title={subscribed ? "In Collections" : "Add to Collection"}
               >
                 {subscribed ? <Check className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
               </button>

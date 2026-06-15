@@ -1,20 +1,12 @@
 import { useState, useEffect } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth, db } from "../lib/firebase";
-import { doc, getDoc, setDoc } from "firebase/firestore";
-import { AniListAnime } from "../types";
-import { getAnimeLibrary, saveAnimeLibrary, mergeFirestoreData } from "../utils";
-
-export interface LibraryItem {
-  animeId: number;
-  animeTitle: string;
-  coverImage: string;
-  bannerImage?: string;
-  subscribedAt: string;
-}
+import { doc, getDoc } from "firebase/firestore";
+import { AniListAnime, CollectionItem, CollectionsState } from "../types";
+import { getAnimeCollections, saveAnimeCollections, mergeFirestoreData } from "../utils";
 
 // Global state cache to keep all hook instances synchronized
-let globalLibrary: LibraryItem[] = [];
+let globalCollections: CollectionsState = { toBinge: [], watched: [] };
 let globalCurrentUser: User | null = null;
 let isGlobalLoading = true;
 const listeners = new Set<() => void>();
@@ -22,28 +14,6 @@ const listeners = new Set<() => void>();
 const notifyListeners = () => {
   listeners.forEach((listener) => listener());
 };
-
-// Map items from raw SubscriptionItem to LibraryItem
-function mapToLibraryItems(items: any[]): LibraryItem[] {
-  return items.map((item) => ({
-    animeId: item.animeId || item.id,
-    animeTitle: item.animeTitle || item.title,
-    coverImage: item.coverImage || item.thumbnail || "",
-    bannerImage: item.bannerImage || "",
-    subscribedAt: item.subscribedAt || item.addedAt || new Date().toISOString(),
-  }));
-}
-
-// Map items from LibraryItem to SubscriptionItem
-function mapToSubscriptionItems(items: LibraryItem[]) {
-  return items.map((item) => ({
-    animeId: item.animeId,
-    animeTitle: item.animeTitle,
-    coverImage: item.coverImage,
-    bannerImage: item.bannerImage,
-    subscribedAt: item.subscribedAt,
-  }));
-}
 
 // Initialize auth listener just once
 if (auth) {
@@ -63,25 +33,25 @@ if (auth) {
             mergeFirestoreData(data);
 
             const animeData = data.anime || {};
-            globalLibrary = mapToLibraryItems(animeData.library || []);
+            globalCollections = animeData.collections || getAnimeCollections();
           } else {
-            globalLibrary = mapToLibraryItems(getAnimeLibrary());
+            globalCollections = getAnimeCollections();
           }
         } else {
-          globalLibrary = mapToLibraryItems(getAnimeLibrary());
+          globalCollections = getAnimeCollections();
         }
       } catch (err) {
         console.error(
           "[useLibrary] Failed to fetch user data from Firestore:",
           err
         );
-        globalLibrary = mapToLibraryItems(getAnimeLibrary());
+        globalCollections = getAnimeCollections();
       } finally {
         isGlobalLoading = false;
         notifyListeners();
       }
     } else {
-      globalLibrary = [];
+      globalCollections = { toBinge: [], watched: [] };
       isGlobalLoading = false;
       notifyListeners();
     }
@@ -89,15 +59,13 @@ if (auth) {
 }
 
 export function useLibrary() {
-  const [library, setLibrary] = useState<LibraryItem[]>(globalLibrary);
-  const [currentUser, setCurrentUser] = useState<User | null>(
-    globalCurrentUser
-  );
+  const [collections, setCollections] = useState<CollectionsState>(globalCollections);
+  const [currentUser, setCurrentUser] = useState<User | null>(globalCurrentUser);
   const [isLoading, setIsLoading] = useState(isGlobalLoading);
 
   useEffect(() => {
     const handleUpdate = () => {
-      setLibrary(globalLibrary);
+      setCollections(globalCollections);
       setCurrentUser(globalCurrentUser);
       setIsLoading(isGlobalLoading);
     };
@@ -109,44 +77,100 @@ export function useLibrary() {
   }, []);
 
   const isSubscribed = (animeId: number) => {
-    return library.some((item) => item.animeId === animeId);
+    return (
+      (collections.toBinge || []).some((item) => item.animeId === animeId || item.id === animeId) ||
+      (collections.watched || []).some((item) => item.animeId === animeId || item.id === animeId)
+    );
+  };
+
+  const isInSpecificCollection = (collectionName: "toBinge" | "watched", animeId: number) => {
+    return (collections[collectionName] || []).some(
+      (item) => item.animeId === animeId || item.id === animeId
+    );
+  };
+
+  const addToCollection = (collectionName: "toBinge" | "watched", anime: AniListAnime) => {
+    const currentList = globalCollections[collectionName] || [];
+    if (currentList.some((item) => item.id === anime.id)) return;
+
+    const newItem: CollectionItem = {
+      id: anime.id,
+      title:
+        anime.title.english ||
+        anime.title.romaji ||
+        anime.title.userPreferred ||
+        "Untitled Anime",
+      posterPath: anime.coverImage.large || anime.coverImage.medium || "",
+      coverImage: anime.coverImage.large || anime.coverImage.medium || "",
+      bannerImage: anime.bannerImage || "",
+      backdropPath: anime.bannerImage || "",
+      type: "anime",
+      addedAt: new Date().toISOString(),
+      animeId: anime.id,
+    };
+
+    const updated = {
+      ...globalCollections,
+      [collectionName]: [newItem, ...currentList],
+    };
+
+    globalCollections = updated;
+    notifyListeners();
+    saveAnimeCollections(updated);
+  };
+
+  const removeFromCollection = (collectionName: "toBinge" | "watched", animeId: number) => {
+    const updated = {
+      ...globalCollections,
+      [collectionName]: (globalCollections[collectionName] || []).filter(
+        (item) => item.id !== animeId && item.animeId !== animeId
+      ),
+    };
+
+    globalCollections = updated;
+    notifyListeners();
+    saveAnimeCollections(updated);
   };
 
   const toggleSubscription = async (anime: AniListAnime) => {
-    const alreadySubscribed = isSubscribed(anime.id);
-    let updatedLibrary: LibraryItem[] = [];
-
-    if (alreadySubscribed) {
-      updatedLibrary = library.filter((item) => item.animeId !== anime.id);
+    const active = isSubscribed(anime.id);
+    if (active) {
+      removeFromCollection("toBinge", anime.id);
+      removeFromCollection("watched", anime.id);
     } else {
-      updatedLibrary = [
-        {
-          animeId: anime.id,
-          animeTitle:
-            anime.title.english ||
-            anime.title.romaji ||
-            anime.title.userPreferred ||
-            "Untitled Anime",
-          coverImage: anime.coverImage.large || anime.coverImage.medium || "",
-          bannerImage: anime.bannerImage || "",
-          subscribedAt: new Date().toISOString(),
-        },
-        ...library,
-      ];
+      addToCollection("toBinge", anime);
     }
-
-    // Optimistically update global and local storage
-    globalLibrary = updatedLibrary;
-    notifyListeners();
-    saveAnimeLibrary(mapToSubscriptionItems(updatedLibrary));
-
-    return !alreadySubscribed;
+    return !active;
   };
+
+  // Map to compatible array/structure
+  const library = [
+    ...(collections.toBinge || []).map(item => ({
+      ...item,
+      animeId: item.animeId || item.id,
+      animeTitle: item.title,
+      coverImage: item.posterPath || item.coverImage || "",
+      bannerImage: item.backdropPath || item.bannerImage || "",
+      subscribedAt: item.addedAt,
+    })),
+    ...(collections.watched || []).map(item => ({
+      ...item,
+      animeId: item.animeId || item.id,
+      animeTitle: item.title,
+      coverImage: item.posterPath || item.coverImage || "",
+      bannerImage: item.backdropPath || item.bannerImage || "",
+      subscribedAt: item.addedAt,
+    })),
+  ];
 
   return {
     library,
+    collections,
     isLoading,
     isSubscribed,
+    isInSpecificCollection,
+    addToCollection,
+    removeFromCollection,
     toggleSubscription,
     currentUser,
   };

@@ -34,14 +34,14 @@ export default function Sidebar({
     { id: "home" as const, label: "Home", icon: Home },
     { id: "schedule" as const, label: "Schedule", icon: Calendar },
     { id: "subscriptions" as const, label: "Subscriptions", icon: Clapperboard },
-    { id: "library" as const, label: "Library", icon: Library },
+    { id: "library" as const, label: "Collections", icon: Library },
   ];
 
   const desktopNavItems = [
     { id: "home" as const, label: "Home", icon: Home },
     { id: "trending" as const, label: "Browse Anime", icon: Compass },
     { id: "schedule" as const, label: "Schedule", icon: Calendar },
-    { id: "library" as const, label: "Library", icon: Library },
+    { id: "library" as const, label: "Collections", icon: Library },
   ];
 
   return (

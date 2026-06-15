@@ -13,14 +13,11 @@ export default function SeriesLibrary() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>("history");
   const [historyItems, setHistoryItems] = useState<SeriesHistoryItem[]>([]);
-  const { library, watchLater, isLoading: libraryLoading, toggleLibrary, toggleWatchLater } = useSeriesData();
+  const { collections, watchLater, isLoading: libraryLoading, removeFromCollection, toggleWatchLater } = useSeriesData();
   const [isLocalLoading, setIsLocalLoading] = useState(true);
 
   useEffect(() => {
-    // When library loads (which triggers user data sync), we re-fetch history
     setHistoryItems(getSeriesHistory());
-    
-    // Smooth natural animation transition for premium feel
     const timer = setTimeout(() => {
       setIsLocalLoading(false);
     }, 450);
@@ -29,20 +26,20 @@ export default function SeriesLibrary() {
 
   const tabs: { id: Tab; label: string }[] = [
     { id: "history", label: "History" },
-    { id: "library", label: "In Library" },
+    { id: "library", label: "Collections" },
     { id: "watch_later", label: "Watch Later" },
   ];
 
   const showLoader = libraryLoading || isLocalLoading;
 
   return (
-    <div className="w-full bg-[#0a0a0c] min-h-screen select-none px-4 md:px-8 py-8 animate-fade-in pb-24">
+    <div className="w-full bg-[#0a0a0c] min-h-screen select-none px-4 md:px-8 py-8 animate-fade-in pb-24 text-white">
       <div className="max-w-[1200px] mx-auto space-y-8">
         
         {/* Header */}
         <div className="flex flex-col gap-1">
           <h1 className="text-white text-3xl font-extrabold tracking-tight">
-            Series Library
+            TV Collections
           </h1>
           <p className="text-sm text-gray-400">
             Keep Tracking everything you Love
@@ -125,28 +122,19 @@ export default function SeriesLibrary() {
                           <div className="flex flex-col gap-2">
                             {items.map((item, idx) => (
                               <div
-                                key={`${item.id}-${item.seasonNumber}-${item.episodeNumber}-${idx}`}
+                                key={`${item.id}-${idx}`}
                                 onClick={() => navigate(`/series/watch/${item.id}/${item.seasonNumber}/${item.episodeNumber}`)}
                                 className="flex items-start sm:items-center gap-4 bg-transparent hover:bg-white/[0.03] rounded-xl p-2 cursor-pointer transition-colors group"
                               >
                                 {/* Thumbnail */}
                                 <div className="relative aspect-video w-40 sm:w-56 bg-black rounded-lg overflow-hidden shrink-0 border border-white/5">
                                   <LazyImage
-                                    src={
-                                      item.thumbnailUrl ||
-                                      (item.posterImage
-                                        ? (item.posterImage.startsWith('http') ? item.posterImage : `${TMDB_IMAGE_BASE_URL_W500}${item.posterImage.replace(`${TMDB_IMAGE_BASE_URL_W500}`, "")}`)
-                                        : item.thumbnail
-                                          ? (item.thumbnail.startsWith('http') ? item.thumbnail : `${TMDB_IMAGE_BASE_URL_W500}${item.thumbnail.replace(`${TMDB_IMAGE_BASE_URL_W500}`, "")}`)
-                                          : item.backdropImage
-                                            ? (item.backdropImage.startsWith('http') ? item.backdropImage : `${TMDB_IMAGE_BASE_URL_W500}${item.backdropImage.replace(`${TMDB_IMAGE_BASE_URL_W500}`, "")}`)
-                                            : "")
-                                    }
+                                    src={item.thumbnailUrl ? `${item.thumbnailUrl}` : (item.backdropImage ? `${TMDB_IMAGE_BASE_URL_W500}${item.backdropImage}` : "")}
                                     alt={item.title}
                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                     referrerPolicy="no-referrer"
                                   />
-                                  {/* Hover states protected by pointer-events-none to prevent render flickering */}
+                                  {/* Hover Play symbol */}
                                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200 pointer-events-none">
                                     <div className="p-2 bg-white/20 backdrop-blur-md rounded-full shadow-lg transform scale-90 group-hover:scale-100 transition-transform duration-200">
                                       <Play className="w-4 h-4 fill-white text-white drop-shadow-md ml-0.5" />
@@ -166,8 +154,8 @@ export default function SeriesLibrary() {
                                   <h3 className="text-white font-semibold text-sm sm:text-base leading-snug truncate group-hover:text-gray-200 transition-colors">
                                     {item.title}
                                   </h3>
-                                  <p className="text-white/60 text-xs sm:text-sm mt-1">
-                                    S{item.seasonNumber} E{item.episodeNumber}
+                                  <p className="text-xs text-gray-500 mt-1 uppercase font-mono tracking-wider">
+                                    S{item.seasonNumber} • E{item.episodeNumber}
                                   </p>
                                 </div>
                               </div>
@@ -181,52 +169,112 @@ export default function SeriesLibrary() {
               )}
 
               {activeTab === "library" && (
-                <div>
+                <div className="space-y-12">
                   {showLoader ? (
-                    <div className="grid grid-cols-2 min-[500px]:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                      {[...Array(6)].map((_, i) => (
-                        <div key={i} className="flex flex-col space-y-2">
-                           <div className="aspect-[2/3] rounded-lg bg-white/5 shimmer-bone w-full" />
-                           <div className="h-4 w-2/3 shimmer-bone rounded" />
+                    <div className="space-y-12 animate-pulse">
+                      <div className="space-y-4">
+                        <div className="h-6 w-32 bg-white/10 rounded" />
+                        <div className="flex gap-4 overflow-x-auto pb-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                          {[...Array(5)].map((_, i) => (
+                            <div key={i} className="flex flex-col space-y-2 w-[160px] shrink-0">
+                               <div className="aspect-[2/3] rounded-lg bg-white/5 w-full" />
+                               <div className="h-4 w-2/3 bg-white/10 rounded" />
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  ) : library.length === 0 ? (
-                    <div className="py-20 text-center">
-                      <p className="text-gray-500 text-sm">Your Library is empty.</p>
+                      </div>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 min-[500px]:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                      {library.map((item) => (
-                        <div
-                          key={item.id}
-                          onClick={() => navigate(`/series/show/${item.id}`)}
-                          className="group relative flex flex-col cursor-pointer"
-                        >
-                          <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-white/5 border border-white/5 group-hover:border-white/25 transition-colors">
-                            <LazyImage
-                              src={item.posterPath ? `${TMDB_IMAGE_BASE_URL_W500}${item.posterPath}` : ''}
-                              alt={item.title}
-                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                            />
-                            {/* Remove Action */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                                toggleLibrary({ id: item.id } as any);
-                              }}
-                              className="absolute top-2 right-2 p-1.5 sm:p-2 bg-black/60 rounded-full hover:bg-black/90 text-white/70 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all duration-200 cursor-pointer backdrop-blur-md"
-                              title="Remove from Library"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                    <div className="space-y-12">
+                      {/* 🔥 To Binge Section */}
+                      <div className="space-y-4">
+                        <h2 className="text-white text-lg font-bold tracking-tight flex items-center gap-2">
+                          <span>🔥</span> To Binge
+                          <span className="text-xs text-gray-500 font-normal">({(collections?.toBinge || []).length})</span>
+                        </h2>
+                        {(!collections?.toBinge || collections.toBinge.length === 0) ? (
+                          <div className="h-[220px] flex items-center justify-center rounded-xl bg-white/[0.01] border border-white/[0.03] text-gray-500 text-sm">
+                            No series in To Binge.
                           </div>
-                          <h3 className="mt-2 text-white text-xs font-medium leading-snug truncate">
-                            {item.title}
-                          </h3>
-                        </div>
-                      ))}
+                        ) : (
+                          <div className="flex gap-4 overflow-x-auto pb-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden snap-x">
+                            {collections.toBinge.map((item) => (
+                              <div
+                                key={item.id}
+                                onClick={() => navigate(`/series/show/${item.id}`)}
+                                className="group relative flex flex-col w-[160px] shrink-0 cursor-pointer snap-start"
+                              >
+                                <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-white/5 border border-white/5 group-hover:border-white/25 transition-colors">
+                                  <LazyImage
+                                    src={item.posterPath ? `${TMDB_IMAGE_BASE_URL_W500}${item.posterPath}` : ''}
+                                    alt={item.title}
+                                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                  />
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      e.preventDefault();
+                                      removeFromCollection("toBinge", item.id);
+                                    }}
+                                    className="absolute top-2 right-2 p-1.5 bg-black/60 rounded-full hover:bg-black/90 text-white/70 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all duration-200 cursor-pointer backdrop-blur-md"
+                                    title="Remove from To Binge"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                                <h3 className="mt-2 text-white text-xs font-medium leading-snug truncate">
+                                  {item.title}
+                                </h3>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* ✓ Watched Section */}
+                      <div className="space-y-4">
+                        <h2 className="text-white text-lg font-bold tracking-tight flex items-center gap-2">
+                          <span>✓</span> Watched
+                          <span className="text-xs text-gray-500 font-normal">({(collections?.watched || []).length})</span>
+                        </h2>
+                        {(!collections?.watched || collections.watched.length === 0) ? (
+                          <div className="h-[220px] flex items-center justify-center rounded-xl bg-white/[0.01] border border-white/[0.03] text-gray-500 text-sm">
+                            No series in Watched.
+                          </div>
+                        ) : (
+                          <div className="flex gap-4 overflow-x-auto pb-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden snap-x">
+                            {collections.watched.map((item) => (
+                              <div
+                                key={item.id}
+                                onClick={() => navigate(`/series/show/${item.id}`)}
+                                className="group relative flex flex-col w-[160px] shrink-0 cursor-pointer snap-start"
+                              >
+                                <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-white/5 border border-white/5 group-hover:border-white/25 transition-colors">
+                                  <LazyImage
+                                    src={item.posterPath ? `${TMDB_IMAGE_BASE_URL_W500}${item.posterPath}` : ''}
+                                    alt={item.title}
+                                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                  />
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      e.preventDefault();
+                                      removeFromCollection("watched", item.id);
+                                    }}
+                                    className="absolute top-2 right-2 p-1.5 bg-black/60 rounded-full hover:bg-black/95 text-white/70 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all duration-200 cursor-pointer backdrop-blur-md"
+                                    title="Remove from Watched"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                                <h3 className="mt-2 text-white text-xs font-medium leading-snug truncate">
+                                  {item.title}
+                                </h3>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -248,14 +296,14 @@ export default function SeriesLibrary() {
                     </div>
                   ) : watchLater.length === 0 ? (
                     <div className="py-20 text-center">
-                      <p className="text-gray-500 text-sm">No series saved for later.</p>
+                      <p className="text-gray-500 text-sm">No TV Series saved for later.</p>
                     </div>
                   ) : (
                     <div className="flex flex-col gap-2">
-                      {watchLater.map((item) => (
+                       {watchLater.map((item) => (
                         <div
                           key={item.id}
-                          onClick={() => navigate(`/series/watch/${item.id}/1/1`)} // Note: It routes to S1E1 for now
+                          onClick={() => navigate(`/series/watch/${item.id}/1/1`)}
                           className="flex items-start sm:items-center gap-4 bg-transparent hover:bg-white/[0.03] rounded-xl p-2 cursor-pointer transition-colors group relative pr-12"
                         >
                           {/* Thumbnail */}
@@ -265,7 +313,7 @@ export default function SeriesLibrary() {
                               alt={item.title}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                             />
-                            {/* Hover states protected by pointer-events-none to prevent render flickering */}
+                            {/* Hover states */}
                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200 pointer-events-none">
                               <div className="p-2 bg-white/20 backdrop-blur-md rounded-full shadow-lg transform scale-90 group-hover:scale-100 transition-transform duration-200">
                                 <Play className="w-4 h-4 fill-white text-white drop-shadow-md ml-0.5" />

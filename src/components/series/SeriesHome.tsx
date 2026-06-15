@@ -23,6 +23,7 @@ import LazyImage from "../LazyImage";
 import ShelfScroller from "../ShelfScroller";
 import { getSeriesHistory, SeriesHistoryItem, storage } from "../../utils";
 import { useSeriesData } from "../../hooks/useSeriesData";
+import { useCollections } from "../CollectionsModal";
 
 const HeroNavDot: React.FC<{
   isActive: boolean;
@@ -76,7 +77,8 @@ const HeroNavDot: React.FC<{
 };
 
 export default function SeriesHome() {
-  const { isInLibrary, toggleLibrary } = useSeriesData();
+  const { isInLibrary } = useSeriesData();
+  const { openCollectionsModal } = useCollections();
   const [trending, setTrending] = useState<TMDBTVShow[]>([]);
   const [popular, setPopular] = useState<TMDBTVShow[]>([]);
   const [topRated, setTopRated] = useState<TMDBTVShow[]>([]);
@@ -233,8 +235,18 @@ export default function SeriesHome() {
                               </button>
 
                               <button
-                                onClick={async () => {
-                                  await toggleLibrary(series as any);
+                                onClick={() => {
+                                  if (series) {
+                                    openCollectionsModal({
+                                      id: series.id,
+                                      title: series.name,
+                                      posterPath: series.poster_path || "",
+                                      coverImage: series.poster_path || "",
+                                      backdropPath: series.backdrop_path || "",
+                                      bannerImage: series.backdrop_path || "",
+                                      type: "series"
+                                    });
+                                  }
                                 }}
                                 className={`px-6 py-2.5 md:px-8 md:py-3 bg-white/[0.08] hover:bg-white/[0.12] backdrop-blur-[20px] border ${subscribed ? "border-white/[0.4]" : "border-white/[0.15]"} text-white font-bold rounded-md flex items-center gap-2 shadow-[0_8px_32px_rgba(0,0,0,0.2)] hover:shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer group`}
                               >
@@ -242,7 +254,7 @@ export default function SeriesHome() {
                                   className={`w-5 h-5 transition-transform group-hover:scale-105 ${subscribed ? "fill-white text-white" : "text-white"}`}
                                 />
                                 <span className="tracking-wide text-sm md:text-base">
-                                  {subscribed ? "In Library" : "Add to Library"}
+                                  {subscribed ? "In Collections" : "Add to Collection"}
                                 </span>
                               </button>
                             </div>

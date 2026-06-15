@@ -19,13 +19,13 @@ export default function MoviesSidebar({
 }: MoviesSidebarProps) {
   const primaryNavItems = [
     { id: "home" as const, label: "Home", icon: Home },
-    { id: "library" as const, label: "Library", icon: Library },
+    { id: "library" as const, label: "Collections", icon: Library },
     { id: "settings" as const, label: "Settings", icon: Settings },
   ];
 
   const desktopNavItems = [
     { id: "home" as const, label: "Home", icon: Home },
-    { id: "library" as const, label: "Library", icon: Library },
+    { id: "library" as const, label: "Collections", icon: Library },
   ];
 
   return (

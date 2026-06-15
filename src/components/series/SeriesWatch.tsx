@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Virtuoso, VirtuosoGrid } from "react-virtuoso";
 import { Play, ChevronLeft, ChevronRight, ChevronDown, Grid, List, Search, Info, Bookmark, Clock, Flag } from "lucide-react";
 import { useSeriesData } from "../../hooks/useSeriesData";
+import { useCollections } from "../CollectionsModal";
 
 const SERIES_PROVIDERS = [
   { id: "vidfast", label: "Matsuri" },
@@ -20,7 +21,8 @@ const SERIES_PROVIDERS = [
 export default function SeriesWatch() {
   const { tmdbId, season, episode } = useParams();
   const navigate = useNavigate();
-  const { isInLibrary, toggleLibrary, isInWatchLater, toggleWatchLater } = useSeriesData();
+  const { isInLibrary, isInWatchLater, toggleWatchLater } = useSeriesData();
+  const { openCollectionsModal } = useCollections();
   const seasonNum = parseInt(season || "1", 10);
   const episodeNum = parseInt(episode || "1", 10);
 
@@ -44,9 +46,17 @@ export default function SeriesWatch() {
     window.scrollTo(0, 0);
   }, [tmdbId, season, episode]);
 
-  const handleToggleBookmark = async () => {
+  const handleToggleBookmark = () => {
     if (series) {
-      await toggleLibrary(series as any);
+      openCollectionsModal({
+        id: series.id,
+        title: series.name,
+        posterPath: series.poster_path || "",
+        coverImage: series.poster_path || "",
+        backdropPath: series.backdrop_path || "",
+        bannerImage: series.backdrop_path || "",
+        type: "series"
+      });
     }
   };
 
@@ -433,7 +443,7 @@ export default function SeriesWatch() {
                     <button 
                        onClick={handleToggleBookmark}
                        className="p-1.5 text-white/50 hover:text-white hover:scale-110 active:scale-95 transition-all duration-150"
-                       title={isInLibrary(series.id) ? "Remove Bookmark" : "Bookmark Series"}
+                       title={isInLibrary(series.id) ? "In Collections" : "Add to Collection"}
                     >
                       <Bookmark className="w-4.5 h-4.5" fill={isInLibrary(series.id) ? "currentColor" : "none"} />
                     </button>
