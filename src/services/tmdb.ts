@@ -26,6 +26,57 @@ export interface TMDBMovieDetails extends TMDBMovie {
   };
 }
 
+export interface TMDBTVShow {
+  id: number;
+  name: string;
+  original_name: string;
+  overview: string;
+  poster_path: string | null;
+  backdrop_path: string | null;
+  first_air_date: string;
+  vote_average: number;
+  genre_ids: number[];
+}
+
+export interface TMDBTVDetails extends TMDBTVShow {
+  genres: { id: number; name: string }[];
+  status: string;
+  number_of_seasons: number;
+  number_of_episodes: number;
+  episode_run_time: number[];
+  seasons: TMDBSeason[];
+  credits?: {
+    cast: { id: number; name: string; character: string; profile_path: string | null }[];
+  };
+  recommendations?: TMDBResponse<TMDBTVShow>;
+}
+
+export interface TMDBSeason {
+  id: number;
+  name: string;
+  overview: string;
+  poster_path: string | null;
+  season_number: number;
+  episode_count: number;
+  air_date: string | null;
+}
+
+export interface TMDBEpisode {
+  id: number;
+  name: string;
+  overview: string;
+  vote_average: number;
+  air_date: string | null;
+  episode_number: number;
+  season_number: number;
+  still_path: string | null;
+  runtime: number | null;
+}
+
+export interface TMDBSeasonDetails extends TMDBSeason {
+  episodes: TMDBEpisode[];
+}
+
 export interface TMDBResponse<T> {
   page: number;
   results: T[];
@@ -54,3 +105,11 @@ export const getTopRatedMovies = () => fetchFromTMDB<TMDBResponse<TMDBMovie>>('/
 export const getUpcomingMovies = () => fetchFromTMDB<TMDBResponse<TMDBMovie>>('/movie/upcoming');
 export const searchMovies = (query: string) => fetchFromTMDB<TMDBResponse<TMDBMovie>>('/search/movie', { query });
 export const getMovieDetails = (id: number) => fetchFromTMDB<TMDBMovieDetails>(`/movie/${id}`, { append_to_response: 'credits' });
+
+export const getTrendingTV = () => fetchFromTMDB<TMDBResponse<TMDBTVShow>>('/trending/tv/day');
+export const getPopularTV = () => fetchFromTMDB<TMDBResponse<TMDBTVShow>>('/tv/popular');
+export const getTopRatedTV = () => fetchFromTMDB<TMDBResponse<TMDBTVShow>>('/tv/top_rated');
+export const getAiringThisWeekTV = () => fetchFromTMDB<TMDBResponse<TMDBTVShow>>('/tv/on_the_air');
+export const searchTV = (query: string) => fetchFromTMDB<TMDBResponse<TMDBTVShow>>('/search/tv', { query });
+export const getTVDetails = (id: number) => fetchFromTMDB<TMDBTVDetails>(`/tv/${id}`, { append_to_response: 'credits,recommendations' });
+export const getTVSeasonDetails = (seriesId: number, seasonNumber: number) => fetchFromTMDB<TMDBSeasonDetails>(`/tv/${seriesId}/season/${seasonNumber}`);

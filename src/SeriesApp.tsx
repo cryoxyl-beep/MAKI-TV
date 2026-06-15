@@ -1,18 +1,31 @@
 import { useState, useEffect } from "react";
+import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import Header from "./components/Header";
 import SeriesSidebar from "./components/SeriesSidebar";
-import SettingsPage from "./components/SettingsPage";
+import SeriesHome from "./components/series/SeriesHome";
+import SeriesSearch from "./components/series/SeriesSearch";
+import SeriesChannel from "./components/series/SeriesChannel";
+import SeriesWatch from "./components/series/SeriesWatch";
+import SeriesLibrary from "./components/series/SeriesLibrary";
+import SeriesSettings from "./components/series/SeriesSettings";
 import { ChevronUp } from "lucide-react";
 
 export default function SeriesApp() {
-  const [activePage, setActivePage] = useState<"home" | "library" | "settings">("home");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const location = useLocation();
+  const navigate = useNavigate();
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(() => {
+    return new URLSearchParams(location.search).get("q") || "";
+  });
 
-  useEffect(() => {
-    document.title = activePage === "home" ? "Series • Miyoro" : `${activePage.charAt(0).toUpperCase() + activePage.slice(1)} • Series`;
-  }, [activePage]);
+  const getActiveTab = () => {
+    if (location.pathname === "/series/library") return "library";
+    if (location.pathname === "/series/settings") return "settings";
+    return "home";
+  };
+
+  const activePage = getActiveTab();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -28,6 +41,11 @@ export default function SeriesApp() {
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
+    if (query.trim()) {
+      navigate(`/series/search?q=${encodeURIComponent(query)}`);
+    } else {
+      navigate("/series");
+    }
   };
 
   return (
@@ -43,45 +61,33 @@ export default function SeriesApp() {
       <Header
         onSearch={handleSearch}
         initialSearchQuery={searchQuery}
-        onNavigateHome={() => setActivePage("home")}
-        onNavigateLibrary={() => setActivePage("library")}
-        isHomeScreen={activePage === "home"}
-        activeTab={activePage}
+        onNavigateHome={() => navigate("/series")}
+        onNavigateLibrary={() => navigate("/series/library")}
+        isHomeScreen={activePage === "home" && location.pathname === "/series"}
+        activeTab={activePage as any}
         onMenuClick={() => setIsSidebarOpen(true)}
       />
 
       <SeriesSidebar
-        activeTab={activePage}
-        onNavigate={(page) => setActivePage(page)}
+        activeTab={activePage as any}
+        onNavigate={(page) => {
+          if (page === "home") navigate("/series");
+          else navigate(`/series/${page}`);
+        }}
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
       />
 
       <div className="flex flex-1 pt-[56px] text-white relative">
-        <main className="flex-1 min-w-0 bg-transparent pb-32 relative px-0">
-          
-          {activePage === "home" && (
-            <div className="w-full min-h-[70vh] flex flex-col items-center justify-center animate-fade-in p-8 text-center">
-              <h1 className="text-3xl font-bold bg-gradient-to-br from-emerald-400 to-teal-400 bg-clip-text text-transparent mb-4">Series Universe</h1>
-              <p className="text-white/50 max-w-lg">
-                The series streaming ecosystem is currently under construction.
-                TMDB metadata and TV show providers will be integrated soon.
-              </p>
-            </div>
-          )}
-
-          {activePage === "library" && (
-            <div className="w-full min-h-[70vh] flex items-center justify-center animate-fade-in">
-              <h1 className="text-white/50 text-xl font-medium tracking-wide">
-                Series Library (Coming Soon)
-              </h1>
-            </div>
-          )}
-
-          {activePage === "settings" && (
-            <SettingsPage />
-          )}
-
+        <main className="flex-1 min-w-0 bg-transparent pb-0 relative px-0">
+          <Routes>
+             <Route path="/" element={<SeriesHome />} />
+             <Route path="/search" element={<SeriesSearch />} />
+             <Route path="/show/:tmdbId" element={<SeriesChannel />} />
+             <Route path="/watch/:tmdbId/:season/:episode" element={<SeriesWatch />} />
+             <Route path="/library" element={<SeriesLibrary />} />
+             <Route path="/settings" element={<SeriesSettings />} />
+          </Routes>
         </main>
       </div>
 
