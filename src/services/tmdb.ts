@@ -1,0 +1,56 @@
+export const TMDB_API_KEY = (import.meta as any).env.VITE_TMDB_API_KEY || "YOUR_TMDB_API_KEY"; // Ensure your TMDB API Key is in VITE_TMDB_API_KEY
+export const TMDB_BASE_URL = "https://api.themoviedb.org/3";
+export const TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p/original";
+export const TMDB_IMAGE_BASE_URL_W500 = "https://image.tmdb.org/t/p/w500";
+
+export interface TMDBMovie {
+  id: number;
+  title: string;
+  original_title: string;
+  overview: string;
+  poster_path: string | null;
+  backdrop_path: string | null;
+  release_date: string;
+  vote_average: number;
+  genre_ids: number[];
+  adult: boolean;
+}
+
+export interface TMDBMovieDetails extends TMDBMovie {
+  genres: { id: number; name: string }[];
+  runtime: number;
+  status: string;
+  production_companies: { id: number; name: string; logo_path: string | null; origin_country: string }[];
+  credits?: {
+    cast: { id: number; name: string; character: string; profile_path: string | null }[];
+  };
+}
+
+export interface TMDBResponse<T> {
+  page: number;
+  results: T[];
+  total_pages: number;
+  total_results: number;
+}
+
+const fetchFromTMDB = async <T>(endpoint: string, params: Record<string, string> = {}): Promise<T> => {
+  const queryParams = new URLSearchParams({
+    api_key: TMDB_API_KEY,
+    ...params,
+  });
+  
+  const response = await fetch(`${TMDB_BASE_URL}${endpoint}?${queryParams.toString()}`);
+  
+  if (!response.ok) {
+    throw new Error(`TMDB API Error: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
+};
+
+export const getTrendingMovies = () => fetchFromTMDB<TMDBResponse<TMDBMovie>>('/trending/movie/day');
+export const getPopularMovies = () => fetchFromTMDB<TMDBResponse<TMDBMovie>>('/movie/popular');
+export const getTopRatedMovies = () => fetchFromTMDB<TMDBResponse<TMDBMovie>>('/movie/top_rated');
+export const getUpcomingMovies = () => fetchFromTMDB<TMDBResponse<TMDBMovie>>('/movie/upcoming');
+export const searchMovies = (query: string) => fetchFromTMDB<TMDBResponse<TMDBMovie>>('/search/movie', { query });
+export const getMovieDetails = (id: number) => fetchFromTMDB<TMDBMovieDetails>(`/movie/${id}`, { append_to_response: 'credits' });
