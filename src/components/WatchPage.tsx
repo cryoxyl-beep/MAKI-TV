@@ -226,7 +226,7 @@ export default function WatchPage({
     const map: Record<string, number> = {};
     const watchHistory = getWatchHistory();
     watchHistory.forEach(item => {
-      if (item.animeId === anime.id) {
+      if (item.id === anime.id) {
         map[`${item.seasonNumber}-${item.episodeNumber}`] = item.progress;
       }
     });

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { TMDBTVDetails, TMDBSeasonDetails, getTVDetails, getTVSeasonDetails, TMDB_IMAGE_BASE_URL_W500 } from "../../services/tmdb";
-import { addToSeriesHistory, storage } from "../../utils";
+import { addToSeriesHistory, storage, getUnifiedHistory } from "../../utils";
 import Header from "../Header";
 import VideoPlayer from "../VideoPlayer";
 import SkeletonLoader from "../SkeletonLoader";
@@ -90,6 +90,32 @@ export default function SeriesWatch() {
     };
     fetchSeason();
   }, [tmdbId, seasonNum]);
+
+  useEffect(() => {
+    if (!series) return;
+    
+    // Initial history write to register series watcher immediately
+    const history = getUnifiedHistory();
+    const existing = history.find((h: any) => 
+      h.type === "series" && 
+      (h.id === series.id || h.tmdbId === series.id) && 
+      h.seasonNumber === seasonNum && 
+      h.episodeNumber === episodeNum
+    );
+    const progress = existing ? existing.progress : 0;
+    const duration = (existing && typeof existing.duration === "number") ? existing.duration : 0;
+    addToSeriesHistory({
+      tmdbId: series.id,
+      title: series.name,
+      seasonNumber: seasonNum,
+      episodeNumber: episodeNum,
+      provider: selectedProvider,
+      progress,
+      duration,
+      posterPath: series.poster_path,
+      backdropPath: series.backdrop_path
+    });
+  }, [series, seasonNum, episodeNum, selectedProvider]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

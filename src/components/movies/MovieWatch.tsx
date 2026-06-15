@@ -5,7 +5,7 @@ import {
   getMovieDetails,
   TMDB_IMAGE_BASE_URL_W500,
 } from "../../services/tmdb";
-import { addToMovieHistory, storage } from "../../utils";
+import { addToMovieHistory, storage, getUnifiedHistory } from "../../utils";
 import Header from "../Header";
 import VideoPlayer from "../VideoPlayer";
 import SkeletonLoader from "../SkeletonLoader";
@@ -49,6 +49,21 @@ export default function MovieWatch() {
         const data = await getMovieDetails(parseInt(tmdbId, 10));
         setMovie(data);
         document.title = `${data.title} - Miyoro`;
+        
+        // Initial history write to register movie watcher immediately
+        const history = getUnifiedHistory();
+        const existing = history.find((h: any) => h.type === "movie" && (h.id === data.id || h.tmdbId === data.id));
+        const progress = existing ? existing.progress : 0;
+        const duration = (existing && typeof existing.duration === "number") ? existing.duration : 0;
+        addToMovieHistory({
+          tmdbId: data.id,
+          title: data.title,
+          provider: selectedProvider,
+          progress,
+          duration,
+          posterPath: data.poster_path,
+          backdropPath: data.backdrop_path,
+        });
       } catch (error) {
         console.error("Failed to fetch movie details:", error);
       } finally {

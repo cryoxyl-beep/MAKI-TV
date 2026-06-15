@@ -32,69 +32,44 @@
       },
       "required": ["title", "malId", "anilistId", "trailerUrl", "logoUrl", "order", "active"]
     },
-    "LibraryData": {
-      "title": "LibraryData",
-      "description": "Account-scoped subscribed anime listings for a user",
+    "AnimeSection": {
+      "title": "AnimeSection",
+      "description": "User's compiled Anime lists",
       "type": "object",
       "properties": {
-        "animes": {
-          "type": "array",
-          "description": "List of subscribed anime details"
-        }
-      },
-      "required": ["animes"]
-    },
-    "UserData": {
-      "title": "UserData",
-      "description": "User specific watch history, watch progress, and saved watch later lists.",
-      "type": "object",
-      "properties": {
-        "history": {
-          "type": "array",
-          "description": "Watch history and progress entries"
-        },
-        "watch_later": {
-          "type": "array",
-          "description": "Watch later episodes"
-        }
+        "library": { "type": "array" },
+        "watchHistory": { "type": "array" },
+        "watchLater": { "type": "array" }
       }
     },
-    "SeriesData": {
-      "title": "SeriesData",
-      "description": "Series custom library, series watch later list, and watch history.",
+    "MoviesSection": {
+      "title": "MoviesSection",
+      "description": "User's compiled Movie lists",
       "type": "object",
       "properties": {
-        "library": {
-          "type": "array",
-          "description": "List of series in the library"
-        },
-        "watchLater": {
-          "type": "array",
-          "description": "Watch later series list"
-        },
-        "history": {
-          "type": "array",
-          "description": "Watch progress and history entries for series"
-        }
+        "library": { "type": "array" },
+        "watchHistory": { "type": "array" },
+        "watchLater": { "type": "array" }
       }
     },
-    "MoviesData": {
-      "title": "MoviesData",
-      "description": "Movies custom library, movies watch later list, and watch history.",
+    "SeriesSection": {
+      "title": "SeriesSection",
+      "description": "User's compiled Series lists",
       "type": "object",
       "properties": {
-        "library": {
-          "type": "array",
-          "description": "List of movies in the library"
-        },
-        "watchLater": {
-          "type": "array",
-          "description": "Watch later movies list"
-        },
-        "history": {
-          "type": "array",
-          "description": "Watch progress and history entries for movies"
-        }
+        "library": { "type": "array" },
+        "watchHistory": { "type": "array" },
+        "watchLater": { "type": "array" }
+      }
+    },
+    "UserDocument": {
+      "title": "UserDocument",
+      "description": "The unified root user profile document containing anime, movies, and series configurations.",
+      "type": "object",
+      "properties": {
+        "anime": { "$ref": "AnimeSection" },
+        "movies": { "$ref": "MoviesSection" },
+        "series": { "$ref": "SeriesSection" }
       }
     }
   },
@@ -107,21 +82,9 @@
       "schema": "HeroTrailer",
       "description": "Contains metadata for hero section premium trailers."
     },
-    "libraries": {
-      "schema": "LibraryData",
-      "description": "Collection of user-subscribed libraries scoped by user ID"
-    },
-    "userData": {
-      "schema": "UserData",
-      "description": "Collection of user's personal private states (history and watch later lists) scoped by user ID"
-    },
-    "seriesData": {
-      "schema": "SeriesData",
-      "description": "Collection of user's personal series library and history scoped by user ID"
-    },
-    "moviesData": {
-      "schema": "MoviesData",
-      "description": "Collection of user's personal movies library and history scoped by user ID"
+    "users": {
+      "schema": "UserDocument",
+      "description": "The master users collection housing all isolated client libraries, history tables, and lists by userId."
     }
   }
 }

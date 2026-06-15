@@ -5,33 +5,43 @@
 
 import { auth, db } from "./lib/firebase";
 import { doc, setDoc } from "firebase/firestore";
-import { AniListAnime, SubscriptionItem, WatchHistoryItem } from "./types";
+import { AniListAnime, SubscriptionItem, WatchHistoryItem, AnimeHistoryItem, MovieHistoryItem, SeriesHistoryItem } from "./types";
 
-export interface UnifiedWatchState {
-  anilistId: number;
-  tmdbId: number;
-  title: string;
-  provider: string;
-  progress: {
-    watched: number;
-    duration: number;
-  };
-  last_season_watched: number;
-  last_episode_watched: number;
-  percentage: number;
-  updatedAt: string;
+export type { AnimeHistoryItem, MovieHistoryItem, SeriesHistoryItem, WatchHistoryItem };
+
+// Startup Local Storage Sanitizer & Clean Architecture Invariant
+if (typeof window !== "undefined" && !localStorage.getItem("makitv_v2_clean_arch")) {
+  localStorage.removeItem("makitv_history");
+  localStorage.removeItem("makitv_watch_later");
+  localStorage.removeItem("makitv_libraries");
+  localStorage.removeItem("makitv_seriesData");
+  localStorage.removeItem("makitv_moviesData");
+  localStorage.removeItem("makitv_userData");
+  localStorage.removeItem("makitv_unified_watch_states");
+  
+  // Wipe legacy keys
+  localStorage.removeItem("makitv_anime_library");
+  localStorage.removeItem("makitv_anime_history");
+  localStorage.removeItem("makitv_anime_watch_later");
+  localStorage.removeItem("makitv_movies_library");
+  localStorage.removeItem("makitv_movies_history");
+  localStorage.removeItem("makitv_movies_watch_later");
+  localStorage.removeItem("makitv_series_library");
+  localStorage.removeItem("makitv_series_history");
+  localStorage.removeItem("makitv_series_watch_later");
+
+  localStorage.setItem("makitv_v2_clean_arch", "true");
 }
 
 export function formatRelativeDate(isoString: string): string {
   const date = new Date(isoString);
   const now = new Date();
 
-  // Reset times to compare days accurately
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const targetDate = new Date(
     date.getFullYear(),
     date.getMonth(),
-    date.getDate(),
+    date.getDate()
   );
 
   const diffTime = today.getTime() - targetDate.getTime();
@@ -53,7 +63,6 @@ export function formatRelativeDate(isoString: string): string {
   return dateFormatted;
 }
 
-// Persist data in localStorage
 const STORAGE_PREFIX = "makitv_";
 
 export const storage = {
@@ -86,181 +95,148 @@ export const storage = {
   },
 };
 
-export function syncToFirebase(key: string, data: any) {
-  if (auth && auth.currentUser && db) {
-    const uid = auth.currentUser.uid;
-    // Sanitize data to remove any undefined values which crash Firebase
-    const sanitizedData = JSON.parse(JSON.stringify(data));
+// Pure Syncing System
+export function syncUserDataToFirebase() {
+  if (!auth || !auth.currentUser || !db) return;
+  const uid = auth.currentUser.uid;
+  const userRef = doc(db, "users", uid);
 
-    if (key === "history") {
-      const historyList = Array.isArray(sanitizedData) ? sanitizedData : [];
-      
-      const animeHistory = historyList.filter((item: any) => !item.type || item.type === "anime");
-      const seriesHistory = historyList.filter((item: any) => item.type === "series");
-      const movieHistory = historyList.filter((item: any) => item.type === "movie");
+  const payload = {
+    anime: {
+      library: storage.get("anime_library", []),
+      watchHistory: storage.get("anime_history", []),
+      watchLater: storage.get("anime_watch_later", []),
+    },
+    movies: {
+      library: storage.get("movies_library", []),
+      watchHistory: storage.get("movies_history", []),
+      watchLater: storage.get("movies_watch_later", []),
+    },
+    series: {
+      library: storage.get("series_library", []),
+      watchHistory: storage.get("series_history", []),
+      watchLater: storage.get("series_watch_later", []),
+    },
+  };
 
-      // Sync anime history to userData
-      const userRef = doc(db, "userData", uid);
-      setDoc(userRef, { history: animeHistory }, { merge: true })
-        .then(() => console.log(`[Firestore Sync] Successfully synced anime history to userData/${uid}`))
-        .catch((err) => console.error(`[Firestore Sync Error] Failed to sync anime history to userData/${uid}:`, err));
+  const sanitized = JSON.parse(JSON.stringify(payload));
 
-      // Sync series history to seriesData
-      const seriesRef = doc(db, "seriesData", uid);
-      setDoc(seriesRef, { history: seriesHistory }, { merge: true })
-        .then(() => console.log(`[Firestore Sync] Successfully synced series history to seriesData/${uid}`))
-        .catch((err) => console.error(`[Firestore Sync Error] Failed to sync series history to seriesData/${uid}:`, err));
+  setDoc(userRef, sanitized, { merge: true })
+    .then(() => console.log(`[Firestore Sync] Successfully synced layout to users/${uid}`))
+    .catch((err) => console.error(`[Firestore Sync Error] Failed to sync users/${uid}:`, err));
+}
 
-      // Sync movie history to moviesData
-      const movieRef = doc(db, "moviesData", uid);
-      setDoc(movieRef, { history: movieHistory }, { merge: true })
-        .then(() => console.log(`[Firestore Sync] Successfully synced movie history to moviesData/${uid}`))
-        .catch((err) => console.error(`[Firestore Sync Error] Failed to sync movie history to moviesData/${uid}:`, err));
+export function mergeFirestoreData(data: any) {
+  if (!data) return;
 
-      return;
+  if (data.anime) {
+    if (Array.isArray(data.anime.library)) {
+      storage.set("anime_library", data.anime.library);
     }
-
-    if (key === "watch_later") {
-      // Anime watch later is saved under userData
-      const userRef = doc(db, "userData", uid);
-      setDoc(userRef, { watch_later: sanitizedData }, { merge: true })
-        .then(() => console.log(`[Firestore Sync] Successfully synced anime watch_later to userData/${uid}`))
-        .catch((err) => console.error(`[Firestore Sync Error] Failed to sync anime watch_later to userData/${uid}:`, err));
-      return;
+    if (Array.isArray(data.anime.watchHistory)) {
+      storage.set("anime_history", data.anime.watchHistory);
     }
-
-    if (key === "unified_watch_states") {
-      // Anime unified watch states under userData
-      const userRef = doc(db, "userData", uid);
-      setDoc(userRef, { unified_watch_states: sanitizedData }, { merge: true })
-        .then(() => console.log(`[Firestore Sync] Successfully synced unified_watch_states to userData/${uid}`))
-        .catch((err) => console.error(`[Firestore Sync Error] Failed to sync unified_watch_states to userData/${uid}:`, err));
-      return;
+    if (Array.isArray(data.anime.watchLater)) {
+      storage.set("anime_watch_later", data.anime.watchLater);
     }
+  }
 
-    const docRef = doc(db, "userData", uid);
-    const payloadSize = new Blob([JSON.stringify(sanitizedData)]).size;
-    console.log(
-      `[Firestore Sync] PATH: userData/${uid} | UID: ${uid} | KEY: ${key} | PAYLOAD SIZE: ${payloadSize} bytes`,
-    );
+  if (data.movies) {
+    if (Array.isArray(data.movies.library)) {
+      storage.set("movies_library", data.movies.library);
+    }
+    if (Array.isArray(data.movies.watchHistory)) {
+      storage.set("movies_history", data.movies.watchHistory);
+    }
+    if (Array.isArray(data.movies.watchLater)) {
+      storage.set("movies_watch_later", data.movies.watchLater);
+    }
+  }
 
-    setDoc(docRef, { [key]: sanitizedData }, { merge: true })
-      .then(() => {
-        console.log(
-          `[Firestore Sync Success] Successfully synced ${key} to userData/${uid}`,
-        );
-      })
-      .catch((err) => {
-        console.error(
-          `[Firestore Sync Error] Failed to sync ${key} to userData/${uid}:`,
-          err,
-        );
-      });
-  } else {
-    console.warn(
-      `[Firestore Sync Warning] Cannot sync ${key}. Auth/DB not ready or no current user.`,
-    );
+  if (data.series) {
+    if (Array.isArray(data.series.library)) {
+      storage.set("series_library", data.series.library);
+    }
+    if (Array.isArray(data.series.watchHistory)) {
+      storage.set("series_history", data.series.watchHistory);
+    }
+    if (Array.isArray(data.series.watchLater)) {
+      storage.set("series_watch_later", data.series.watchLater);
+    }
   }
 }
 
-// Unified Watch Progress Tracking Getter/Setters
-export function getUnifiedWatchStates(): Record<number, UnifiedWatchState> {
-  return storage.get<Record<number, UnifiedWatchState>>(
-    "unified_watch_states",
-    {},
-  );
+// 1. History Persistence Helpers
+export function getWatchHistory(): AnimeHistoryItem[] {
+  return storage.get<AnimeHistoryItem[]>("anime_history", []);
 }
 
-export function getUnifiedWatchState(
-  anilistId: number,
-): UnifiedWatchState | null {
+export function getMovieHistory(): MovieHistoryItem[] {
+  return storage.get<MovieHistoryItem[]>("movies_history", []);
+}
+
+export function getSeriesHistory(): SeriesHistoryItem[] {
+  return storage.get<SeriesHistoryItem[]>("series_history", []);
+}
+
+export function getUnifiedHistory(): WatchHistoryItem[] {
+  const anime = getWatchHistory();
+  const movies = getMovieHistory();
+  const series = getSeriesHistory();
+  const combined: WatchHistoryItem[] = [...anime, ...movies, ...series];
+  combined.sort(
+    (a, b) => new Date(b.watchedAt).getTime() - new Date(a.watchedAt).getTime()
+  );
+  return combined;
+}
+
+// Unified Watch Progress tracking helper (local storage only for granular performance, with BG sync)
+export function getUnifiedWatchStates(): Record<number, any> {
+  return storage.get<Record<number, any>>("anime_watch_progress", {});
+}
+
+export function getUnifiedWatchState(anilistId: number): any | null {
   const states = getUnifiedWatchStates();
   return states[anilistId] || null;
 }
 
-export function saveUnifiedWatchState(state: UnifiedWatchState): void {
+export function saveUnifiedWatchState(state: any): void {
   const states = getUnifiedWatchStates();
   states[state.anilistId] = {
     ...state,
     updatedAt: new Date().toISOString(),
   };
-  storage.set("unified_watch_states", states);
-  syncToFirebase("unified_watch_states", states);
-}
-
-// 1. History Persistence Helpers
-// Returns the single unified history array
-export function getUnifiedHistory(): WatchHistoryItem[] {
-  const history = storage.get<WatchHistoryItem[]>("history", []);
-  
-  // Normalize legacy data fields to unified structure dynamically
-  return history.map(item => {
-    if (!item.id && (item.animeId || item.tmdbId)) {
-      item.id = (item.animeId || item.tmdbId) as number;
-    }
-    if (!item.title && item.animeTitle) {
-      item.title = item.animeTitle;
-    }
-    if (!item.posterImage && (item.coverImage || item.posterPath)) {
-      item.posterImage = (item.coverImage || item.posterPath) as string;
-    }
-    if (!item.backdropImage && (item.bannerImage || item.backdropPath)) {
-      item.backdropImage = (item.bannerImage || item.backdropPath) as string;
-    }
-    if (!item.type) {
-      item.type = 'anime';
-    }
-    return item;
-  });
-}
-
-export function getWatchHistory(): WatchHistoryItem[] {
-  return getUnifiedHistory().filter((h) => !h.type || h.type === "anime");
-}
-
-export type MovieHistoryItem = WatchHistoryItem;
-
-export function getMovieHistory(): MovieHistoryItem[] {
-  return getUnifiedHistory().filter(
-    (h) => h.type === "movie",
-  );
+  storage.set("anime_watch_progress", states);
 }
 
 export interface MovieHistoryInput {
   tmdbId: number;
   title: string;
-  provider: string; // provider shouldn't be required but it's passed
+  provider?: string;
   progress: number;
-  duration?: number;
+  duration?: number | string;
   posterPath?: string;
   backdropPath?: string;
 }
 
 export function addToMovieHistory(item: MovieHistoryInput): void {
-  const history = getUnifiedHistory();
-  const newItem: WatchHistoryItem = {
-    ...item,
+  console.log("[MOVIE HISTORY WRITE]", item);
+  const history = getMovieHistory();
+  const newItem: MovieHistoryItem = {
     id: item.tmdbId,
-    posterImage: item.posterPath || "",
+    title: item.title,
+    thumbnail: item.posterPath || "",
     backdropImage: item.backdropPath || "",
-    type: "movie",
+    progress: item.progress,
+    duration: typeof item.duration === "number" ? item.duration : parseFloat(item.duration || "0") || 0,
     watchedAt: new Date().toISOString(),
+    type: "movie",
   };
-  const filtered = history.filter(
-    (h) => !(h.type === "movie" && (h.id === item.tmdbId || h.tmdbId === item.tmdbId)),
-  );
+  const filtered = history.filter((h) => h.id !== item.tmdbId);
   filtered.unshift(newItem);
-  const newHistory = filtered.slice(0, 300);
-  storage.set("history", newHistory);
-  syncToFirebase("history", newHistory);
-}
-
-export type SeriesHistoryItem = WatchHistoryItem;
-
-export function getSeriesHistory(): SeriesHistoryItem[] {
-  return getUnifiedHistory().filter(
-    (h) => h.type === "series",
-  );
+  const limited = filtered.slice(0, 300);
+  storage.set("movies_history", limited);
+  syncUserDataToFirebase();
 }
 
 export interface SeriesHistoryInput {
@@ -268,36 +244,35 @@ export interface SeriesHistoryInput {
   title: string;
   seasonNumber: number;
   episodeNumber: number;
-  provider: string;
+  provider?: string;
   progress: number;
-  duration?: number;
+  duration?: number | string;
   posterPath?: string;
   backdropPath?: string;
 }
 
 export function addToSeriesHistory(item: SeriesHistoryInput): void {
-  const history = getUnifiedHistory();
-  const newItem: WatchHistoryItem = {
-    ...item,
+  console.log("[SERIES HISTORY WRITE]", item);
+  const history = getSeriesHistory();
+  const newItem: SeriesHistoryItem = {
     id: item.tmdbId,
-    posterImage: item.posterPath || "",
+    title: item.title,
+    thumbnail: item.posterPath || "",
     backdropImage: item.backdropPath || "",
-    type: "series",
+    seasonNumber: item.seasonNumber,
+    episodeNumber: item.episodeNumber,
+    progress: item.progress,
+    duration: typeof item.duration === "number" ? item.duration : parseFloat(item.duration || "0") || 0,
     watchedAt: new Date().toISOString(),
+    type: "series",
   };
   const filtered = history.filter(
-    (h) =>
-      !(
-        h.type === "series" &&
-        (h.id === item.tmdbId || h.tmdbId === item.tmdbId) &&
-        h.seasonNumber === item.seasonNumber &&
-        h.episodeNumber === item.episodeNumber
-      ),
+    (h) => !(h.id === item.tmdbId && h.seasonNumber === item.seasonNumber && h.episodeNumber === item.episodeNumber)
   );
   filtered.unshift(newItem);
-  const newHistory = filtered.slice(0, 300);
-  storage.set("history", newHistory);
-  syncToFirebase("history", newHistory);
+  const limited = filtered.slice(0, 300);
+  storage.set("series_history", limited);
+  syncUserDataToFirebase();
 }
 
 export interface AnimeHistoryInput {
@@ -313,87 +288,31 @@ export interface AnimeHistoryInput {
 }
 
 export function addToWatchHistory(item: AnimeHistoryInput): void {
-  const history = getUnifiedHistory();
+  const history = getWatchHistory();
 
-  // Try to find if we already have this episode in history to preserve existing thumbnailUrl if not provided
-  const existing = history.find(
-    (h) =>
-      (!h.type || h.type === "anime") &&
-      (h.id === item.animeId || h.animeId === item.animeId) &&
-      h.episodeNumber === item.episodeNumber &&
-      h.seasonNumber === item.seasonNumber,
-  );
-
-  const newItem: WatchHistoryItem = {
-    ...item,
+  const newItem: AnimeHistoryItem = {
     id: item.animeId,
     title: item.animeTitle,
-    posterImage: item.coverImage || "",
-    backdropImage: item.bannerImage || "",
-    type: "anime",
+    thumbnail: item.thumbnailUrl || item.coverImage || "",
+    bannerImage: item.bannerImage || "",
+    seasonNumber: item.seasonNumber,
+    episodeNumber: item.episodeNumber,
+    progress: item.progress,
+    duration: typeof item.duration === "number" ? item.duration : parseFloat(item.duration || "0") || 0,
     watchedAt: new Date().toISOString(),
-    thumbnailUrl: item.thumbnailUrl || existing?.thumbnailUrl,
+    type: "anime",
   };
 
-  // Remove existing history item for same anime and same episode/season if exists to put it on top
   const filtered = history.filter(
-    (h) =>
-      !(
-        (!h.type || h.type === "anime") &&
-        (h.id === item.animeId || h.animeId === item.animeId) &&
-        h.episodeNumber === item.episodeNumber &&
-        h.seasonNumber === item.seasonNumber
-      ),
+    (h) => !(h.id === item.animeId && h.seasonNumber === item.seasonNumber && h.episodeNumber === item.episodeNumber)
   );
 
-  filtered.unshift(newItem); // put on top
-  const newHistory = filtered.slice(0, 300); // keep last 300
-  storage.set("history", newHistory); // keep last 300
-  syncToFirebase("history", newHistory);
+  filtered.unshift(newItem);
+  const limited = filtered.slice(0, 300);
+  storage.set("anime_history", limited);
+  syncUserDataToFirebase();
 }
 
-export function mergeFirebaseHistory(firebaseHistory: any[]) {
-  if (
-    !firebaseHistory ||
-    !Array.isArray(firebaseHistory) ||
-    firebaseHistory.length === 0
-  ) {
-    return;
-  }
-  const localHistory = getUnifiedHistory();
-  if (localHistory.length === 0) {
-    storage.set("history", firebaseHistory.slice(0, 300));
-    return;
-  }
-
-  const combined = [...localHistory, ...firebaseHistory];
-  combined.sort(
-    (a, b) =>
-      new Date(b.watchedAt || 0).getTime() -
-      new Date(a.watchedAt || 0).getTime(),
-  );
-
-  const unique: WatchHistoryItem[] = [];
-  const seen = new Set();
-
-  for (const item of combined) {
-    let key = "";
-    if (item.type === "movie") {
-      key = `movie_${item.tmdbId}`;
-    } else if (item.type === "series") {
-      key = `series_${item.tmdbId}_${item.seasonNumber}_${item.episodeNumber}`;
-    } else {
-      key = `anime_${item.animeId}_${item.seasonNumber}_${item.episodeNumber}`;
-    }
-    if (!seen.has(key)) {
-      seen.add(key);
-      unique.push(item);
-    }
-  }
-  storage.set("history", unique.slice(0, 300));
-}
-
-// Get the last progress of a specific episode
 export function getEpisodeProgress(
   animeId: number,
   seasonNumber: number,
@@ -402,49 +321,52 @@ export function getEpisodeProgress(
   const history = getWatchHistory();
   const found = history.find(
     (h) =>
-      h.animeId === animeId &&
+      h.id === animeId &&
       h.seasonNumber === seasonNumber &&
-      h.episodeNumber === episodeNumber,
+      h.episodeNumber === episodeNumber
   );
   return found ? found.progress : 0;
 }
 
-// 2. Subscriptions / "Channels" Subscribed Helpers
-export function getSubscriptions(): SubscriptionItem[] {
-  return storage.get<SubscriptionItem[]>("subscriptions", []);
+// 2. Library Storage Helpers
+export function getAnimeLibrary(): SubscriptionItem[] {
+  return storage.get<SubscriptionItem[]>("anime_library", []);
+}
+export function saveAnimeLibrary(data: SubscriptionItem[]) {
+  storage.set("anime_library", data);
+  syncUserDataToFirebase();
 }
 
-export function isSubscribed(animeId: number): boolean {
-  const subs = getSubscriptions();
-  return subs.some((s) => s.animeId === animeId);
+export function getMoviesLibrary() {
+  return storage.get<any[]>("movies_library", []);
+}
+export function saveMoviesLibrary(data: any[]) {
+  storage.set("movies_library", data);
+  syncUserDataToFirebase();
 }
 
-export function toggleSubscription(anime: AniListAnime): boolean {
-  const subs = getSubscriptions();
-  const alreadySubscribed = subs.some((s) => s.animeId === anime.id);
+export function getMoviesWatchLater() {
+  return storage.get<any[]>("movies_watch_later", []);
+}
+export function saveMoviesWatchLater(data: any[]) {
+  storage.set("movies_watch_later", data);
+  syncUserDataToFirebase();
+}
 
-  let updatedSubs: SubscriptionItem[];
-  if (alreadySubscribed) {
-    updatedSubs = subs.filter((s) => s.animeId !== anime.id);
-  } else {
-    updatedSubs = [
-      ...subs,
-      {
-        animeId: anime.id,
-        animeTitle:
-          anime.title.english ||
-          anime.title.romaji ||
-          anime.title.userPreferred ||
-          "Untitled Anime",
-        coverImage: anime.coverImage.large || anime.coverImage.medium,
-        bannerImage: anime.bannerImage,
-        subscribedAt: new Date().toISOString(),
-      },
-    ];
-  }
+export function getSeriesLibrary() {
+  return storage.get<any[]>("series_library", []);
+}
+export function saveSeriesLibrary(data: any[]) {
+  storage.set("series_library", data);
+  syncUserDataToFirebase();
+}
 
-  storage.set("subscriptions", updatedSubs);
-  return !alreadySubscribed;
+export function getSeriesWatchLater() {
+  return storage.get<any[]>("series_watch_later", []);
+}
+export function saveSeriesWatchLater(data: any[]) {
+  storage.set("series_watch_later", data);
+  syncUserDataToFirebase();
 }
 
 // 3. Watch Later Helpers
@@ -459,7 +381,7 @@ export interface WatchLaterItem {
 }
 
 export function getWatchLater(): WatchLaterItem[] {
-  return storage.get<WatchLaterItem[]>("watch_later", []);
+  return storage.get<WatchLaterItem[]>("anime_watch_later", []);
 }
 
 export function isWatchLater(
@@ -471,7 +393,7 @@ export function isWatchLater(
     (i) =>
       i.animeId === animeId &&
       i.seasonNumber === seasonNumber &&
-      i.episodeNumber === episodeNumber,
+      i.episodeNumber === episodeNumber
   );
 }
 
@@ -482,7 +404,7 @@ export function toggleWatchLater(
   const exists = isWatchLater(
     item.animeId,
     item.seasonNumber,
-    item.episodeNumber,
+    item.episodeNumber
   );
 
   if (exists) {
@@ -492,15 +414,15 @@ export function toggleWatchLater(
           i.animeId === item.animeId &&
           i.seasonNumber === item.seasonNumber &&
           i.episodeNumber === item.episodeNumber
-        ),
+        )
     );
-    storage.set("watch_later", newLater);
-    syncToFirebase("watch_later", newLater);
+    storage.set("anime_watch_later", newLater);
+    syncUserDataToFirebase();
     return false;
   } else {
     const newLater = [{ ...item, savedAt: new Date().toISOString() }, ...items];
-    storage.set("watch_later", newLater);
-    syncToFirebase("watch_later", newLater);
+    storage.set("anime_watch_later", newLater);
+    syncUserDataToFirebase();
     return true;
   }
 }
@@ -519,10 +441,6 @@ export interface SeasonInfo {
 }
 
 export function buildSeasonsList(anime: AniListAnime): SeasonInfo[] {
-  // We want to construct an ordered list of seasons
-  // The current anime itself is one of them.
-  // We inspect its relations to find "PREQUEL", "SEQUEL", and compile them.
-
   const currentTitle =
     anime.title.english ||
     anime.title.romaji ||
@@ -539,11 +457,9 @@ export function buildSeasonsList(anime: AniListAnime): SeasonInfo[] {
     popularity: number;
   }[] = [];
 
-  // Add relations
   if (anime.relations?.edges) {
     const edges = anime.relations.edges;
 
-    // Sort and filtering of relation items
     edges.forEach((edge) => {
       const node = edge.node;
       if (node.type === "ANIME") {
@@ -586,7 +502,6 @@ export function buildSeasonsList(anime: AniListAnime): SeasonInfo[] {
           edge.relationType === "SIDE_STORY" ||
           edge.relationType === "PARENT"
         ) {
-          // Avoid clutter unless popular
           if (pop > 1000) {
             seasons.push({
               animeId: node.id,
@@ -603,13 +518,11 @@ export function buildSeasonsList(anime: AniListAnime): SeasonInfo[] {
     });
   }
 
-  // Deduplicate by animeId just in case
   const uniqueSeasons = seasons.filter(
     (s, index, self) =>
-      self.findIndex((u) => u.animeId === s.animeId) === index,
+      self.findIndex((u) => u.animeId === s.animeId) === index
   );
 
-  // Group roles
   const prequels = uniqueSeasons
     .filter((s) => s.role === "prequel")
     .sort((a, b) => a.animeId - b.animeId);
@@ -619,10 +532,8 @@ export function buildSeasonsList(anime: AniListAnime): SeasonInfo[] {
   const alternatives = uniqueSeasons
     .filter((s) => s.role === "alternative")
     .sort((a, b) => b.popularity - a.popularity)
-    .slice(0, 2); // limit to 2 alternatives
+    .slice(0, 2);
 
-  // Combine into direct sequence
-  // Order: prequels -> current -> sequels -> alternatives
   const orderedList: typeof uniqueSeasons = [
     ...prequels,
     {
@@ -642,9 +553,8 @@ export function buildSeasonsList(anime: AniListAnime): SeasonInfo[] {
     ...alternatives,
   ];
 
-  // Assign season numbers sequence (1, 2, 3...)
   return orderedList.map((item, idx) => ({
-    id: item.animeId, // this points to the AniList media ID
+    id: item.animeId,
     seasonNumber: idx + 1,
     animeId: item.animeId,
     title: item.title,
@@ -654,8 +564,6 @@ export function buildSeasonsList(anime: AniListAnime): SeasonInfo[] {
   }));
 }
 
-// 4. Custom Anime Video Clips / Loops database
-// This matches real open source video loops to represent anime watching with true media feedback
 export interface AnimeVideoLoop {
   url: string;
   subtitles: { time: number; text: string; jpn?: string }[];
@@ -663,7 +571,7 @@ export interface AnimeVideoLoop {
 
 export const ANIME_VIDEO_CLIPS: AnimeVideoLoop[] = [
   {
-    url: "https://assets.mixkit.co/videos/preview/mixkit-star-trails-over-dense-forest-41582-large.mp4", // Starry cinematic sky
+    url: "https://assets.mixkit.co/videos/preview/mixkit-star-trails-over-dense-forest-41582-large.mp4",
     subtitles: [
       {
         time: 2,
@@ -693,7 +601,7 @@ export const ANIME_VIDEO_CLIPS: AnimeVideoLoop[] = [
     ],
   },
   {
-    url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4", // generic funny clip
+    url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
     subtitles: [
       {
         time: 3,
@@ -713,7 +621,7 @@ export const ANIME_VIDEO_CLIPS: AnimeVideoLoop[] = [
     ],
   },
   {
-    url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4", // tech/modern loop
+    url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
     subtitles: [
       {
         time: 3,
@@ -735,7 +643,6 @@ export const ANIME_VIDEO_CLIPS: AnimeVideoLoop[] = [
 ];
 
 export function getClipsByAnimeId(animeId: number): AnimeVideoLoop {
-  // Use simple hash to pick one loop, so it's consistent for each anime
   const index = animeId % ANIME_VIDEO_CLIPS.length;
   return ANIME_VIDEO_CLIPS[index];
 }

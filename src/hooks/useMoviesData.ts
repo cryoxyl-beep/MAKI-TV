@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth, db } from "../lib/firebase";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { TMDBMovie } from "../services/tmdb";
-import { storage, mergeFirebaseHistory } from "../utils";
+import { getMoviesLibrary, saveMoviesLibrary, getMoviesWatchLater, saveMoviesWatchLater, mergeFirestoreData } from "../utils";
 
 export interface MovieLibraryItem {
   id: number;
@@ -40,23 +40,32 @@ if (auth) {
       notifyListeners();
       try {
         if (db) {
-          const docRef = doc(db, "moviesData", user.uid);
+          const docRef = doc(db, "users", user.uid);
           const snap = await getDoc(docRef);
           if (snap.exists()) {
             const data = snap.data();
-            globalLibrary = data.library || [];
-            globalWatchLater = data.watchLater || [];
-            if (data.history) mergeFirebaseHistory(data.history);
+            
+            // Sync all user sections to local storage
+            mergeFirestoreData(data);
+
+            const movieData = data.movies || {};
+            globalLibrary = movieData.library || [];
+            globalWatchLater = movieData.watchLater || [];
           } else {
-            globalLibrary = [];
-            globalWatchLater = [];
+            globalLibrary = getMoviesLibrary();
+            globalWatchLater = getMoviesWatchLater();
           }
+        } else {
+          globalLibrary = getMoviesLibrary();
+          globalWatchLater = getMoviesWatchLater();
         }
       } catch (err) {
         console.error(
-          "[useMoviesData] Failed to fetch user moviesData from Firestore:",
-          err,
+          "[useMoviesData] Failed to fetch user data from Firestore:",
+          err
         );
+        globalLibrary = getMoviesLibrary();
+        globalWatchLater = getMoviesWatchLater();
       } finally {
         isGlobalLoading = false;
         notifyListeners();
@@ -70,25 +79,12 @@ if (auth) {
   });
 }
 
-const syncToFirebase = async () => {
-  if (!globalCurrentUser || !db) return;
-  const docRef = doc(db, "moviesData", globalCurrentUser.uid);
-  try {
-    const payload = JSON.parse(
-      JSON.stringify({ library: globalLibrary, watchLater: globalWatchLater }),
-    );
-    await setDoc(docRef, payload, { merge: true });
-  } catch (err) {
-    console.error("[useMoviesData] Failed to sync to Firestore:", err);
-  }
-};
-
 export function useMoviesData() {
   const [library, setLibrary] = useState<MovieLibraryItem[]>(globalLibrary);
   const [watchLater, setWatchLater] =
     useState<MovieWatchLaterItem[]>(globalWatchLater);
   const [currentUser, setCurrentUser] = useState<User | null>(
-    globalCurrentUser,
+    globalCurrentUser
   );
   const [isLoading, setIsLoading] = useState(isGlobalLoading);
 
@@ -111,15 +107,12 @@ export function useMoviesData() {
     watchLater.some((item) => item.id === id);
 
   const toggleLibrary = async (movie: TMDBMovie) => {
-    if (!globalCurrentUser) {
-      alert("Please login to add to library");
-      return false;
-    }
     const exists = isInLibrary(movie.id);
+    let updated: MovieLibraryItem[];
     if (exists) {
-      globalLibrary = globalLibrary.filter((item) => item.id !== movie.id);
+      updated = globalLibrary.filter((item) => item.id !== movie.id);
     } else {
-      globalLibrary = [
+      updated = [
         {
           id: movie.id,
           title: movie.title,
@@ -130,23 +123,19 @@ export function useMoviesData() {
         ...globalLibrary,
       ];
     }
+    globalLibrary = updated;
     notifyListeners();
-    await syncToFirebase();
+    saveMoviesLibrary(updated);
     return !exists;
   };
 
   const toggleWatchLater = async (movie: TMDBMovie) => {
-    if (!globalCurrentUser) {
-      alert("Please login to add to watch later");
-      return false;
-    }
     const exists = isInWatchLater(movie.id);
+    let updated: MovieWatchLaterItem[];
     if (exists) {
-      globalWatchLater = globalWatchLater.filter(
-        (item) => item.id !== movie.id,
-      );
+      updated = globalWatchLater.filter((item) => item.id !== movie.id);
     } else {
-      globalWatchLater = [
+      updated = [
         {
           id: movie.id,
           title: movie.title,
@@ -157,8 +146,9 @@ export function useMoviesData() {
         ...globalWatchLater,
       ];
     }
+    globalWatchLater = updated;
     notifyListeners();
-    await syncToFirebase();
+    saveMoviesWatchLater(updated);
     return !exists;
   };
 

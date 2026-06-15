@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth, db } from "../lib/firebase";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { TMDBTVShow } from "../services/tmdb";
-import { storage, mergeFirebaseHistory } from "../utils";
+import { getSeriesLibrary, saveSeriesLibrary, getSeriesWatchLater, saveSeriesWatchLater, mergeFirestoreData } from "../utils";
 
 export interface SeriesLibraryItem {
   id: number;
@@ -40,23 +40,32 @@ if (auth) {
       notifyListeners();
       try {
         if (db) {
-          const docRef = doc(db, "seriesData", user.uid);
+          const docRef = doc(db, "users", user.uid);
           const snap = await getDoc(docRef);
           if (snap.exists()) {
             const data = snap.data();
-            globalLibrary = data.library || [];
-            globalWatchLater = data.watchLater || [];
-            if (data.history) mergeFirebaseHistory(data.history);
+            
+            // Sync all user sections to local storage
+            mergeFirestoreData(data);
+
+            const seriesData = data.series || {};
+            globalLibrary = seriesData.library || [];
+            globalWatchLater = seriesData.watchLater || [];
           } else {
-            globalLibrary = [];
-            globalWatchLater = [];
+            globalLibrary = getSeriesLibrary();
+            globalWatchLater = getSeriesWatchLater();
           }
+        } else {
+          globalLibrary = getSeriesLibrary();
+          globalWatchLater = getSeriesWatchLater();
         }
       } catch (err) {
         console.error(
-          "[useSeriesData] Failed to fetch user seriesData from Firestore:",
-          err,
+          "[useSeriesData] Failed to fetch user data from Firestore:",
+          err
         );
+        globalLibrary = getSeriesLibrary();
+        globalWatchLater = getSeriesWatchLater();
       } finally {
         isGlobalLoading = false;
         notifyListeners();
@@ -70,25 +79,12 @@ if (auth) {
   });
 }
 
-const syncToFirebase = async () => {
-  if (!globalCurrentUser || !db) return;
-  const docRef = doc(db, "seriesData", globalCurrentUser.uid);
-  try {
-    const payload = JSON.parse(
-      JSON.stringify({ library: globalLibrary, watchLater: globalWatchLater }),
-    );
-    await setDoc(docRef, payload, { merge: true });
-  } catch (err) {
-    console.error("[useSeriesData] Failed to sync to Firestore:", err);
-  }
-};
-
 export function useSeriesData() {
   const [library, setLibrary] = useState<SeriesLibraryItem[]>(globalLibrary);
   const [watchLater, setWatchLater] =
     useState<SeriesWatchLaterItem[]>(globalWatchLater);
   const [currentUser, setCurrentUser] = useState<User | null>(
-    globalCurrentUser,
+    globalCurrentUser
   );
   const [isLoading, setIsLoading] = useState(isGlobalLoading);
 
@@ -111,15 +107,12 @@ export function useSeriesData() {
     watchLater.some((item) => item.id === id);
 
   const toggleLibrary = async (series: TMDBTVShow) => {
-    if (!globalCurrentUser) {
-      alert("Please login to add to library");
-      return false;
-    }
     const exists = isInLibrary(series.id);
+    let updated: SeriesLibraryItem[];
     if (exists) {
-      globalLibrary = globalLibrary.filter((item) => item.id !== series.id);
+      updated = globalLibrary.filter((item) => item.id !== series.id);
     } else {
-      globalLibrary = [
+      updated = [
         {
           id: series.id,
           title: series.name,
@@ -130,23 +123,19 @@ export function useSeriesData() {
         ...globalLibrary,
       ];
     }
+    globalLibrary = updated;
     notifyListeners();
-    await syncToFirebase();
+    saveSeriesLibrary(updated);
     return !exists;
   };
 
   const toggleWatchLater = async (series: TMDBTVShow) => {
-    if (!globalCurrentUser) {
-      alert("Please login to add to watch later");
-      return false;
-    }
     const exists = isInWatchLater(series.id);
+    let updated: SeriesWatchLaterItem[];
     if (exists) {
-      globalWatchLater = globalWatchLater.filter(
-        (item) => item.id !== series.id,
-      );
+      updated = globalWatchLater.filter((item) => item.id !== series.id);
     } else {
-      globalWatchLater = [
+      updated = [
         {
           id: series.id,
           title: series.name,
@@ -157,8 +146,9 @@ export function useSeriesData() {
         ...globalWatchLater,
       ];
     }
+    globalWatchLater = updated;
     notifyListeners();
-    await syncToFirebase();
+    saveSeriesWatchLater(updated);
     return !exists;
   };
 

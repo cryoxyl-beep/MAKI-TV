@@ -3,7 +3,7 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { auth, db } from "../lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { AniListAnime } from "../types";
-import { storage, mergeFirebaseHistory } from "../utils";
+import { getAnimeLibrary, saveAnimeLibrary, mergeFirestoreData } from "../utils";
 
 export interface LibraryItem {
   animeId: number;
@@ -23,6 +23,28 @@ const notifyListeners = () => {
   listeners.forEach((listener) => listener());
 };
 
+// Map items from raw SubscriptionItem to LibraryItem
+function mapToLibraryItems(items: any[]): LibraryItem[] {
+  return items.map((item) => ({
+    animeId: item.animeId || item.id,
+    animeTitle: item.animeTitle || item.title,
+    coverImage: item.coverImage || item.thumbnail || "",
+    bannerImage: item.bannerImage || "",
+    subscribedAt: item.subscribedAt || item.addedAt || new Date().toISOString(),
+  }));
+}
+
+// Map items from LibraryItem to SubscriptionItem
+function mapToSubscriptionItems(items: LibraryItem[]) {
+  return items.map((item) => ({
+    animeId: item.animeId,
+    animeTitle: item.animeTitle,
+    coverImage: item.coverImage,
+    bannerImage: item.bannerImage,
+    subscribedAt: item.subscribedAt,
+  }));
+}
+
 // Initialize auth listener just once
 if (auth) {
   onAuthStateChanged(auth, async (user) => {
@@ -32,30 +54,28 @@ if (auth) {
       notifyListeners();
       try {
         if (db) {
-          const libRef = doc(db, "libraries", user.uid);
-          const libSnap = await getDoc(libRef);
-          if (libSnap.exists()) {
-            globalLibrary = libSnap.data().animes || [];
-          } else {
-            globalLibrary = [];
-          }
+          const userRef = doc(db, "users", user.uid);
+          const snap = await getDoc(userRef);
+          if (snap.exists()) {
+            const data = snap.data();
+            
+            // Overwrite/merge local storage
+            mergeFirestoreData(data);
 
-          // Sync local storage history/watch later
-          const userRef = doc(db, "userData", user.uid);
-          const userSnap = await getDoc(userRef);
-          if (userSnap.exists()) {
-            const data = userSnap.data();
-            if (data.history) mergeFirebaseHistory(data.history);
-            if (data.watch_later) storage.set("watch_later", data.watch_later);
-            if (data.unified_watch_states)
-              storage.set("unified_watch_states", data.unified_watch_states);
+            const animeData = data.anime || {};
+            globalLibrary = mapToLibraryItems(animeData.library || []);
+          } else {
+            globalLibrary = mapToLibraryItems(getAnimeLibrary());
           }
+        } else {
+          globalLibrary = mapToLibraryItems(getAnimeLibrary());
         }
       } catch (err) {
         console.error(
-          "[useLibrary] Failed to fetch user library/history from Firestore:",
-          err,
+          "[useLibrary] Failed to fetch user data from Firestore:",
+          err
         );
+        globalLibrary = mapToLibraryItems(getAnimeLibrary());
       } finally {
         isGlobalLoading = false;
         notifyListeners();
@@ -71,7 +91,7 @@ if (auth) {
 export function useLibrary() {
   const [library, setLibrary] = useState<LibraryItem[]>(globalLibrary);
   const [currentUser, setCurrentUser] = useState<User | null>(
-    globalCurrentUser,
+    globalCurrentUser
   );
   const [isLoading, setIsLoading] = useState(isGlobalLoading);
 
@@ -93,8 +113,6 @@ export function useLibrary() {
   };
 
   const toggleSubscription = async (anime: AniListAnime) => {
-    if (!globalCurrentUser || !db) return false;
-
     const alreadySubscribed = isSubscribed(anime.id);
     let updatedLibrary: LibraryItem[] = [];
 
@@ -117,19 +135,10 @@ export function useLibrary() {
       ];
     }
 
-    // Optimistically update global state
+    // Optimistically update global and local storage
     globalLibrary = updatedLibrary;
     notifyListeners();
-
-    try {
-      const docRef = doc(db, "libraries", globalCurrentUser.uid);
-      await setDoc(docRef, { animes: updatedLibrary }, { merge: true });
-    } catch (err) {
-      // Revert if failed
-      globalLibrary = library;
-      notifyListeners();
-      return alreadySubscribed;
-    }
+    saveAnimeLibrary(mapToSubscriptionItems(updatedLibrary));
 
     return !alreadySubscribed;
   };

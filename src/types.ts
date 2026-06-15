@@ -72,31 +72,61 @@ export interface AniListAnime {
   trailer?: TrailerInfo;
 }
 
-export interface UnifiedHistoryItem {
+export interface AnimeHistoryItem {
   id: number;
   title: string;
-  posterImage: string;
-  backdropImage: string;
-  type: 'anime' | 'movie' | 'series';
-  progress: number;
-  watchedAt: string;
-  duration?: string | number;
-  episodeNumber?: number;
-  seasonNumber?: number;
-  thumbnailUrl?: string;
-  provider?: string;
-
-  // Legacy backwards compatibility
-  animeId?: number;
-  animeTitle?: string;
-  coverImage?: string;
+  thumbnail: string;
   bannerImage?: string;
-  tmdbId?: number;
-  posterPath?: string;
-  backdropPath?: string;
+  seasonNumber: number;
+  episodeNumber: number;
+  progress: number;
+  duration?: number | string;
+  watchedAt: string;
+  type: "anime";
 }
 
-export type WatchHistoryItem = UnifiedHistoryItem;
+export interface MovieHistoryItem {
+  id: number;
+  title: string;
+  thumbnail: string;
+  backdropImage?: string;
+  progress: number;
+  duration?: number | string;
+  watchedAt: string;
+  type: "movie";
+}
+
+export interface SeriesHistoryItem {
+  id: number;
+  title: string;
+  thumbnail: string;
+  backdropImage?: string;
+  seasonNumber: number;
+  episodeNumber: number;
+  progress: number;
+  duration?: number | string;
+  watchedAt: string;
+  type: "series";
+}
+
+export interface WatchHistoryItem {
+  id: number;
+  title: string;
+  thumbnail: string;
+  bannerImage?: string;
+  backdropImage?: string;
+  seasonNumber?: number;
+  episodeNumber?: number;
+  progress: number;
+  duration?: number | string;
+  watchedAt: string;
+  type: "anime" | "movie" | "series";
+  thumbnailUrl?: string; // Backwards compatibility helper
+  posterImage?: string; // Backwards compatibility helper
+  coverImage?: string; // Backwards compatibility helper
+  animeTitle?: string; // Backwards compatibility helper
+  provider?: string; // Backwards compatibility helper
+}
 
 export interface SubscriptionItem {
   animeId: number;
@@ -104,4 +134,10 @@ export interface SubscriptionItem {
   coverImage?: string;
   bannerImage?: string;
   subscribedAt: string;
+}
+
+export interface UnifiedWatchState {
+  anilistId: number;
+  episodeProgressList: Record<number, { progress: number; duration: number }>;
+  updatedAt: string;
 }
