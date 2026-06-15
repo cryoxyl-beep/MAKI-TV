@@ -81,12 +81,16 @@ export default function MovieChannel() {
       {/* =============== HERO ATMOSPHERE =============== */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         {movie.backdrop_path ? (
-          <LazyImage
-            src={`${TMDB_IMAGE_BASE_URL}${movie.backdrop_path}`}
-            alt={movie.title}
-            className="w-full h-full object-cover opacity-20 object-top"
-            referrerPolicy="no-referrer"
-          />
+          <div className="absolute inset-0">
+            <LazyImage
+              src={`${TMDB_IMAGE_BASE_URL}${movie.backdrop_path}`}
+              alt={movie.title}
+              className="w-full h-full object-cover opacity-60 object-top"
+              referrerPolicy="no-referrer"
+            />
+            {/* Black blur layer over bright backdrop */}
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-[40px]" />
+          </div>
         ) : (
           <div className="w-full h-full bg-white/[0.02]" />
         )}
@@ -117,7 +121,7 @@ export default function MovieChannel() {
             className="flex-1 min-w-0 flex flex-col justify-center h-full max-h-[85vh] animate-fade-in"
             style={{ animationDelay: "0.1s" }}
           >
-            <div className="flex flex-col gap-1 overflow-y-auto overflow-x-hidden scrollbar-hide pb-6 pt-4 px-6 -mx-6">
+            <div className="flex flex-col gap-1 overflow-y-auto scrollbar-hide pb-6 pt-4 px-6 -mx-6">
               {/* Year & Genres */}
               <div className="flex flex-wrap items-center gap-3 mb-2">
                 {movie.release_date && (
