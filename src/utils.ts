@@ -53,7 +53,8 @@ export const storage = {
     try {
       const item = localStorage.getItem(STORAGE_PREFIX + key);
       return item ? JSON.parse(item) : defaultValue;
-    } catch {
+    } catch (e) {
+      console.error("[storage] Failed to get/parse item", key, e);
       return defaultValue;
     }
   },
@@ -61,6 +62,7 @@ export const storage = {
     try {
       localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(value));
     } catch (e) {
+      console.error("[storage] Failed to set item", key, e);
     }
   },
   update: <T>(key: string, updater: (val: T) => T, defaultValue: T): void => {
@@ -71,6 +73,7 @@ export const storage = {
     try {
       localStorage.removeItem(STORAGE_PREFIX + key);
     } catch (e) {
+      console.error("[storage] Failed to remove item", key, e);
     }
   },
 };

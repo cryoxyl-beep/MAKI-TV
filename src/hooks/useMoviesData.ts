@@ -3,6 +3,7 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { auth, db } from "../lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { TMDBMovie } from "../services/tmdb";
+import { storage } from "../utils";
 
 export interface MovieLibraryItem {
   id: number;
@@ -47,6 +48,15 @@ if (auth) {
           } else {
             globalLibrary = [];
             globalWatchLater = [];
+          }
+          // Sync local storage history/watch later from userData
+          const userRef = doc(db, "userData", user.uid);
+          const userSnap = await getDoc(userRef);
+          if (userSnap.exists()) {
+             const data = userSnap.data();
+             if (data.history) storage.set("history", data.history);
+             if (data.watch_later) storage.set("watch_later", data.watch_later);
+             if (data.unified_watch_states) storage.set("unified_watch_states", data.unified_watch_states);
           }
         }
       } catch (err) {
