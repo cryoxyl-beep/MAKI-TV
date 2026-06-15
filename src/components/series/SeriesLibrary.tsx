@@ -132,7 +132,16 @@ export default function SeriesLibrary() {
                                 {/* Thumbnail */}
                                 <div className="relative aspect-video w-40 sm:w-56 bg-black rounded-lg overflow-hidden shrink-0 border border-white/5">
                                   <LazyImage
-                                    src={item.backdropImage ? `${TMDB_IMAGE_BASE_URL_W500}${item.backdropImage.replace(`${TMDB_IMAGE_BASE_URL_W500}`, "")}` : ''}
+                                    src={
+                                      item.thumbnailUrl ||
+                                      (item.posterImage
+                                        ? (item.posterImage.startsWith('http') ? item.posterImage : `${TMDB_IMAGE_BASE_URL_W500}${item.posterImage.replace(`${TMDB_IMAGE_BASE_URL_W500}`, "")}`)
+                                        : item.thumbnail
+                                          ? (item.thumbnail.startsWith('http') ? item.thumbnail : `${TMDB_IMAGE_BASE_URL_W500}${item.thumbnail.replace(`${TMDB_IMAGE_BASE_URL_W500}`, "")}`)
+                                          : item.backdropImage
+                                            ? (item.backdropImage.startsWith('http') ? item.backdropImage : `${TMDB_IMAGE_BASE_URL_W500}${item.backdropImage.replace(`${TMDB_IMAGE_BASE_URL_W500}`, "")}`)
+                                            : "")
+                                    }
                                     alt={item.title}
                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                     referrerPolicy="no-referrer"

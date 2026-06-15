@@ -76,6 +76,8 @@ export interface AnimeHistoryItem {
   id: number;
   title: string;
   thumbnail: string;
+  thumbnailUrl?: string;
+  coverImage?: string;
   bannerImage?: string;
   seasonNumber: number;
   episodeNumber: number;
@@ -100,6 +102,8 @@ export interface SeriesHistoryItem {
   id: number;
   title: string;
   thumbnail: string;
+  thumbnailUrl?: string;
+  posterImage?: string;
   backdropImage?: string;
   seasonNumber: number;
   episodeNumber: number;

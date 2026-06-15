@@ -104,6 +104,11 @@ export default function SeriesWatch() {
     );
     const progress = existing ? existing.progress : 0;
     const duration = (existing && typeof existing.duration === "number") ? existing.duration : 0;
+    const currentEp = seasonDetails?.episodes.find(e => e.episode_number === episodeNum);
+    const resolvedThumbnail = currentEp?.still_path 
+      ? `${TMDB_IMAGE_BASE_URL_W500}${currentEp.still_path}` 
+      : undefined;
+
     addToSeriesHistory({
       tmdbId: series.id,
       title: series.name,
@@ -113,9 +118,10 @@ export default function SeriesWatch() {
       progress,
       duration,
       posterPath: series.poster_path,
-      backdropPath: series.backdrop_path
+      backdropPath: series.backdrop_path,
+      thumbnailUrl: resolvedThumbnail
     });
-  }, [series, seasonNum, episodeNum, selectedProvider]);
+  }, [series, seasonDetails, seasonNum, episodeNum, selectedProvider]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -156,6 +162,11 @@ export default function SeriesWatch() {
 
   const handleProgressUpdate = (percentage: number, currentTime?: number, duration?: number) => {
     if (!series) return;
+    const currentEp = seasonDetails?.episodes.find(e => e.episode_number === episodeNum);
+    const resolvedThumbnail = currentEp?.still_path 
+      ? `${TMDB_IMAGE_BASE_URL_W500}${currentEp.still_path}` 
+      : undefined;
+
     addToSeriesHistory({
       tmdbId: series.id,
       title: series.name,
@@ -165,7 +176,8 @@ export default function SeriesWatch() {
       progress: percentage,
       duration: duration || 0,
       posterPath: series.poster_path,
-      backdropPath: series.backdrop_path
+      backdropPath: series.backdrop_path,
+      thumbnailUrl: resolvedThumbnail
     });
   };
 

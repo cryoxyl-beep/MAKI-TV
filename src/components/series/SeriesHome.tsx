@@ -275,11 +275,14 @@ export default function SeriesHome() {
                   >
                     <LazyImage
                       src={
-                        item.backdropImage
-                          ? `${TMDB_IMAGE_BASE_URL}${item.backdropImage.replace(`${TMDB_IMAGE_BASE_URL_W500}`, "")}`
-                          : item.posterImage
-                            ? `${TMDB_IMAGE_BASE_URL}${item.posterImage.replace(`${TMDB_IMAGE_BASE_URL_W500}`, "")}`
-                            : ""
+                        item.thumbnailUrl ||
+                        (item.posterImage
+                          ? (item.posterImage.startsWith('http') ? item.posterImage : `${TMDB_IMAGE_BASE_URL}${item.posterImage.replace(`${TMDB_IMAGE_BASE_URL_W500}`, "")}`)
+                          : item.thumbnail
+                            ? (item.thumbnail.startsWith('http') ? item.thumbnail : `${TMDB_IMAGE_BASE_URL}${item.thumbnail.replace(`${TMDB_IMAGE_BASE_URL_W500}`, "")}`)
+                            : item.backdropImage
+                              ? (item.backdropImage.startsWith('http') ? item.backdropImage : `${TMDB_IMAGE_BASE_URL}${item.backdropImage.replace(`${TMDB_IMAGE_BASE_URL_W500}`, "")}`)
+                              : "")
                       }
                       alt={item.title}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 opacity-70 group-hover:opacity-100 pointer-events-none"

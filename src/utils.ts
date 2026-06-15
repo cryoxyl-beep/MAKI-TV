@@ -249,6 +249,9 @@ export interface SeriesHistoryInput {
   duration?: number | string;
   posterPath?: string;
   backdropPath?: string;
+  thumbnailUrl?: string;
+  posterImage?: string;
+  backdropImage?: string;
 }
 
 export function addToSeriesHistory(item: SeriesHistoryInput): void {
@@ -257,8 +260,10 @@ export function addToSeriesHistory(item: SeriesHistoryInput): void {
   const newItem: SeriesHistoryItem = {
     id: item.tmdbId,
     title: item.title,
-    thumbnail: item.posterPath || "",
-    backdropImage: item.backdropPath || "",
+    thumbnail: item.thumbnailUrl || item.posterImage || item.posterPath || "",
+    thumbnailUrl: item.thumbnailUrl,
+    posterImage: item.posterImage || item.posterPath,
+    backdropImage: item.backdropImage || item.backdropPath || "",
     seasonNumber: item.seasonNumber,
     episodeNumber: item.episodeNumber,
     progress: item.progress,
@@ -294,6 +299,8 @@ export function addToWatchHistory(item: AnimeHistoryInput): void {
     id: item.animeId,
     title: item.animeTitle,
     thumbnail: item.thumbnailUrl || item.coverImage || "",
+    thumbnailUrl: item.thumbnailUrl,
+    coverImage: item.coverImage,
     bannerImage: item.bannerImage || "",
     seasonNumber: item.seasonNumber,
     episodeNumber: item.episodeNumber,
