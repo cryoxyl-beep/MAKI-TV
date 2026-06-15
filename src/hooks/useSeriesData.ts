@@ -50,6 +50,7 @@ if (auth) {
           }
         }
       } catch (err) {
+        console.error("[useSeriesData] Failed to fetch user seriesData from Firestore:", err);
       } finally {
         isGlobalLoading = false;
         notifyListeners();
@@ -69,7 +70,9 @@ const syncToFirebase = async () => {
     try {
         const payload = JSON.parse(JSON.stringify({ library: globalLibrary, watchLater: globalWatchLater }));
         await setDoc(docRef, payload, { merge: true });
-    } catch(err) {}
+    } catch(err) {
+        console.error("[useSeriesData] Failed to sync to Firestore:", err);
+    }
 };
 
 export function useSeriesData() {

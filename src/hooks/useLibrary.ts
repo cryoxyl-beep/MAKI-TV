@@ -47,12 +47,11 @@ if (auth) {
              const data = userSnap.data();
              if (data.history) storage.set("history", data.history);
              if (data.watch_later) storage.set("watch_later", data.watch_later);
-             if (data.movie_history) storage.set("movie_history", data.movie_history); // keep local legacy if any 
-             if (data.series_history) storage.set("series_history", data.series_history); // keep local legacy if any
              if (data.unified_watch_states) storage.set("unified_watch_states", data.unified_watch_states);
           }
         }
       } catch (err) {
+        console.error("[useLibrary] Failed to fetch user library/history from Firestore:", err);
       } finally {
         isGlobalLoading = false;
         notifyListeners();

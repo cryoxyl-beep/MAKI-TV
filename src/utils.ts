@@ -77,12 +77,24 @@ export const storage = {
 
 export function syncToFirebase(key: string, data: any) {
   if (auth && auth.currentUser && db) {
-    const docRef = doc(db, "userData", auth.currentUser.uid);
+    const uid = auth.currentUser.uid;
+    const docRef = doc(db, "userData", uid);
     // Sanitize data to remove any undefined values which crash Firebase
     const sanitizedData = JSON.parse(JSON.stringify(data));
-    setDoc(docRef, { [key]: sanitizedData }, { merge: true }).catch((err) => {
-      console.error("Firebase sync error:", err);
-    });
+    
+    // Add diagnostic logging requested by user
+    const payloadSize = new Blob([JSON.stringify(sanitizedData)]).size;
+    console.log(`[Firestore Sync] PATH: userData/${uid} | UID: ${uid} | KEY: ${key} | PAYLOAD SIZE: ${payloadSize} bytes`);
+    
+    setDoc(docRef, { [key]: sanitizedData }, { merge: true })
+      .then(() => {
+        console.log(`[Firestore Sync Success] Successfully synced ${key} to userData/${uid}`);
+      })
+      .catch((err) => {
+        console.error(`[Firestore Sync Error] Failed to sync ${key} to userData/${uid}:`, err);
+      });
+  } else {
+    console.warn(`[Firestore Sync Warning] Cannot sync ${key}. Auth/DB not ready or no current user.`);
   }
 }
 
