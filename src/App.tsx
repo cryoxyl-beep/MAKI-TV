@@ -106,9 +106,9 @@ export default function App() {
 
   const [homeRefreshTrigger, setHomeRefreshTrigger] = useState(0);
 
-  // Browser state routing via hash listeners (e.g. #/channel/32, #/watch/12/1/4)
+  // Browser state routing via History API (e.g. /channel/32, /watch/12/1/4)
   useEffect(() => {
-    const handleHashChange = () => {
+    const handlePopState = () => {
       // Global scroll reset on every route change
       window.scrollTo({
         top: 0,
@@ -116,17 +116,17 @@ export default function App() {
         behavior: "instant"
       });
 
-      const hash = window.location.hash || "#/";
+      const path = window.location.pathname || "/";
 
-      if (hash.startsWith("#/channel/")) {
-        const id = parseInt(hash.replace("#/channel/", ""), 10);
+      if (path.startsWith("/channel/")) {
+        const id = parseInt(path.replace("/channel/", ""), 10);
         if (!isNaN(id)) {
           setSelectedChannelId(id);
           setActivePage("channel");
           setSearchQuery("");
         }
-      } else if (hash.startsWith("#/watch/")) {
-        const parts = hash.replace("#/watch/", "").split("/");
+      } else if (path.startsWith("/watch/")) {
+        const parts = path.replace("/watch/", "").split("/");
         const animeId = parseInt(parts[0], 10);
         let seasonNumber = 1;
         let episodeNumber = 1;
@@ -144,19 +144,19 @@ export default function App() {
           setActivePage("watch");
           setSearchQuery("");
         }
-      } else if (hash === "#/trending") {
+      } else if (path === "/trending") {
         setActivePage("trending");
         setSearchQuery("");
-      } else if (hash === "#/subscriptions") {
+      } else if (path === "/subscriptions") {
         setActivePage("subscriptions");
         setSearchQuery("");
-      } else if (hash === "#/library") {
+      } else if (path === "/library") {
         setActivePage("library");
         setSearchQuery("");
-      } else if (hash === "#/schedule") {
+      } else if (path === "/schedule") {
         setActivePage("schedule");
         setSearchQuery("");
-      } else if (hash === "#/settings") {
+      } else if (path === "/settings") {
         setActivePage("settings");
         setSearchQuery("");
       } else {
@@ -165,14 +165,19 @@ export default function App() {
       }
     };
 
-    window.addEventListener("hashchange", handleHashChange);
-    // Execute hash change check at load
-    handleHashChange();
+    window.addEventListener("popstate", handlePopState);
+    // Execute history change check at load
+    handlePopState();
 
     return () => {
-      window.removeEventListener("hashchange", handleHashChange);
+      window.removeEventListener("popstate", handlePopState);
     };
   }, []);
+
+  const pushRoute = (path: string) => {
+    window.history.pushState(null, "", path);
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  };
 
   // Helpers to push link state
   const handleNavigate = (page: "home" | "trending" | "subscriptions" | "library" | "schedule" | "settings") => {
@@ -180,9 +185,9 @@ export default function App() {
       if (activePage === "home") {
         setHomeRefreshTrigger(prev => prev + 1);
       }
-      window.location.hash = "/";
+      pushRoute("/");
     } else {
-      window.location.hash = `/${page}`;
+      pushRoute(`/${page}`);
     }
     setSearchQuery("");
   };
@@ -209,16 +214,16 @@ export default function App() {
 
     setSearchQuery(trimmed);
     if (activePage !== "home") {
-      window.location.hash = "/"; // search triggers on the homepage recommendations feed
+      pushRoute("/"); // search triggers on the homepage recommendations feed
     }
   };
 
   const handleOpenChannel = (animeId: number) => {
-    window.location.hash = `/channel/${animeId}`;
+    pushRoute(`/channel/${animeId}`);
   };
 
   const handleOpenEpisode = (animeId: number, seasonNumber: number, episodeNumber: number) => {
-    window.location.hash = `/watch/${animeId}/${seasonNumber}/${episodeNumber}`;
+    pushRoute(`/watch/${animeId}/${seasonNumber}/${episodeNumber}`);
   };
 
   return (
