@@ -16,6 +16,7 @@ import {
   getTopRatedMovies,
   getUpcomingMovies,
   TMDB_IMAGE_BASE_URL,
+  TMDB_IMAGE_BASE_URL_W500,
 } from "../../services/tmdb";
 import MovieCard from "./MovieCard";
 import LazyImage from "../LazyImage";

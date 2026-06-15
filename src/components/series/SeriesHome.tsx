@@ -16,6 +16,7 @@ import {
   getTopRatedTV,
   getAiringThisWeekTV,
   TMDB_IMAGE_BASE_URL,
+  TMDB_IMAGE_BASE_URL_W500,
 } from "../../services/tmdb";
 import SeriesCard from "./SeriesCard";
 import LazyImage from "../LazyImage";

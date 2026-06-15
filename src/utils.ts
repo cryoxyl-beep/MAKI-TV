@@ -89,11 +89,56 @@ export const storage = {
 export function syncToFirebase(key: string, data: any) {
   if (auth && auth.currentUser && db) {
     const uid = auth.currentUser.uid;
-    const docRef = doc(db, "userData", uid);
     // Sanitize data to remove any undefined values which crash Firebase
     const sanitizedData = JSON.parse(JSON.stringify(data));
 
-    // Add diagnostic logging requested by user
+    if (key === "history") {
+      const historyList = Array.isArray(sanitizedData) ? sanitizedData : [];
+      
+      const animeHistory = historyList.filter((item: any) => !item.type || item.type === "anime");
+      const seriesHistory = historyList.filter((item: any) => item.type === "series");
+      const movieHistory = historyList.filter((item: any) => item.type === "movie");
+
+      // Sync anime history to userData
+      const userRef = doc(db, "userData", uid);
+      setDoc(userRef, { history: animeHistory }, { merge: true })
+        .then(() => console.log(`[Firestore Sync] Successfully synced anime history to userData/${uid}`))
+        .catch((err) => console.error(`[Firestore Sync Error] Failed to sync anime history to userData/${uid}:`, err));
+
+      // Sync series history to seriesData
+      const seriesRef = doc(db, "seriesData", uid);
+      setDoc(seriesRef, { history: seriesHistory }, { merge: true })
+        .then(() => console.log(`[Firestore Sync] Successfully synced series history to seriesData/${uid}`))
+        .catch((err) => console.error(`[Firestore Sync Error] Failed to sync series history to seriesData/${uid}:`, err));
+
+      // Sync movie history to moviesData
+      const movieRef = doc(db, "moviesData", uid);
+      setDoc(movieRef, { history: movieHistory }, { merge: true })
+        .then(() => console.log(`[Firestore Sync] Successfully synced movie history to moviesData/${uid}`))
+        .catch((err) => console.error(`[Firestore Sync Error] Failed to sync movie history to moviesData/${uid}:`, err));
+
+      return;
+    }
+
+    if (key === "watch_later") {
+      // Anime watch later is saved under userData
+      const userRef = doc(db, "userData", uid);
+      setDoc(userRef, { watch_later: sanitizedData }, { merge: true })
+        .then(() => console.log(`[Firestore Sync] Successfully synced anime watch_later to userData/${uid}`))
+        .catch((err) => console.error(`[Firestore Sync Error] Failed to sync anime watch_later to userData/${uid}:`, err));
+      return;
+    }
+
+    if (key === "unified_watch_states") {
+      // Anime unified watch states under userData
+      const userRef = doc(db, "userData", uid);
+      setDoc(userRef, { unified_watch_states: sanitizedData }, { merge: true })
+        .then(() => console.log(`[Firestore Sync] Successfully synced unified_watch_states to userData/${uid}`))
+        .catch((err) => console.error(`[Firestore Sync Error] Failed to sync unified_watch_states to userData/${uid}:`, err));
+      return;
+    }
+
+    const docRef = doc(db, "userData", uid);
     const payloadSize = new Blob([JSON.stringify(sanitizedData)]).size;
     console.log(
       `[Firestore Sync] PATH: userData/${uid} | UID: ${uid} | KEY: ${key} | PAYLOAD SIZE: ${payloadSize} bytes`,

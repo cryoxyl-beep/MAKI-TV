@@ -58,6 +58,44 @@
           "description": "Watch later episodes"
         }
       }
+    },
+    "SeriesData": {
+      "title": "SeriesData",
+      "description": "Series custom library, series watch later list, and watch history.",
+      "type": "object",
+      "properties": {
+        "library": {
+          "type": "array",
+          "description": "List of series in the library"
+        },
+        "watchLater": {
+          "type": "array",
+          "description": "Watch later series list"
+        },
+        "history": {
+          "type": "array",
+          "description": "Watch progress and history entries for series"
+        }
+      }
+    },
+    "MoviesData": {
+      "title": "MoviesData",
+      "description": "Movies custom library, movies watch later list, and watch history.",
+      "type": "object",
+      "properties": {
+        "library": {
+          "type": "array",
+          "description": "List of movies in the library"
+        },
+        "watchLater": {
+          "type": "array",
+          "description": "Watch later movies list"
+        },
+        "history": {
+          "type": "array",
+          "description": "Watch progress and history entries for movies"
+        }
+      }
     }
   },
   "firestore": {
@@ -76,6 +114,14 @@
     "userData": {
       "schema": "UserData",
       "description": "Collection of user's personal private states (history and watch later lists) scoped by user ID"
+    },
+    "seriesData": {
+      "schema": "SeriesData",
+      "description": "Collection of user's personal series library and history scoped by user ID"
+    },
+    "moviesData": {
+      "schema": "MoviesData",
+      "description": "Collection of user's personal movies library and history scoped by user ID"
     }
   }
 }
