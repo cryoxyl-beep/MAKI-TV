@@ -9,6 +9,8 @@ import { fetchAnimeDetails, formatAiringStatus } from "../services/anilist";
 import { getEpisodeProgress } from "../utils";
 import { getFribbEntryByAnilist, initializeFribbMapping } from "../services/fribb";
 import { getTVDBSeriesManifest } from "../services/thumbnails";
+import { getTMDBMapping } from "../services/mapping";
+import { getLogoPath } from "../services/tmdb";
 import SkeletonLoader from "./SkeletonLoader";
 import { Check, Star, Play, Info, Plus, X } from "lucide-react";
 import LazyImage from "./LazyImage";
@@ -29,6 +31,10 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
   const [episodesPage, setEpisodesPage] = useState(1);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const { isSubscribed, toggleSubscription, currentUser } = useLibrary();
+
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [logoError, setLogoError] = useState(false);
+  const [isLogoLoading, setIsLogoLoading] = useState(true);
 
   const [anivexaEpisodes, setAnivexaEpisodes] = useState<any[]>([]);
   const [isAnivexaLoading, setIsAnivexaLoading] = useState(true);
@@ -53,6 +59,35 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
     loadChannel();
     return () => { mounted = false; };
   }, [animeId]);
+
+  useEffect(() => {
+    let mounted = true;
+    async function loadLogo() {
+      if (!anime) return;
+      setIsLogoLoading(true);
+      try {
+        const mapping = await getTMDBMapping(anime);
+        if (mapping && mapping.tmdbId && mounted) {
+          const url = await getLogoPath(mapping.type, mapping.tmdbId);
+          if (mounted) {
+            setLogoUrl(url);
+            setLogoError(false);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load anime logo:", err);
+      } finally {
+        if (mounted) {
+          setIsLogoLoading(false);
+        }
+      }
+    }
+    setLogoUrl(null);
+    setLogoError(false);
+    setIsLogoLoading(true);
+    loadLogo();
+    return () => { mounted = false; };
+  }, [anime]);
 
   useEffect(() => {
     let mounted = true;
@@ -250,9 +285,23 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
               </div>
             )}
             
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white mb-4 tracking-tight leading-tight">
-              {mainTitle}
-            </h1>
+            {isLogoLoading ? (
+              <div className="h-[120px] w-[240px] max-w-full bg-white/5 rounded-lg animate-pulse mb-4 self-start" />
+            ) : logoUrl && !logoError ? (
+              <motion.img
+                src={logoUrl}
+                alt={mainTitle}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+                className="max-h-[120px] w-auto object-contain mb-4 drop-shadow-2xl self-start"
+                onError={() => setLogoError(true)}
+              />
+            ) : (
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white mb-4 tracking-tight leading-tight">
+                {mainTitle}
+              </h1>
+            )}
 
             {/* Genres */}
             <div className="flex flex-wrap gap-2 mb-6">

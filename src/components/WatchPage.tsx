@@ -7,6 +7,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { AniListAnime } from "../types";
 import { fetchAnimeDetails } from "../services/anilist";
 import { getTMDBMapping } from "../services/mapping";
+import { getLogoPath } from "../services/tmdb";
 import { getAniListId, getFribbEntryByAnilist, initializeFribbMapping } from "../services/fribb";
 import EpisodeThumbnailItem from "./EpisodeThumbnailItem";
 import { getTVDBSeriesManifest, getEpisodeThumbnail } from "../services/thumbnails";
@@ -65,6 +66,10 @@ export default function WatchPage({
   const [anime, setAnime] = useState<AniListAnime | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { settings } = useSettings();
+  
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [logoError, setLogoError] = useState(false);
+  const [isLogoLoading, setIsLogoLoading] = useState(true);
   
   // Mapping States
   const [tmdbId, setTmdbId] = useState<number>(0);
@@ -266,6 +271,9 @@ export default function WatchPage({
     let mounted = true;
     async function loadWatchAnime() {
       setIsLoading(true);
+      setLogoUrl(null);
+      setLogoError(false);
+      setIsLogoLoading(true);
       try {
         const [data] = await Promise.all([
           fetchAnimeDetails(animeId),
@@ -279,12 +287,30 @@ export default function WatchPage({
           }
           setAnime(data);
 
-          // Load target TMDB maps
-          const mapped = await getTMDBMapping(data);
-          if (mounted) {
-            setTmdbId(mapped.tmdbId);
-            setMediaType(mapped.type);
-          }
+          // Start mapping and logo lookup asynchronously so it does not block the video player loading!
+          getTMDBMapping(data).then(async (mapped) => {
+            if (mounted) {
+              if (mapped) {
+                setTmdbId(mapped.tmdbId);
+                setMediaType(mapped.type);
+                try {
+                  const fetchedLogo = await getLogoPath(mapped.type, mapped.tmdbId);
+                  if (mounted) {
+                    setLogoUrl(fetchedLogo);
+                    setLogoError(false);
+                  }
+                } catch (err) {
+                  console.error("Failed to load anime logo on WatchPage:", err);
+                }
+              }
+              setIsLogoLoading(false);
+            }
+          }).catch(err => {
+            console.error("Failed getTMDBMapping on WatchPage:", err);
+            if (mounted) {
+              setIsLogoLoading(false);
+            }
+          });
 
           // Add this initial watching entry to history (0% progress initially or loaded from previous score)
           const lastPercentProgress = getEpisodeProgress(data.id, seasonNumber, episodeNumber);
@@ -919,12 +945,27 @@ export default function WatchPage({
                 
                 <div className="flex flex-col justify-center">
                   <div className="flex items-center gap-2">
-                    <h3 
-                      onClick={() => onNavigateToChannel(anime.id)}
-                      className="text-white text-[16px] font-semibold truncate max-w-[220px] sm:max-w-[320px] cursor-pointer hover:text-white/80 transition-colors"
-                    >
-                      {mainTitle}
-                    </h3>
+                    {isLogoLoading ? (
+                      <div className="h-[28px] w-[140px] bg-white/5 rounded animate-pulse" />
+                    ) : logoUrl && !logoError ? (
+                      <motion.img
+                        src={logoUrl}
+                        alt={mainTitle}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4, ease: "easeOut" }}
+                        className="max-h-[60px] w-auto object-contain cursor-pointer"
+                        onClick={() => onNavigateToChannel(anime.id)}
+                        onError={() => setLogoError(true)}
+                      />
+                    ) : (
+                      <h3 
+                        onClick={() => onNavigateToChannel(anime.id)}
+                        className="text-white text-[16px] font-semibold truncate max-w-[220px] sm:max-w-[320px] cursor-pointer hover:text-white/80 transition-colors"
+                      >
+                        {mainTitle}
+                      </h3>
+                    )}
                     
                     {/* Compact Bookmark Button (Outline/Fill) */}
                     <button 
