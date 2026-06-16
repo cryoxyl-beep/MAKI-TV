@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { Search as SearchIcon } from "lucide-react";
 import { TMDBMovie, searchMovies } from "../../services/tmdb";
 import MovieCard from "./MovieCard";
+import SkeletonLoader from "../SkeletonLoader";
 
 export default function MoviesSearch() {
   const [searchParams] = useSearchParams();
@@ -29,8 +30,6 @@ export default function MoviesSearch() {
       }
     };
 
-    // Debounce a bit or just fetch directly since this page mounts on enter typically.
-    // In React Router, if they navigate to /movies/search?q=..., it fetches immediately.
     fetchResults();
   }, [query]);
 
@@ -45,31 +44,32 @@ export default function MoviesSearch() {
   }
 
   return (
-    <div className="w-full flex justify-center pb-32 animate-fade-in text-white min-h-screen pt-4 md:pt-8 bg-[#09090b]">
-      <div className="w-full max-w-[2000px] px-4 md:px-8 flex flex-col gap-6">
-        <h1 className="text-2xl md:text-3xl font-bold">
-          Search Results for <span className="text-rose-400">"{query}"</span>
-        </h1>
-
-        {loading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4 w-full">
-            {Array.from({ length: 12 }).map((_, i) => (
-               <div key={i} className="shimmer-bone w-full aspect-[2/3] rounded-xl" />
-            ))}
-          </div>
-        ) : results.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4 w-full">
-            {results.map((movie) => (
-              <MovieCard key={movie.id} movie={movie} />
-            ))}
-          </div>
-        ) : (
-          <div className="w-full py-20 flex flex-col items-center justify-center text-center">
-            <h2 className="text-xl font-bold text-white mb-2">No Results Found</h2>
-            <p className="text-white/50">We couldn't find any movies matching your search.</p>
-          </div>
-        )}
+    <div className="w-full pb-20 animate-fade-in text-white min-h-screen bg-transparent">
+      <div className="px-4 md:px-6 pt-8 pb-4">
+        <h2 className="text-xl md:text-2xl font-bold text-white tracking-tight">
+          Results for "{query}"
+        </h2>
       </div>
+
+      {loading ? (
+        <div className="mt-8">
+          <SkeletonLoader type="grid" />
+        </div>
+      ) : results.length > 0 ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-8 px-4 md:px-6 w-full select-none group/row transition-opacity duration-300">
+          {results.map((movie, index) => (
+            <MovieCard key={movie.id} movie={movie} index={index} />
+          ))}
+        </div>
+      ) : (
+        <div className="w-full py-24 flex flex-col items-center justify-center text-center px-4">
+          <span className="text-2xl mb-2">🔍</span>
+          <div className="text-white font-bold text-lg">No Results Found</div>
+          <p className="text-gray-400 text-xs mt-1 max-w-xs">
+            We couldn't find any movies matching your search.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
