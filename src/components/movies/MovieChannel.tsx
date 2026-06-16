@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { useParams, useNavigate } from "react-router-dom";
 import { Play, Plus, Star, Calendar, Clock, Info, Check } from "lucide-react";
 import {
@@ -18,6 +19,7 @@ export default function MovieChannel() {
   const { isInLibrary, toggleLibrary } = useMoviesData();
   const [movie, setMovie] = useState<TMDBMovieDetails | null>(null);
   const [loading, setLoading] = useState(true);
+  const [logoError, setLogoError] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -122,9 +124,21 @@ export default function MovieChannel() {
                 ))}
               </div>
 
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white mb-6 tracking-tight leading-[1.1] drop-shadow-lg">
-                {movie.title}
-              </h1>
+              {movie.logo_path && !logoError ? (
+                <motion.img
+                  src={movie.logo_path}
+                  alt={movie.title}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                  className="max-h-[160px] w-auto object-contain mb-6 drop-shadow-2xl"
+                  onError={() => setLogoError(true)}
+                />
+              ) : (
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white mb-6 tracking-tight leading-[1.1] drop-shadow-lg">
+                  {movie.title}
+                </h1>
+              )}
 
               {/* Main Action Buttons */}
               <div className="flex items-center gap-4 mb-8">

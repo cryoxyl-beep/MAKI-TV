@@ -27,6 +27,7 @@ export default function SeriesWatch() {
   const [series, setSeries] = useState<TMDBTVDetails | null>(null);
   const [seasonDetails, setSeasonDetails] = useState<TMDBSeasonDetails | null>(null);
   const [loading, setLoading] = useState(true);
+  const [logoError, setLogoError] = useState(false);
   
   const getSettings = () => storage.get<any>("miyoro_settings", null);
   const defaultProvider = getSettings()?.playback?.defaultServerSeries || "vidfast";
@@ -423,12 +424,25 @@ export default function SeriesWatch() {
                 
                 <div className="flex flex-col justify-center">
                   <div className="flex items-center gap-2">
-                    <h3 
-                      onClick={() => navigate(`/series/show/${series.id}`)}
-                      className="text-white text-[16px] font-semibold truncate max-w-[220px] sm:max-w-[320px] cursor-pointer hover:text-white/80 transition-colors"
-                    >
-                      {series.name}
-                    </h3>
+                    {series.logo_path && !logoError ? (
+                      <motion.img
+                        src={series.logo_path}
+                        alt={series.name}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4, ease: "easeOut" }}
+                        className="max-h-[60px] w-auto object-contain cursor-pointer"
+                        onClick={() => navigate(`/series/show/${series.id}`)}
+                        onError={() => setLogoError(true)}
+                      />
+                    ) : (
+                      <h3 
+                        onClick={() => navigate(`/series/show/${series.id}`)}
+                        className="text-white text-[16px] font-semibold truncate max-w-[220px] sm:max-w-[320px] cursor-pointer hover:text-white/80 transition-colors"
+                      >
+                        {series.name}
+                      </h3>
+                    )}
 
                     <button 
                        onClick={handleToggleBookmark}

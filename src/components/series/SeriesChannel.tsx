@@ -14,6 +14,7 @@ export default function SeriesChannel() {
   const { isInLibrary, toggleLibrary } = useSeriesData();
   const [series, setSeries] = useState<TMDBTVDetails | null>(null);
   const [loading, setLoading] = useState(true);
+  const [logoError, setLogoError] = useState(false);
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   
   const [selectedSeason, setSelectedSeason] = useState<number>(1);
@@ -167,9 +168,21 @@ export default function SeriesChannel() {
               </div>
             )}
             
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white mb-4 tracking-tight leading-tight">
-              {series.name}
-            </h1>
+            {series.logo_path && !logoError ? (
+              <motion.img
+                src={series.logo_path}
+                alt={series.name}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+                className="max-h-[120px] w-auto object-contain mb-4 drop-shadow-2xl"
+                onError={() => setLogoError(true)}
+              />
+            ) : (
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white mb-4 tracking-tight leading-tight">
+                {series.name}
+              </h1>
+            )}
 
             {/* Genres */}
             <div className="flex flex-wrap gap-2 mb-6">

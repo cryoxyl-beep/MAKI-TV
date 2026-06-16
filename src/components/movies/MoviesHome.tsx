@@ -17,6 +17,7 @@ import {
   getUpcomingMovies,
   TMDB_IMAGE_BASE_URL,
   TMDB_IMAGE_BASE_URL_W500,
+  getLogoPath,
 } from "../../services/tmdb";
 import MovieCard from "./MovieCard";
 import LazyImage from "../LazyImage";
@@ -91,6 +92,7 @@ export default function MoviesHome() {
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
   const [slideProgress, setSlideProgress] = useState(0);
   const [swiperInstance, setSwiperInstance] = useState<SwiperType | null>(null);
+  const [failedLogos, setFailedLogos] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -102,10 +104,23 @@ export default function MoviesHome() {
             getTopRatedMovies(),
             getUpcomingMovies(),
           ]);
-        setTrending(trendingData.results);
-        setPopular(popularData.results);
-        setTopRated(topRatedData.results);
-        setUpcoming(upcomingData.results);
+        
+        const trendingResults = trendingData.results || [];
+        const heroSlice = trendingResults.slice(0, 6);
+        await Promise.all(
+          heroSlice.map(async (movie) => {
+            try {
+              movie.logo_path = await getLogoPath('movie', movie.id);
+            } catch (err) {
+              console.error("Failed fetching logo for movie", movie.id, err);
+            }
+          })
+        );
+
+        setTrending(trendingResults);
+        setPopular(popularData.results || []);
+        setTopRated(topRatedData.results || []);
+        setUpcoming(upcomingData.results || []);
         setMovieHistory(getMovieHistory().slice(0, 10));
       } catch (error) {
         console.error("Failed to fetch movies:", error);
@@ -201,9 +216,23 @@ export default function MoviesHome() {
                       <div className="absolute inset-0 z-20 flex flex-col justify-end px-6 md:px-10 lg:px-14 py-8 lg:py-12 pb-12 md:pb-16 pointer-events-none wrapper">
                         <div className="w-full h-full flex flex-col justify-end pointer-events-auto">
                           <div className="max-w-3xl lg:max-w-4xl flex flex-col items-start gap-2">
-                            <h2 className="text-white text-3xl md:text-5xl lg:text-6xl font-black tracking-tight font-sans drop-shadow leading-tight line-clamp-2 px-1 mb-2">
-                              {movie.title}
-                            </h2>
+                            {movie.logo_path && !failedLogos[movie.id] ? (
+                              <motion.img
+                                src={movie.logo_path}
+                                alt={movie.title}
+                                initial={{ opacity: 0, y: 8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.4, ease: "easeOut" }}
+                                className="max-h-[160px] w-auto object-contain px-1 mb-2 drop-shadow-2xl"
+                                onError={() => {
+                                  setFailedLogos((prev) => ({ ...prev, [movie.id]: true }));
+                                }}
+                              />
+                            ) : (
+                              <h2 className="text-white text-3xl md:text-5xl lg:text-6xl font-black tracking-tight font-sans drop-shadow leading-tight line-clamp-2 px-1 mb-2">
+                                {movie.title}
+                              </h2>
+                            )}
 
                             <div className="flex flex-col gap-2 px-1">
                               <div className="flex flex-wrap items-center gap-2 text-[11px] md:text-sm font-semibold text-white/90 drop-shadow-md tracking-widest uppercase">

@@ -27,6 +27,7 @@ export default function MovieWatch() {
 
   const [movie, setMovie] = useState<TMDBMovieDetails | null>(null);
   const [loading, setLoading] = useState(true);
+  const [logoError, setLogoError] = useState(false);
 
   const getSettings = () => storage.get<any>("miyoro_settings", null);
   const defaultProvider =
@@ -183,9 +184,21 @@ export default function MovieWatch() {
               </span>
             </div>
 
-            <h1 className="text-white text-xl sm:text-[22px] font-bold font-sans tracking-tight mt-1">
-              {movie.title}
-            </h1>
+            {movie.logo_path && !logoError ? (
+              <motion.img
+                src={movie.logo_path}
+                alt={movie.title}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+                className="max-h-[100px] w-auto object-contain mt-1"
+                onError={() => setLogoError(true)}
+              />
+            ) : (
+              <h1 className="text-white text-xl sm:text-[22px] font-bold font-sans tracking-tight mt-1">
+                {movie.title}
+              </h1>
+            )}
 
             <div className="flex flex-col xl:flex-row xl:items-center justify-between py-1 gap-4">
               <div className="flex items-center gap-4">

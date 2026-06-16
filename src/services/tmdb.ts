@@ -14,6 +14,7 @@ export interface TMDBMovie {
   vote_average: number;
   genre_ids: number[];
   adult: boolean;
+  logo_path?: string | null;
 }
 
 export interface TMDBMovieDetails extends TMDBMovie {
@@ -36,6 +37,7 @@ export interface TMDBTVShow {
   first_air_date: string;
   vote_average: number;
   genre_ids: number[];
+  logo_path?: string | null;
 }
 
 export interface TMDBTVDetails extends TMDBTVShow {
@@ -99,17 +101,82 @@ const fetchFromTMDB = async <T>(endpoint: string, params: Record<string, string>
   return response.json();
 };
 
+export interface TMDBLogoImage {
+  file_path: string;
+  iso_639_1: string | null;
+  aspect_ratio?: number;
+  height?: number;
+  width?: number;
+}
+
+export interface TMDBImagesResponse {
+  logos: TMDBLogoImage[];
+}
+
+const logoCache: Record<string, Promise<string | null> | string | null> = {};
+
+export const extractBestLogo = (logos: TMDBLogoImage[]): TMDBLogoImage | null => {
+  if (!logos || logos.length === 0) return null;
+  return (
+    logos.find(l => l.iso_639_1 === "en" && l.file_path && l.file_path.toLowerCase().endsWith(".png")) ||
+    logos.find(l => l.file_path && l.file_path.toLowerCase().endsWith(".png")) ||
+    logos[0] ||
+    null
+  );
+};
+
+export const getLogoPath = async (type: 'movie' | 'tv', id: number): Promise<string | null> => {
+  const cacheKey = `${type}_${id}`;
+  if (cacheKey in logoCache) {
+    const cachedVal = logoCache[cacheKey];
+    if (cachedVal instanceof Promise) {
+      return cachedVal;
+    }
+    return cachedVal;
+  }
+
+  const fetchPromise = (async () => {
+    try {
+      const response = await fetchFromTMDB<TMDBImagesResponse>(`/${type}/${id}/images`, { include_image_language: 'en,null' });
+      const logo = extractBestLogo(response?.logos || []);
+      return logo ? `https://image.tmdb.org/t/p/original${logo.file_path}` : null;
+    } catch (error) {
+      console.error(`Failed to fetch logo for ${type} ${id}:`, error);
+      return null;
+    }
+  })();
+
+  logoCache[cacheKey] = fetchPromise;
+  
+  const result = await fetchPromise;
+  logoCache[cacheKey] = result;
+  return result;
+};
+
 export const getTrendingMovies = () => fetchFromTMDB<TMDBResponse<TMDBMovie>>('/trending/movie/day');
 export const getPopularMovies = () => fetchFromTMDB<TMDBResponse<TMDBMovie>>('/movie/popular');
 export const getTopRatedMovies = () => fetchFromTMDB<TMDBResponse<TMDBMovie>>('/movie/top_rated');
 export const getUpcomingMovies = () => fetchFromTMDB<TMDBResponse<TMDBMovie>>('/movie/upcoming');
 export const searchMovies = (query: string) => fetchFromTMDB<TMDBResponse<TMDBMovie>>('/search/movie', { query });
-export const getMovieDetails = (id: number) => fetchFromTMDB<TMDBMovieDetails>(`/movie/${id}`, { append_to_response: 'credits,recommendations' });
+
+export const getMovieDetails = async (id: number): Promise<TMDBMovieDetails> => {
+  const details = await fetchFromTMDB<TMDBMovieDetails>(`/movie/${id}`, { append_to_response: 'credits,recommendations' });
+  const logoUrl = await getLogoPath('movie', id);
+  details.logo_path = logoUrl;
+  return details;
+};
 
 export const getTrendingTV = () => fetchFromTMDB<TMDBResponse<TMDBTVShow>>('/trending/tv/day');
 export const getPopularTV = () => fetchFromTMDB<TMDBResponse<TMDBTVShow>>('/tv/popular');
 export const getTopRatedTV = () => fetchFromTMDB<TMDBResponse<TMDBTVShow>>('/tv/top_rated');
 export const getAiringThisWeekTV = () => fetchFromTMDB<TMDBResponse<TMDBTVShow>>('/tv/on_the_air');
 export const searchTV = (query: string) => fetchFromTMDB<TMDBResponse<TMDBTVShow>>('/search/tv', { query });
-export const getTVDetails = (id: number) => fetchFromTMDB<TMDBTVDetails>(`/tv/${id}`, { append_to_response: 'credits,recommendations' });
+
+export const getTVDetails = async (id: number): Promise<TMDBTVDetails> => {
+  const details = await fetchFromTMDB<TMDBTVDetails>(`/tv/${id}`, { append_to_response: 'credits,recommendations' });
+  const logoUrl = await getLogoPath('tv', id);
+  details.logo_path = logoUrl;
+  return details;
+};
+
 export const getTVSeasonDetails = (seriesId: number, seasonNumber: number) => fetchFromTMDB<TMDBSeasonDetails>(`/tv/${seriesId}/season/${seasonNumber}`);

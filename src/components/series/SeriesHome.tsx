@@ -17,6 +17,7 @@ import {
   getAiringThisWeekTV,
   TMDB_IMAGE_BASE_URL,
   TMDB_IMAGE_BASE_URL_W500,
+  getLogoPath,
 } from "../../services/tmdb";
 import SeriesCard from "./SeriesCard";
 import LazyImage from "../LazyImage";
@@ -91,6 +92,7 @@ export default function SeriesHome() {
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
   const [slideProgress, setSlideProgress] = useState(0);
   const [swiperInstance, setSwiperInstance] = useState<SwiperType | null>(null);
+  const [failedLogos, setFailedLogos] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -102,10 +104,23 @@ export default function SeriesHome() {
             getTopRatedTV(),
             getAiringThisWeekTV(),
           ]);
-        setTrending(trendingData.results);
-        setPopular(popularData.results);
-        setTopRated(topRatedData.results);
-        setAiring(airingData.results);
+        
+        const trendingResults = trendingData.results || [];
+        const heroSlice = trendingResults.slice(0, 6);
+        await Promise.all(
+          heroSlice.map(async (show) => {
+            try {
+              show.logo_path = await getLogoPath('tv', show.id);
+            } catch (err) {
+              console.error("Failed fetching logo for TV show", show.id, err);
+            }
+          })
+        );
+
+        setTrending(trendingResults);
+        setPopular(popularData.results || []);
+        setTopRated(topRatedData.results || []);
+        setAiring(airingData.results || []);
         setSeriesHistory(getSeriesHistory().slice(0, 10)); // up to 10 recent
       } catch (error) {
         console.error("Failed to fetch series:", error);
@@ -201,9 +216,23 @@ export default function SeriesHome() {
                       <div className="absolute inset-0 z-20 flex flex-col justify-end px-6 md:px-10 lg:px-14 py-8 lg:py-12 pb-12 md:pb-16 pointer-events-none wrapper">
                         <div className="w-full h-full flex flex-col justify-end pointer-events-auto">
                           <div className="max-w-3xl lg:max-w-4xl flex flex-col items-start gap-2">
-                            <h2 className="text-white text-3xl md:text-5xl lg:text-6xl font-black tracking-tight font-sans drop-shadow leading-tight line-clamp-2 px-1 mb-2">
-                              {series.name}
-                            </h2>
+                            {series.logo_path && !failedLogos[series.id] ? (
+                              <motion.img
+                                src={series.logo_path}
+                                alt={series.name}
+                                initial={{ opacity: 0, y: 8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.4, ease: "easeOut" }}
+                                className="max-h-[120px] w-auto object-contain px-1 mb-2 drop-shadow-2xl"
+                                onError={() => {
+                                  setFailedLogos((prev) => ({ ...prev, [series.id]: true }));
+                                }}
+                              />
+                            ) : (
+                              <h2 className="text-white text-3xl md:text-5xl lg:text-6xl font-black tracking-tight font-sans drop-shadow leading-tight line-clamp-2 px-1 mb-2">
+                                {series.name}
+                              </h2>
+                            )}
 
                             <div className="flex flex-col gap-2 px-1">
                               <div className="flex flex-wrap items-center gap-2 text-[11px] md:text-sm font-semibold text-white/90 drop-shadow-md tracking-widest uppercase">
