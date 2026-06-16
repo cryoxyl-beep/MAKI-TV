@@ -19,7 +19,6 @@ import {
   toggleWatchLater
 } from "../utils";
 import { useLibrary } from "../hooks/useLibrary";
-import { useCollections } from "./CollectionsModal";
 import LazyImage from "./LazyImage";
 import VideoPlayer from "./VideoPlayer";
 import SkeletonLoader from "./SkeletonLoader";
@@ -87,8 +86,7 @@ export default function WatchPage({
   const [tvdbThumbnailMap, setTvdbThumbnailMap] = useState<Record<string, string>>({});
   const [currentEpisodeThumbnail, setCurrentEpisodeThumbnail] = useState<string | undefined>(undefined);
 
-  const { isSubscribed, currentUser } = useLibrary();
-  const { openCollectionsModal } = useCollections();
+  const { isSubscribed, toggleSubscription, currentUser } = useLibrary();
 
   // Floating continue/session resume prompt trigger
   const [resumeSession, setResumeSession] = useState<{
@@ -463,17 +461,11 @@ export default function WatchPage({
     }
   };
 
-  const handleToggleBookmark = () => {
+  const handleToggleBookmark = async () => {
     if (anime) {
-      openCollectionsModal({
-        id: anime.id,
-        title: anime.title.english || anime.title.romaji || anime.title.userPreferred || "Untitled Anime",
-        posterPath: anime.coverImage.large || anime.coverImage.medium || "",
-        coverImage: anime.coverImage.large || anime.coverImage.medium || "",
-        backdropPath: anime.bannerImage || "",
-        bannerImage: anime.bannerImage || "",
-        type: "anime",
-      });
+      await toggleSubscription(anime);
+      setIsBookmarked(!isBookmarked);
+      if (onSubscriptionChanged) onSubscriptionChanged();
     }
   };
 
@@ -938,9 +930,9 @@ export default function WatchPage({
                     <button 
                        onClick={handleToggleBookmark}
                        className="p-1.5 text-white/50 hover:text-white hover:scale-110 active:scale-95 transition-all duration-150"
-                       title={isSubscribed(anime.id) ? "In Collections" : "Add to Collection"}
+                       title={isBookmarked ? "Remove Bookmark" : "Bookmark Anime"}
                     >
-                      <Bookmark className="w-4.5 h-4.5" fill={isSubscribed(anime.id) ? "currentColor" : "none"} />
+                      <Bookmark className="w-4.5 h-4.5" fill={isBookmarked ? "currentColor" : "none"} />
                     </button>
                   </div>
                 </div>

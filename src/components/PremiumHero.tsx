@@ -19,7 +19,6 @@ import "swiper/css/effect-fade";
 import { fetchAnimeDetails } from "../services/anilist";
 import { AniListAnime } from "../types";
 import { useLibrary } from "../hooks/useLibrary";
-import { useCollections } from "./CollectionsModal";
 
 class EventEmitter {
   callbacks: ((progress: number) => void)[] = [];
@@ -197,8 +196,7 @@ function HeroSlide({ trailer, isActive, isFirstSlide, onSelect, onEnded, onHeroL
   const [useBanner, setUseBanner] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [metadata, setMetadata] = useState<AniListAnime | null>(null);
-  const { isSubscribed, currentUser } = useLibrary();
-  const { openCollectionsModal } = useCollections();
+  const { isSubscribed, toggleSubscription, currentUser } = useLibrary();
 
   useEffect(() => {
     let mounted = true;
@@ -262,27 +260,19 @@ function HeroSlide({ trailer, isActive, isFirstSlide, onSelect, onEnded, onHeroL
   const handleLibraryToggle = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!currentUser) {
-      alert("Please sign in to add to your collections.");
+      alert("Please sign in to add to your library.");
       return;
     }
-    const mediaToOpen = metadata ? {
-      id: metadata.id,
-      title: metadata.title.english || metadata.title.romaji || metadata.title.userPreferred || "Untitled",
-      posterPath: metadata.coverImage.large || metadata.coverImage.medium || "",
-      coverImage: metadata.coverImage.large || metadata.coverImage.medium || "",
-      bannerImage: metadata.bannerImage || "",
-      backdropPath: metadata.bannerImage || "",
-      type: "anime" as const,
-    } : {
-      id: trailer.malId,
-      title: trailer.title,
-      posterPath: trailer.logoUrl || "",
-      coverImage: trailer.logoUrl || "",
-      backdropPath: trailer.logoUrl || "",
-      bannerImage: trailer.logoUrl || "",
-      type: "anime" as const,
-    };
-    openCollectionsModal(mediaToOpen);
+    if (metadata) { 
+      await toggleSubscription(metadata);
+    } else {
+      await toggleSubscription({
+        id: trailer.malId,
+        title: { userPreferred: trailer.title },
+        coverImage: { large: trailer.logoUrl || "", medium: trailer.logoUrl || "" },
+        genres: [],
+      } as any);
+    }
   };
 
   const subscribed = isSubscribed(trailer.malId);
@@ -384,7 +374,7 @@ function HeroSlide({ trailer, isActive, isFirstSlide, onSelect, onEnded, onHeroL
                 className={`px-6 py-2.5 md:px-8 md:py-3 bg-white/[0.08] hover:bg-white/[0.12] backdrop-blur-[20px] border ${subscribed ? 'border-white/[0.4]' : 'border-white/[0.15]'} text-white font-bold rounded-md flex items-center gap-2 shadow-[0_8px_32px_rgba(0,0,0,0.2)] hover:shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 group ${isActive ? 'pointer-events-auto cursor-pointer' : 'pointer-events-none'}`}
               >
                 <Bookmark className={`w-5 h-5 transition-transform group-hover:scale-105 ${subscribed ? 'fill-white text-white' : 'text-white'}`} />
-                <span className="tracking-wide text-sm md:text-base">{subscribed ? 'In Collections' : 'Add to Collection'}</span>
+                <span className="tracking-wide text-sm md:text-base">{subscribed ? 'In Library' : 'Add to Library'}</span>
               </button>
             </div>
           </div>

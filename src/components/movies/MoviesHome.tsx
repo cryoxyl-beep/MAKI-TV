@@ -23,7 +23,6 @@ import LazyImage from "../LazyImage";
 import ShelfScroller from "../ShelfScroller";
 import { getMovieHistory, MovieHistoryItem, storage } from "../../utils";
 import { useMoviesData } from "../../hooks/useMoviesData";
-import { useCollections } from "../CollectionsModal";
 
 const HeroNavDot: React.FC<{
   isActive: boolean;
@@ -77,8 +76,7 @@ const HeroNavDot: React.FC<{
 };
 
 export default function MoviesHome() {
-  const { isInLibrary } = useMoviesData();
-  const { openCollectionsModal } = useCollections();
+  const { isInLibrary, toggleLibrary } = useMoviesData();
   const [trending, setTrending] = useState<TMDBMovie[]>([]);
   const [popular, setPopular] = useState<TMDBMovie[]>([]);
   const [topRated, setTopRated] = useState<TMDBMovie[]>([]);
@@ -235,18 +233,8 @@ export default function MoviesHome() {
                               </button>
 
                               <button
-                                onClick={() => {
-                                  if (movie) {
-                                    openCollectionsModal({
-                                      id: movie.id,
-                                      title: movie.title,
-                                      posterPath: movie.poster_path || "",
-                                      coverImage: movie.poster_path || "",
-                                      backdropPath: movie.backdrop_path || "",
-                                      bannerImage: movie.backdrop_path || "",
-                                      type: "movie"
-                                    });
-                                  }
+                                onClick={async () => {
+                                  await toggleLibrary(movie as any);
                                 }}
                                 className={`px-6 py-2.5 md:px-8 md:py-3 bg-white/[0.08] hover:bg-white/[0.12] backdrop-blur-[20px] border ${subscribed ? "border-white/[0.4]" : "border-white/[0.15]"} text-white font-bold rounded-md flex items-center gap-2 shadow-[0_8px_32px_rgba(0,0,0,0.2)] hover:shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer group`}
                               >
@@ -254,7 +242,7 @@ export default function MoviesHome() {
                                   className={`w-5 h-5 transition-transform group-hover:scale-105 ${subscribed ? "fill-white text-white" : "text-white"}`}
                                 />
                                 <span className="tracking-wide text-sm md:text-base">
-                                  {subscribed ? "In Collections" : "Add to Collection"}
+                                  {subscribed ? "In Library" : "Add to Library"}
                                 </span>
                               </button>
                             </div>

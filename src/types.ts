@@ -140,24 +140,6 @@ export interface SubscriptionItem {
   subscribedAt: string;
 }
 
-export interface CollectionItem {
-  id: number;
-  title: string;
-  posterPath?: string;
-  coverImage?: string;
-  backdropPath?: string;
-  bannerImage?: string;
-  type: "anime" | "movie" | "series";
-  addedAt: string;
-  animeId?: number;
-  tmdbId?: number;
-}
-
-export interface CollectionsState {
-  toBinge: CollectionItem[];
-  watched: CollectionItem[];
-}
-
 export interface UnifiedWatchState {
   anilistId: number;
   episodeProgressList: Record<number, { progress: number; duration: number }>;

@@ -19,13 +19,13 @@ export default function SeriesSidebar({
 }: SeriesSidebarProps) {
   const primaryNavItems = [
     { id: "home" as const, label: "Home", icon: Home },
-    { id: "library" as const, label: "Collections", icon: Library },
+    { id: "library" as const, label: "Library", icon: Library },
     { id: "settings" as const, label: "Settings", icon: Settings },
   ];
 
   const desktopNavItems = [
     { id: "home" as const, label: "Home", icon: Home },
-    { id: "library" as const, label: "Collections", icon: Library },
+    { id: "library" as const, label: "Library", icon: Library },
   ];
 
   return (

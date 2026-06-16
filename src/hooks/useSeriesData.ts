@@ -3,8 +3,15 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { auth, db } from "../lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { TMDBTVShow } from "../services/tmdb";
-import { CollectionItem, CollectionsState } from "../types";
-import { getSeriesCollections, saveSeriesCollections, getSeriesWatchLater, saveSeriesWatchLater, mergeFirestoreData } from "../utils";
+import { getSeriesLibrary, saveSeriesLibrary, getSeriesWatchLater, saveSeriesWatchLater, mergeFirestoreData } from "../utils";
+
+export interface SeriesLibraryItem {
+  id: number;
+  title: string;
+  posterPath: string;
+  backdropPath?: string;
+  addedAt: string;
+}
 
 export interface SeriesWatchLaterItem {
   id: number;
@@ -15,7 +22,7 @@ export interface SeriesWatchLaterItem {
 }
 
 // Global cache
-let globalCollections: CollectionsState = { toBinge: [], watched: [] };
+let globalLibrary: SeriesLibraryItem[] = [];
 let globalWatchLater: SeriesWatchLaterItem[] = [];
 let globalCurrentUser: User | null = null;
 let isGlobalLoading = true;
@@ -42,14 +49,14 @@ if (auth) {
             mergeFirestoreData(data);
 
             const seriesData = data.series || {};
-            globalCollections = seriesData.collections || getSeriesCollections();
+            globalLibrary = seriesData.library || [];
             globalWatchLater = seriesData.watchLater || [];
           } else {
-            globalCollections = getSeriesCollections();
+            globalLibrary = getSeriesLibrary();
             globalWatchLater = getSeriesWatchLater();
           }
         } else {
-          globalCollections = getSeriesCollections();
+          globalLibrary = getSeriesLibrary();
           globalWatchLater = getSeriesWatchLater();
         }
       } catch (err) {
@@ -57,14 +64,14 @@ if (auth) {
           "[useSeriesData] Failed to fetch user data from Firestore:",
           err
         );
-        globalCollections = getSeriesCollections();
+        globalLibrary = getSeriesLibrary();
         globalWatchLater = getSeriesWatchLater();
       } finally {
         isGlobalLoading = false;
         notifyListeners();
       }
     } else {
-      globalCollections = { toBinge: [], watched: [] };
+      globalLibrary = [];
       globalWatchLater = [];
       isGlobalLoading = false;
       notifyListeners();
@@ -73,7 +80,7 @@ if (auth) {
 }
 
 export function useSeriesData() {
-  const [collections, setCollections] = useState<CollectionsState>(globalCollections);
+  const [library, setLibrary] = useState<SeriesLibraryItem[]>(globalLibrary);
   const [watchLater, setWatchLater] =
     useState<SeriesWatchLaterItem[]>(globalWatchLater);
   const [currentUser, setCurrentUser] = useState<User | null>(
@@ -83,7 +90,7 @@ export function useSeriesData() {
 
   useEffect(() => {
     const handleUpdate = () => {
-      setCollections(globalCollections);
+      setLibrary(globalLibrary);
       setWatchLater(globalWatchLater);
       setCurrentUser(globalCurrentUser);
       setIsLoading(isGlobalLoading);
@@ -95,66 +102,30 @@ export function useSeriesData() {
     };
   }, []);
 
-  const isInSpecificCollection = (collectionName: "toBinge" | "watched", id: number) => {
-    return (collections[collectionName] || []).some((item) => item.id === id || item.tmdbId === id);
-  };
-
-  const isInLibrary = (id: number) => {
-    return (
-      (collections.toBinge || []).some((item) => item.id === id || item.tmdbId === id) ||
-      (collections.watched || []).some((item) => item.id === id || item.tmdbId === id)
-    );
-  };
-
-  const isInWatchLater = (id: number) => watchLater.some((item) => item.id === id);
-
-  const addToCollection = (collectionName: "toBinge" | "watched", series: TMDBTVShow) => {
-    const currentList = globalCollections[collectionName] || [];
-    if (currentList.some((item) => item.id === series.id)) return;
-
-    const newItem: CollectionItem = {
-      id: series.id,
-      title: series.name,
-      posterPath: series.poster_path || "",
-      coverImage: series.poster_path || "",
-      backdropPath: series.backdrop_path || "",
-      bannerImage: series.backdrop_path || "",
-      type: "series",
-      addedAt: new Date().toISOString(),
-      tmdbId: series.id,
-    };
-
-    const updated = {
-      ...globalCollections,
-      [collectionName]: [newItem, ...currentList],
-    };
-
-    globalCollections = updated;
-    notifyListeners();
-    saveSeriesCollections(updated);
-  };
-
-  const removeFromCollection = (collectionName: "toBinge" | "watched", id: number) => {
-    const updated = {
-      ...globalCollections,
-      [collectionName]: (globalCollections[collectionName] || []).filter(
-        (item) => item.id !== id && item.tmdbId !== id
-      ),
-    };
-
-    globalCollections = updated;
-    notifyListeners();
-    saveSeriesCollections(updated);
-  };
+  const isInLibrary = (id: number) => library.some((item) => item.id === id);
+  const isInWatchLater = (id: number) =>
+    watchLater.some((item) => item.id === id);
 
   const toggleLibrary = async (series: TMDBTVShow) => {
     const exists = isInLibrary(series.id);
+    let updated: SeriesLibraryItem[];
     if (exists) {
-      removeFromCollection("toBinge", series.id);
-      removeFromCollection("watched", series.id);
+      updated = globalLibrary.filter((item) => item.id !== series.id);
     } else {
-      addToCollection("toBinge", series);
+      updated = [
+        {
+          id: series.id,
+          title: series.name,
+          posterPath: series.poster_path || "",
+          backdropPath: series.backdrop_path || "",
+          addedAt: new Date().toISOString(),
+        },
+        ...globalLibrary,
+      ];
     }
+    globalLibrary = updated;
+    notifyListeners();
+    saveSeriesLibrary(updated);
     return !exists;
   };
 
@@ -181,23 +152,13 @@ export function useSeriesData() {
     return !exists;
   };
 
-  // Compatibility array for libraries list
-  const library = [
-    ...(collections.toBinge || []),
-    ...(collections.watched || []),
-  ];
-
   return {
     library,
-    collections,
     watchLater,
     isLoading,
     isInLibrary,
-    isInSpecificCollection,
-    addToCollection,
-    removeFromCollection,
-    toggleLibrary,
     isInWatchLater,
+    toggleLibrary,
     toggleWatchLater,
     currentUser,
   };

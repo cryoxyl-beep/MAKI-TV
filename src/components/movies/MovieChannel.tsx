@@ -11,13 +11,11 @@ import LazyImage from "../LazyImage";
 import SkeletonLoader from "../SkeletonLoader";
 import { storage } from "../../utils";
 import { useMoviesData } from "../../hooks/useMoviesData";
-import { useCollections } from "../CollectionsModal";
 
 export default function MovieChannel() {
   const { tmdbId } = useParams();
   const navigate = useNavigate();
-  const { isInLibrary } = useMoviesData();
-  const { openCollectionsModal } = useCollections();
+  const { isInLibrary, toggleLibrary } = useMoviesData();
   const [movie, setMovie] = useState<TMDBMovieDetails | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -141,18 +139,8 @@ export default function MovieChannel() {
                 </button>
 
                 <button
-                  onClick={() => {
-                    if (movie) {
-                      openCollectionsModal({
-                        id: movie.id,
-                        title: movie.title,
-                        posterPath: movie.poster_path || "",
-                        coverImage: movie.poster_path || "",
-                        backdropPath: movie.backdrop_path || "",
-                        bannerImage: movie.backdrop_path || "",
-                        type: "movie"
-                      });
-                    }
+                  onClick={async () => {
+                    await toggleLibrary(movie as any);
                   }}
                   className={`px-8 py-3.5 rounded-full backdrop-blur-md border border-white/10 hover:border-white/20 flex items-center justify-center transition-all hover:-translate-y-0.5 active:translate-y-0 cursor-pointer shadow-lg ${subscribed ? "bg-white/10 text-white" : "bg-white/[0.04] text-white/90"}`}
                 >
@@ -162,7 +150,7 @@ export default function MovieChannel() {
                     <Plus className="w-5 h-5 mr-2.5" />
                   )}
                   <span className="font-bold tracking-wide text-[15px]">
-                    {subscribed ? "In Collections" : "Add to Collection"}
+                    {subscribed ? "In Library" : "Add to Library"}
                   </span>
                 </button>
               </div>

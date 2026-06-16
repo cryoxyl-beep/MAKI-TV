@@ -5,7 +5,7 @@
 
 import { auth, db } from "./lib/firebase";
 import { doc, setDoc } from "firebase/firestore";
-import { AniListAnime, SubscriptionItem, WatchHistoryItem, AnimeHistoryItem, MovieHistoryItem, SeriesHistoryItem, CollectionItem, CollectionsState } from "./types";
+import { AniListAnime, SubscriptionItem, WatchHistoryItem, AnimeHistoryItem, MovieHistoryItem, SeriesHistoryItem } from "./types";
 
 export type { AnimeHistoryItem, MovieHistoryItem, SeriesHistoryItem, WatchHistoryItem };
 
@@ -103,17 +103,17 @@ export function syncUserDataToFirebase() {
 
   const payload = {
     anime: {
-      collections: storage.get("anime_collections", { toBinge: [], watched: [] }),
+      library: storage.get("anime_library", []),
       watchHistory: storage.get("anime_history", []),
       watchLater: storage.get("anime_watch_later", []),
     },
     movies: {
-      collections: storage.get("movies_collections", { toBinge: [], watched: [] }),
+      library: storage.get("movies_library", []),
       watchHistory: storage.get("movies_history", []),
       watchLater: storage.get("movies_watch_later", []),
     },
     series: {
-      collections: storage.get("series_collections", { toBinge: [], watched: [] }),
+      library: storage.get("series_library", []),
       watchHistory: storage.get("series_history", []),
       watchLater: storage.get("series_watch_later", []),
     },
@@ -130,8 +130,8 @@ export function mergeFirestoreData(data: any) {
   if (!data) return;
 
   if (data.anime) {
-    if (data.anime.collections) {
-      storage.set("anime_collections", data.anime.collections);
+    if (Array.isArray(data.anime.library)) {
+      storage.set("anime_library", data.anime.library);
     }
     if (Array.isArray(data.anime.watchHistory)) {
       storage.set("anime_history", data.anime.watchHistory);
@@ -142,8 +142,8 @@ export function mergeFirestoreData(data: any) {
   }
 
   if (data.movies) {
-    if (data.movies.collections) {
-      storage.set("movies_collections", data.movies.collections);
+    if (Array.isArray(data.movies.library)) {
+      storage.set("movies_library", data.movies.library);
     }
     if (Array.isArray(data.movies.watchHistory)) {
       storage.set("movies_history", data.movies.watchHistory);
@@ -154,8 +154,8 @@ export function mergeFirestoreData(data: any) {
   }
 
   if (data.series) {
-    if (data.series.collections) {
-      storage.set("series_collections", data.series.collections);
+    if (Array.isArray(data.series.library)) {
+      storage.set("series_library", data.series.library);
     }
     if (Array.isArray(data.series.watchHistory)) {
       storage.set("series_history", data.series.watchHistory);
@@ -335,40 +335,22 @@ export function getEpisodeProgress(
   return found ? found.progress : 0;
 }
 
-// 2. Library (now Collections) Storage Helpers
-export function getAnimeCollections(): CollectionsState {
-  return storage.get<CollectionsState>("anime_collections", { toBinge: [], watched: [] });
-}
-export function saveAnimeCollections(data: CollectionsState) {
-  storage.set("anime_collections", data);
-  syncUserDataToFirebase();
-}
-
-export function getMoviesCollections(): CollectionsState {
-  return storage.get<CollectionsState>("movies_collections", { toBinge: [], watched: [] });
-}
-export function saveMoviesCollections(data: CollectionsState) {
-  storage.set("movies_collections", data);
-  syncUserDataToFirebase();
-}
-
-export function getSeriesCollections(): CollectionsState {
-  return storage.get<CollectionsState>("series_collections", { toBinge: [], watched: [] });
-}
-export function saveSeriesCollections(data: CollectionsState) {
-  storage.set("series_collections", data);
-  syncUserDataToFirebase();
-}
-
+// 2. Library Storage Helpers
 export function getAnimeLibrary(): SubscriptionItem[] {
-  return [];
+  return storage.get<SubscriptionItem[]>("anime_library", []);
 }
-export function saveAnimeLibrary(data: SubscriptionItem[]) {}
+export function saveAnimeLibrary(data: SubscriptionItem[]) {
+  storage.set("anime_library", data);
+  syncUserDataToFirebase();
+}
 
 export function getMoviesLibrary() {
-  return [];
+  return storage.get<any[]>("movies_library", []);
 }
-export function saveMoviesLibrary(data: any[]) {}
+export function saveMoviesLibrary(data: any[]) {
+  storage.set("movies_library", data);
+  syncUserDataToFirebase();
+}
 
 export function getMoviesWatchLater() {
   return storage.get<any[]>("movies_watch_later", []);
@@ -379,9 +361,12 @@ export function saveMoviesWatchLater(data: any[]) {
 }
 
 export function getSeriesLibrary() {
-  return [];
+  return storage.get<any[]>("series_library", []);
 }
-export function saveSeriesLibrary(data: any[]) {}
+export function saveSeriesLibrary(data: any[]) {
+  storage.set("series_library", data);
+  syncUserDataToFirebase();
+}
 
 export function getSeriesWatchLater() {
   return storage.get<any[]>("series_watch_later", []);

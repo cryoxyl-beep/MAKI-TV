@@ -15,7 +15,6 @@ import LazyImage from "./LazyImage";
 import EpisodeThumbnailItem from "./EpisodeThumbnailItem";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLibrary } from "../hooks/useLibrary";
-import { useCollections } from "./CollectionsModal";
 
 interface ChannelPageProps {
   animeId: number;
@@ -29,8 +28,7 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
   const [isLoading, setIsLoading] = useState(true);
   const [episodesPage, setEpisodesPage] = useState(1);
   const [showInfoModal, setShowInfoModal] = useState(false);
-  const { isSubscribed, currentUser } = useLibrary();
-  const { openCollectionsModal } = useCollections();
+  const { isSubscribed, toggleSubscription, currentUser } = useLibrary();
 
   const [anivexaEpisodes, setAnivexaEpisodes] = useState<any[]>([]);
   const [isAnivexaLoading, setIsAnivexaLoading] = useState(true);
@@ -128,21 +126,14 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
     }
   }, [anime]);
 
-  const handleLibraryToggle = () => {
+  const handleLibraryToggle = async () => {
     if (anime) {
       if (!currentUser) {
-        alert("Please sign in to add to your collections.");
+        alert("Please sign in to add to your library.");
         return;
       }
-      openCollectionsModal({
-        id: anime.id,
-        title: anime.title.english || anime.title.romaji || anime.title.userPreferred || "Untitled Anime",
-        posterPath: anime.coverImage.large || anime.coverImage.medium || "",
-        coverImage: anime.coverImage.large || anime.coverImage.medium || "",
-        backdropPath: anime.bannerImage || "",
-        bannerImage: anime.bannerImage || "",
-        type: "anime",
-      });
+      await toggleSubscription(anime);
+      onSubscriptionChanged();
     }
   };
 
@@ -285,7 +276,7 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
               <button 
                 onClick={handleLibraryToggle}
                 className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 border border-white/5 flex items-center justify-center transition-all text-white active:scale-95"
-                title={subscribed ? "In Collections" : "Add to Collection"}
+                title={subscribed ? "Remove from Library" : "Add to Library"}
               >
                 {subscribed ? <Check className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
               </button>
