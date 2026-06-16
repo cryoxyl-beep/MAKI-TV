@@ -184,21 +184,9 @@ export default function MovieWatch() {
               </span>
             </div>
 
-            {movie.logo_path && !logoError ? (
-              <motion.img
-                src={movie.logo_path}
-                alt={movie.title}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, ease: "easeOut" }}
-                className="max-h-[100px] w-auto object-contain mt-1"
-                onError={() => setLogoError(true)}
-              />
-            ) : (
-              <h1 className="text-white text-xl sm:text-[22px] font-bold font-sans tracking-tight mt-1">
-                {movie.title}
-              </h1>
-            )}
+            <h1 className="text-white text-xl sm:text-[22px] font-bold font-sans tracking-tight mt-1">
+              Now Playing
+            </h1>
 
             <div className="flex flex-col xl:flex-row xl:items-center justify-between py-1 gap-4">
               <div className="flex items-center gap-4">
@@ -219,12 +207,25 @@ export default function MovieWatch() {
 
                 <div className="flex flex-col justify-center">
                   <div className="flex items-center gap-2">
-                    <h3
-                      onClick={() => navigate(`/movies/movie/${movie.id}`)}
-                      className="text-white text-[16px] font-semibold truncate max-w-[220px] sm:max-w-[320px] cursor-pointer hover:text-white/80 transition-colors"
-                    >
-                      {movie.title}
-                    </h3>
+                    {movie.logo_path && !logoError ? (
+                      <motion.img
+                        src={movie.logo_path}
+                        alt={movie.title}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4, ease: "easeOut" }}
+                        className="max-h-[60px] w-auto object-contain cursor-pointer"
+                        onClick={() => navigate(`/movies/movie/${movie.id}`)}
+                        onError={() => setLogoError(true)}
+                      />
+                    ) : (
+                      <h3
+                        onClick={() => navigate(`/movies/movie/${movie.id}`)}
+                        className="text-white text-[16px] font-semibold truncate max-w-[220px] sm:max-w-[320px] cursor-pointer hover:text-white/80 transition-colors"
+                      >
+                        {movie.title}
+                      </h3>
+                    )}
 
                     <button
                       onClick={handleToggleBookmark}

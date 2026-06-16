@@ -175,7 +175,7 @@ export default function SeriesChannel() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, ease: "easeOut" }}
-                className="max-h-[120px] w-auto object-contain mb-4 drop-shadow-2xl"
+                className="max-h-[120px] w-auto object-contain mb-4 drop-shadow-2xl self-start"
                 onError={() => setLogoError(true)}
               />
             ) : (
