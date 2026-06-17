@@ -124,8 +124,8 @@ export default function WatchPage({
   const [isServerDropdownOpen, setIsServerDropdownOpen] = useState(false);
   const [episodeSearchQuery, setEpisodeSearchQuery] = useState("");
 
-  const [anivexaEpisodes, setAnivexaEpisodes] = useState<any[]>([]);
-  const [isAnivexaLoading, setIsAnivexaLoading] = useState(true);
+  const [jikanEpisodes, setJikanEpisodes] = useState<any[]>([]);
+  const [isJikanLoading, setIsJikanLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
@@ -150,47 +150,23 @@ export default function WatchPage({
 
   useEffect(() => {
     let mounted = true;
-    async function fetchAnivexaEpisodes() {
-      if (!anime?.anilistId) return;
-      
-      const cacheKey = `anivexa_episodes_${anime.anilistId}`;
-      const cached = localStorage.getItem(cacheKey);
-      if (cached) {
-        try {
-          const parsed = JSON.parse(cached);
-          if (Date.now() - parsed.timestamp < 6 * 60 * 60 * 1000) {
-            if (mounted) {
-              setAnivexaEpisodes(parsed.data);
-              setIsAnivexaLoading(false);
-            }
-            return;
-          }
-        } catch(e) {}
-      }
-
-      setIsAnivexaLoading(true);
+    async function fetchJikanEpisodesData() {
+      if (!anime?.id) return;
+      setIsJikanLoading(true);
       try {
-        const res = await fetch(`https://anivexa-api-nine.vercel.app/episodes/${anime.anilistId}`);
-        if (res.ok) {
-           const data = await res.json();
-           if (mounted && data?.anineko?.episodes?.sub) {
-             setAnivexaEpisodes(data.anineko.episodes.sub);
-             try {
-               safeSetItem(cacheKey, JSON.stringify({
-                 timestamp: Date.now(),
-                 data: data.anineko.episodes.sub
-               }));
-             } catch (err) {}
-           }
+        const { fetchAllJikanEpisodes } = await import('../services/anilist');
+        const eps = await fetchAllJikanEpisodes(anime.id);
+        if (mounted && eps && eps.length > 0) {
+          setJikanEpisodes(eps);
         }
       } catch (e) {
       } finally {
-        if (mounted) setIsAnivexaLoading(false);
+        if (mounted) setIsJikanLoading(false);
       }
     }
-    fetchAnivexaEpisodes();
+    fetchJikanEpisodesData();
     return () => { mounted = false; };
-  }, [anime?.anilistId]);
+  }, [anime?.id]);
 
   const audioDropdownRef = useRef<HTMLDivElement>(null);
   const serverDropdownRef = useRef<HTMLDivElement>(null);
@@ -251,13 +227,13 @@ export default function WatchPage({
       const query = episodeSearchQuery.toLowerCase();
       eps = eps.filter((epNum) => {
         const epData = episodesMap[currentRange]?.find(e => Number(e.mal_id) === Number(epNum)) || episodesMap[currentRange]?.[(epNum - 1) % 100];
-        const anivexaEp = anivexaEpisodes.find(e => Number(e.number) === Number(epNum)) || anivexaEpisodes[epNum - 1];
-        const epTitle = (epData?.title || anivexaEp?.title || "").toLowerCase();
+        const jikanEp = jikanEpisodes.find(e => Number(e.number) === Number(epNum)) || jikanEpisodes[epNum - 1];
+        const epTitle = (epData?.title || jikanEp?.title || "").toLowerCase();
         return epNum.toString().includes(query) || epTitle.includes(query);
       });
     }
     return eps;
-  }, [anime, currentRange, episodesCount, isLongRunning, episodeSearchQuery, episodesMap, anivexaEpisodes]);
+  }, [anime, currentRange, episodesCount, isLongRunning, episodeSearchQuery, episodesMap, jikanEpisodes]);
   
   // Set initial range based on current episode
   useEffect(() => {
@@ -516,19 +492,19 @@ export default function WatchPage({
   const studioName = anime.studios?.nodes?.[0]?.name || anime.format || "Official Studio";
 
   const currentEpData = episodesMap[currentRange]?.find(e => Number(e.mal_id) === Number(episodeNumber)) || episodesMap[currentRange]?.[Number(episodeNumber) - 1];
-  const currentAnivexaEp = anivexaEpisodes.find(e => Number(e.number) === Number(episodeNumber)) || anivexaEpisodes[Number(episodeNumber) - 1];
+  const currentJikanEp = jikanEpisodes.find(e => Number(e.number) === Number(episodeNumber)) || jikanEpisodes[Number(episodeNumber) - 1];
   
-  const currentEpTitle = currentEpData?.title || currentAnivexaEp?.title || "";
-  const currentEpDesc = currentAnivexaEp?.description || episodeDescription;
-  const currentEpAired = currentEpData?.aired || currentAnivexaEp?.airDate;
+  const currentEpTitle = currentEpData?.title || currentJikanEp?.title || "";
+  const currentEpDesc = currentJikanEp?.description || episodeDescription;
+  const currentEpAired = currentEpData?.aired || currentJikanEp?.aired;
   const accentColor = anime?.coverImage?.color || "#38bdf8";
 
   // Calculate next episode title for "Up Next" header
   const nextEpNum = Number(episodeNumber) + 1;
   const targetRange = Math.max(1, Math.ceil(nextEpNum / 100));
   const nextEpData = episodesMap[targetRange]?.find(e => Number(e.mal_id) === nextEpNum) || episodesMap[targetRange]?.[(nextEpNum - 1) % 100];
-  const nextAnivexaEp = anivexaEpisodes.find(e => Number(e.number) === nextEpNum) || anivexaEpisodes[nextEpNum - 1];
-  const nextEpTitle = nextEpData?.title || nextAnivexaEp?.title || "";
+  const nextJikanEp = jikanEpisodes.find(e => Number(e.number) === nextEpNum) || jikanEpisodes[nextEpNum - 1];
+  const nextEpTitle = nextEpData?.title || nextJikanEp?.title || "";
   const hasNextEpisode = nextEpNum <= (anime.episodes || 9999);
   
   const upNextHeader = hasNextEpisode 
@@ -717,8 +693,8 @@ export default function WatchPage({
                   const query = episodeSearchQuery.toLowerCase();
                   episodesToRender = episodesToRender.filter((epNum) => {
                     const epData = episodesMap[currentRange]?.find(e => Number(e.mal_id) === Number(epNum)) || episodesMap[currentRange]?.[(epNum - 1) % 100];
-                    const anivexaEp = anivexaEpisodes.find(e => Number(e.number) === Number(epNum)) || anivexaEpisodes[epNum - 1];
-                    const epTitle = (epData?.title || anivexaEp?.title || "").toLowerCase();
+                    const jikanEp = jikanEpisodes.find(e => Number(e.number) === Number(epNum)) || jikanEpisodes[epNum - 1];
+                    const epTitle = (epData?.title || jikanEp?.title || "").toLowerCase();
                     return epNum.toString().includes(query) || epTitle.includes(query);
                   });
                 }
@@ -793,9 +769,9 @@ export default function WatchPage({
                         const progressVal = progressMap[`${seasonNumber}-${epNum}`] || 0;
                         
                         const epData = episodesMap[currentRange]?.find(e => Number(e.mal_id) === Number(epNum)) || episodesMap[currentRange]?.[(epNum - 1) % 100];
-                        const anivexaEp = anivexaEpisodes.find(e => Number(e.number) === Number(epNum)) || anivexaEpisodes[epNum - 1];
-                        const epTitleStr = epData?.title || anivexaEp?.title || "";
-                        const epAired = epData?.aired || anivexaEp?.airDate;
+                        const jikanEp = jikanEpisodes.find(e => Number(e.number) === Number(epNum)) || jikanEpisodes[epNum - 1];
+                        const epTitleStr = epData?.title || jikanEp?.title || "";
+                        const epAired = epData?.aired || jikanEp?.aired;
                         
                         let badge = null;
                         if (epData?.recap) {

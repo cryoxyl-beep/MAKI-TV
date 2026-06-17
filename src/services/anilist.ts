@@ -531,3 +531,56 @@ export async function fetchAnimeTrailer(idMal: number, signal?: AbortSignal): Pr
   }
   return null;
 }
+
+export async function fetchJikanEpisodes(malId: number, page: number = 1): Promise<any> {
+    const url = `https://api.jikan.moe/v4/anime/${malId}/episodes?page=${page}`;
+    const cacheKey = `jikan_episodes_${malId}_${page}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+        try {
+            const parsed = JSON.parse(cached);
+            if (Date.now() - parsed.timestamp < 24 * 60 * 60 * 1000) {
+                return parsed.data;
+            }
+        } catch (e) {}
+    }
+
+    try {
+        const response = await fetch(url);
+        if (response.ok) {
+            const data = await response.json();
+            try {
+                safeSetItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data }));
+            } catch(e) {}
+            return data;
+        }
+    } catch(e) {}
+    
+    return null;
+}
+
+export async function fetchAllJikanEpisodes(malId: number): Promise<any[]> {
+    let allEpisodes: any[] = [];
+    let page = 1;
+    let hasNextPage = true;
+    
+    while (hasNextPage && page <= 5) { // Limit to 5 pages for safety -> max 500 episodes
+        const data = await fetchJikanEpisodes(malId, page);
+        if (data && data.data && data.data.length > 0) {
+            const mappedData = data.data.map((e: any) => ({
+                ...e,
+                number: e.mal_id
+            }));
+            allEpisodes = [...allEpisodes, ...mappedData];
+            hasNextPage = data.pagination?.has_next_page || false;
+            page++;
+            if (hasNextPage) {
+               await new Promise(r => setTimeout(r, 350)); // Jikan rate limit buffer
+            }
+        } else {
+            hasNextPage = false;
+        }
+    }
+    
+    return allEpisodes;
+}

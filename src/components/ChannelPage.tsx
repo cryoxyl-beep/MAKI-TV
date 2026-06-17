@@ -37,8 +37,8 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
   const [logoError, setLogoError] = useState(false);
   const [isLogoLoading, setIsLogoLoading] = useState(true);
 
-  const [anivexaEpisodes, setAnivexaEpisodes] = useState<any[]>([]);
-  const [isAnivexaLoading, setIsAnivexaLoading] = useState(true);
+  const [jikanEpisodes, setJikanEpisodes] = useState<any[]>([]);
+  const [isJikanLoading, setIsJikanLoading] = useState(true);
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const [tvdbThumbnailMap, setTvdbThumbnailMap] = useState<Record<string, string>>({});
 
@@ -113,47 +113,23 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
 
   useEffect(() => {
     let mounted = true;
-    async function fetchAnivexaEpisodes() {
-      if (!anime?.anilistId) return;
-      
-      const cacheKey = `anivexa_episodes_${anime.anilistId}`;
-      const cached = localStorage.getItem(cacheKey);
-      if (cached) {
-        try {
-          const parsed = JSON.parse(cached);
-          if (Date.now() - parsed.timestamp < 6 * 60 * 60 * 1000) {
-            if (mounted) {
-              setAnivexaEpisodes(parsed.data);
-              setIsAnivexaLoading(false);
-            }
-            return;
-          }
-        } catch(e) {}
-      }
-
-      setIsAnivexaLoading(true);
+    async function fetchJikanEpisodesData() {
+      if (!anime?.id) return;
+      setIsJikanLoading(true);
       try {
-        const res = await fetch(`https://anivexa-api-nine.vercel.app/episodes/${anime.anilistId}`);
-        if (res.ok) {
-           const data = await res.json();
-           if (mounted && data?.anineko?.episodes?.sub) {
-             setAnivexaEpisodes(data.anineko.episodes.sub);
-             try {
-               safeSetItem(cacheKey, JSON.stringify({
-                 timestamp: Date.now(),
-                 data: data.anineko.episodes.sub
-               }));
-             } catch (err) {}
-           }
+        const { fetchAllJikanEpisodes } = await import('../services/anilist');
+        const eps = await fetchAllJikanEpisodes(anime.id);
+        if (mounted && eps && eps.length > 0) {
+          setJikanEpisodes(eps);
         }
       } catch (e) {
       } finally {
-        if (mounted) setIsAnivexaLoading(false);
+        if (mounted) setIsJikanLoading(false);
       }
     }
-    fetchAnivexaEpisodes();
+    fetchJikanEpisodesData();
     return () => { mounted = false; };
-  }, [anime?.anilistId]);
+  }, [anime?.id]);
 
   useEffect(() => {
     if (anime) {
@@ -398,8 +374,8 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
 
                 return eps.map((episodeNum, listIndex) => {
                   const watchProgress = getEpisodeProgress(anime.id, 1, episodeNum);
-                  const anivexaEp = anivexaEpisodes.find(e => e.number === episodeNum);
-                  const epTitleStr = anivexaEp?.title || `${mainTitle.replace(/Season \d+/gi, "").trim()} - Episode ${episodeNum}`;
+                  const jikanEp = jikanEpisodes.find(e => e.number === episodeNum);
+                  const epTitleStr = jikanEp?.title || `${mainTitle.replace(/Season \d+/gi, "").trim()} - Episode ${episodeNum}`;
                   
                   return (
                     <motion.div

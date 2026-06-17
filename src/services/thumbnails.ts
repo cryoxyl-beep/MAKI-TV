@@ -194,14 +194,7 @@ export async function getEpisodeThumbnail(options: {
     }
   }
 
-  // Step 3: Anivexa Fallback
-  const anivexaImg = await getAnivexaThumbnail(animeId, episode);
-  if (anivexaImg) {
-    safeSetItem(cacheKey, anivexaImg);
-    return anivexaImg;
-  }
-
-  // Step 4: AniList Fallback
+  // Step 3: AniList Fallback
   if (fallbackImages && fallbackImages.length > 0) {
     const aniListImg = fallbackImages.find(img => !!img) || null;
     if (aniListImg) {
