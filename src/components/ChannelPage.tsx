@@ -11,6 +11,7 @@ import { getFribbEntryByAnilist, initializeFribbMapping } from "../services/frib
 import { getTVDBSeriesManifest } from "../services/thumbnails";
 import { getTMDBMapping } from "../services/mapping";
 import { getLogoPath } from "../services/tmdb";
+import { safeSetItem } from "../lib/cacheManager";
 import SkeletonLoader from "./SkeletonLoader";
 import { Check, Star, Play, Info, Plus, X } from "lucide-react";
 import LazyImage from "./LazyImage";
@@ -138,7 +139,7 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
            if (mounted && data?.anineko?.episodes?.sub) {
              setAnivexaEpisodes(data.anineko.episodes.sub);
              try {
-               localStorage.setItem(cacheKey, JSON.stringify({
+               safeSetItem(cacheKey, JSON.stringify({
                  timestamp: Date.now(),
                  data: data.anineko.episodes.sub
                }));

@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { safeSetItem } from "../lib/cacheManager";
+
 // Provided Credentials for TMDB Operations
 const TMDB_API_KEY = "fbc7f38e1070f1b873607893800598d9";
 const TMDB_TOKENS = [
@@ -201,7 +203,7 @@ export async function getTMDBMapping(anime: {
   // Save resolved results to cache
   const cachedData = { tmdbId: finalTmdbId, type };
   try {
-    localStorage.setItem(cacheKey, JSON.stringify(cachedData));
+    safeSetItem(cacheKey, JSON.stringify(cachedData));
   } catch (err) {
   }
 

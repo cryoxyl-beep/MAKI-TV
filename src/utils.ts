@@ -6,6 +6,7 @@
 import { auth, db } from "./lib/firebase";
 import { doc, setDoc } from "firebase/firestore";
 import { AniListAnime, SubscriptionItem, WatchHistoryItem, AnimeHistoryItem, MovieHistoryItem, SeriesHistoryItem } from "./types";
+import { safeSetItem } from "./lib/cacheManager";
 
 export type { AnimeHistoryItem, MovieHistoryItem, SeriesHistoryItem, WatchHistoryItem };
 
@@ -30,7 +31,7 @@ if (typeof window !== "undefined" && !localStorage.getItem("makitv_v2_clean_arch
   localStorage.removeItem("makitv_series_history");
   localStorage.removeItem("makitv_series_watch_later");
 
-  localStorage.setItem("makitv_v2_clean_arch", "true");
+  safeSetItem("makitv_v2_clean_arch", "true");
 }
 
 export function formatRelativeDate(isoString: string): string {
@@ -77,7 +78,7 @@ export const storage = {
   },
   set: <T>(key: string, value: T): void => {
     try {
-      localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(value));
+      safeSetItem(STORAGE_PREFIX + key, JSON.stringify(value));
     } catch (e) {
       console.error("[storage] Failed to set item", key, e);
     }

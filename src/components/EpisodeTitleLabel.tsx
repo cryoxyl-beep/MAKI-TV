@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { safeSetItem } from "../lib/cacheManager";
 
 // Global in-memory cache to prevent flickering on clean re-renders
 const inMemoryTitleCache: Record<string, string> = {};
@@ -49,7 +50,7 @@ export function useEpisodeTitle(animeId: number, episodeNumber: number, fallback
         
         const json = await response.json();
         if (json.data) {
-          localStorage.setItem(cacheKey, JSON.stringify({
+          safeSetItem(cacheKey, JSON.stringify({
             timestamp: Date.now(),
             data: json.data,
           }));

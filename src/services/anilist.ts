@@ -5,6 +5,7 @@
 
 import { AniListAnime } from "../types";
 import { getAniListId, initializeFribbMapping } from "./fribb";
+import { safeSetItem } from "../lib/cacheManager";
 
 const ANILIST_API_URL = "https://graphql.anilist.co";
 
@@ -71,7 +72,7 @@ export async function fetchAniList(query: string, variables: any = {}): Promise<
 
   if (json.data) {
     try {
-      localStorage.setItem(cacheKey, JSON.stringify({
+      safeSetItem(cacheKey, JSON.stringify({
         timestamp: Date.now(),
         data: json.data,
       }));
@@ -171,7 +172,7 @@ export async function fetchAnimeFeed(category?: string, searchWord?: string, pag
     });
 
     try {
-        localStorage.setItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data: result }));
+        safeSetItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data: result }));
     } catch(e) { }
 
     return result;
@@ -309,7 +310,7 @@ export async function fetchAnimeDetails(id: number): Promise<AniListAnime | null
          };
 
          try {
-             localStorage.setItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data: result }));
+             safeSetItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data: result }));
          } catch(e) { }
 
          return result as AniListAnime;
@@ -399,7 +400,7 @@ export async function fetchAnimeDetails(id: number): Promise<AniListAnime | null
     };
     
     try {
-        localStorage.setItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data: result }));
+        safeSetItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data: result }));
     } catch(e) { }
 
     return result as AniListAnime;
@@ -464,7 +465,7 @@ export async function fetchNewReleases(page: number = 1): Promise<AniListAnime[]
     });
 
     try {
-      localStorage.setItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data: result }));
+      safeSetItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data: result }));
     } catch(e) { }
 
     return result;

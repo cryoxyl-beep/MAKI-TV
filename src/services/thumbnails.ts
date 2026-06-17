@@ -4,6 +4,7 @@
  */
 
 import { getFribbEntryByAnilist, initializeFribbMapping } from "./fribb";
+import { safeSetItem } from "../lib/cacheManager";
 
 const TVDB_API_KEY = "e0a96c0b-7a3f-4063-ae2d-1f192cc2827e";
 const TMDB_API_KEY = "fbc7f38e1070f1b873607893800598d9";
@@ -35,8 +36,8 @@ async function loginTVDB(): Promise<string | null> {
       const token = data.data?.token;
       if (token) {
         tvdbToken = token;
-        localStorage.setItem("makitv_tvdb_token", token);
-        localStorage.setItem("makitv_tvdb_token_time", Date.now().toString());
+        safeSetItem("makitv_tvdb_token", token);
+        safeSetItem("makitv_tvdb_token_time", Date.now().toString());
         return token;
       }
     }
@@ -95,7 +96,7 @@ export async function getTVDBSeriesManifest(tvdbId: number, seasonOverrides?: { 
         }
       });
 
-      localStorage.setItem(cacheKey, JSON.stringify({ data: manifest, timestamp: Date.now() }));
+      safeSetItem(cacheKey, JSON.stringify({ data: manifest, timestamp: Date.now() }));
       return manifest;
     }
   } catch (error) {
@@ -162,7 +163,7 @@ export async function getEpisodeThumbnail(options: {
   if (tvdbThumbnailMap) {
     const tvdbUrl = tvdbThumbnailMap[`${mappedTvdbSeason}_${episode}`];
     if (tvdbUrl) {
-      localStorage.setItem(cacheKey, tvdbUrl);
+      safeSetItem(cacheKey, tvdbUrl);
       return tvdbUrl;
     }
   }
@@ -175,7 +176,7 @@ export async function getEpisodeThumbnail(options: {
     const s = fribbEntry?.season?.tvdb ?? season;
     const tvdbImg = await getTVDBThumbnail(fribbEntry.tvdb_id, s, episode);
     if (tvdbImg) {
-      localStorage.setItem(cacheKey, tvdbImg);
+      safeSetItem(cacheKey, tvdbImg);
       return tvdbImg;
     }
   }
@@ -188,7 +189,7 @@ export async function getEpisodeThumbnail(options: {
     const mappedSeason = fribbEntry?.season?.tmdb ?? season;
     const tmdbImg = await getTMDBThumbnail(tmdbId, mappedSeason, episode);
     if (tmdbImg) {
-      localStorage.setItem(cacheKey, tmdbImg);
+      safeSetItem(cacheKey, tmdbImg);
       return tmdbImg;
     }
   }
@@ -196,7 +197,7 @@ export async function getEpisodeThumbnail(options: {
   // Step 3: Anivexa Fallback
   const anivexaImg = await getAnivexaThumbnail(animeId, episode);
   if (anivexaImg) {
-    localStorage.setItem(cacheKey, anivexaImg);
+    safeSetItem(cacheKey, anivexaImg);
     return anivexaImg;
   }
 
@@ -204,7 +205,7 @@ export async function getEpisodeThumbnail(options: {
   if (fallbackImages && fallbackImages.length > 0) {
     const aniListImg = fallbackImages.find(img => !!img) || null;
     if (aniListImg) {
-      localStorage.setItem(cacheKey, aniListImg);
+      safeSetItem(cacheKey, aniListImg);
       return aniListImg;
     }
   }

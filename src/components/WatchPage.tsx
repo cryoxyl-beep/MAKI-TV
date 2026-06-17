@@ -19,6 +19,7 @@ import {
   isWatchLater,
   toggleWatchLater
 } from "../utils";
+import { safeSetItem } from "../lib/cacheManager";
 import { useLibrary } from "../hooks/useLibrary";
 import LazyImage from "./LazyImage";
 import VideoPlayer from "./VideoPlayer";
@@ -175,7 +176,7 @@ export default function WatchPage({
            if (mounted && data?.anineko?.episodes?.sub) {
              setAnivexaEpisodes(data.anineko.episodes.sub);
              try {
-               localStorage.setItem(cacheKey, JSON.stringify({
+               safeSetItem(cacheKey, JSON.stringify({
                  timestamp: Date.now(),
                  data: data.anineko.episodes.sub
                }));
@@ -449,7 +450,7 @@ export default function WatchPage({
 
   const handleSelectProvider = (providerId: string) => {
     setSelectedProvider(providerId);
-    localStorage.setItem("makitv_selected_provider", providerId);
+    safeSetItem("makitv_selected_provider", providerId);
   };
 
   const handleNextEpisode = () => {
@@ -605,7 +606,7 @@ export default function WatchPage({
             audioLanguage={audioLanguage}
             onAudioLanguageChange={(lang) => {
               setAudioLanguage(lang);
-              localStorage.setItem("makitv_megaplay_language", lang);
+              safeSetItem("makitv_megaplay_language", lang);
             }}
             tmdbId={tmdbId}
             mediaType={mediaType}
@@ -1007,7 +1008,7 @@ export default function WatchPage({
                           <button
                             onClick={() => {
                               setAudioLanguage("sub");
-                              localStorage.setItem("makitv_megaplay_language", "sub");
+                              safeSetItem("makitv_megaplay_language", "sub");
                               setIsAudioDropdownOpen(false);
                             }}
                             className={`px-4 py-2.5 text-[13px] font-semibold text-left hover:bg-white/10 transition-colors cursor-pointer ${audioLanguage === "sub" ? "text-white bg-white/5" : "text-white/60"}`}
@@ -1017,7 +1018,7 @@ export default function WatchPage({
                           <button
                             onClick={() => {
                               setAudioLanguage("dub");
-                              localStorage.setItem("makitv_megaplay_language", "dub");
+                              safeSetItem("makitv_megaplay_language", "dub");
                               setIsAudioDropdownOpen(false);
                             }}
                             className={`px-4 py-2.5 text-[13px] font-semibold text-left hover:bg-white/10 transition-colors cursor-pointer ${audioLanguage === "dub" ? "text-white bg-white/5" : "text-white/60"}`}
@@ -1080,7 +1081,7 @@ export default function WatchPage({
                                 setIsServerDropdownOpen(false);
                                 if (!["megaplay", "origami", "vidnest", "animepahe", "anineko", "animegg"].includes(provider.id)) {
                                   setAudioLanguage("sub");
-                                  localStorage.setItem("makitv_megaplay_language", "sub");
+                                  safeSetItem("makitv_megaplay_language", "sub");
                                 }
                               }}
                               className={`px-4 py-2.5 text-left hover:bg-white/10 transition-colors cursor-pointer ${selectedProvider === provider.id ? "bg-white/5 text-white" : "text-white/60 hover:text-white"}`}
