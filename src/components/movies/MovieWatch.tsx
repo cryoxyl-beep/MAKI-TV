@@ -135,7 +135,13 @@ export default function MovieWatch() {
     <div className="w-full bg-[#0f0f0f] pb-20 pt-14 select-none z-10 relative animate-fade-in text-[#f1f1f1] min-h-screen">
       <Header
         variant="slim"
-        onSearch={() => navigate("/movies")}
+        onSearch={(query) => {
+          if (query.trim()) {
+            navigate(`/movies/search?q=${encodeURIComponent(query)}`);
+          } else {
+            navigate("/movies");
+          }
+        }}
         onNavigateHome={() => navigate("/movies")}
         breadcrumbs={[
           {

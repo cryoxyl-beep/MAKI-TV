@@ -172,6 +172,68 @@ async function getAnivexaThumbnail(anilistId: number, episode: number): Promise<
 /**
  * Main Tiered Thumbnail Export
  */
+export async function getSeriesEpisodeThumbnail(options: {
+  tmdbId: number;
+  seasonNumber: number;
+  episodeNumber: number;
+  stillPath: string | null;
+  seasonPosterPath: string | null;
+  seriesBackdropPath: string | null;
+}): Promise<string | null> {
+  const { tmdbId, seasonNumber, episodeNumber, stillPath, seasonPosterPath, seriesBackdropPath } = options;
+
+  if (stillPath) {
+    return `https://image.tmdb.org/t/p/w500${stillPath}`;
+  }
+
+  const cacheKey = `makitv_series_thumb_${tmdbId}_${seasonNumber}_${episodeNumber}`;
+  const cached = localStorage.getItem(cacheKey);
+  if (cached) return cached;
+
+  // TVDB fallback mapping
+  const tvdbMappingKey = `makitv_tvdb_mapping_${tmdbId}`;
+  let tvdbId: number | null = null;
+  
+  const cachedMapping = localStorage.getItem(tvdbMappingKey);
+  if (cachedMapping) {
+    try {
+       const parsed = JSON.parse(cachedMapping);
+       if (Date.now() - parsed.timestamp < 30 * 24 * 60 * 60 * 1000) {
+          tvdbId = parsed.tvdbId;
+       }
+    } catch(e) {}
+  }
+
+  if (tvdbId === null) {
+    try {
+      const res = await fetch(`https://api.themoviedb.org/3/tv/${tmdbId}/external_ids?api_key=${TMDB_API_KEY}`);
+      if (res.ok) {
+        const data = await res.json();
+        tvdbId = data.tvdb_id || 0;
+        safeSetItem(tvdbMappingKey, JSON.stringify({ tvdbId, timestamp: Date.now() }));
+      }
+    } catch(e) {}
+  }
+
+  if (tvdbId && tvdbId > 0) {
+    const tvdbImg = await getTVDBThumbnail(tvdbId, seasonNumber, episodeNumber);
+    if (tvdbImg) {
+      safeSetItem(cacheKey, tvdbImg);
+      return tvdbImg;
+    }
+  }
+
+  if (seasonPosterPath) {
+    return `https://image.tmdb.org/t/p/w500${seasonPosterPath}`;
+  }
+
+  if (seriesBackdropPath) {
+    return `https://image.tmdb.org/t/p/w500${seriesBackdropPath}`;
+  }
+
+  return null;
+}
+
 export async function getEpisodeThumbnail(options: {
   animeId: number; // AniList ID
   malId?: number;

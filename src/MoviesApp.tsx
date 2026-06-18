@@ -19,6 +19,11 @@ export default function MoviesApp() {
     return new URLSearchParams(location.search).get("q") || "";
   });
 
+  useEffect(() => {
+    const q = new URLSearchParams(location.search).get("q") || "";
+    setSearchQuery(q);
+  }, [location.search]);
+
   const getActiveTab = () => {
     if (location.pathname === "/movies/library") return "library";
     if (location.pathname === "/movies/settings") return "settings";

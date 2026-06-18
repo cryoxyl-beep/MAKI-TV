@@ -10,6 +10,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Virtuoso, VirtuosoGrid } from "react-virtuoso";
 import { Play, ChevronLeft, ChevronRight, ChevronDown, Grid, List, Search, Info, Bookmark, Clock, Flag } from "lucide-react";
 import { useSeriesData } from "../../hooks/useSeriesData";
+import { SeriesEpisodeImage } from "./SeriesEpisodeImage";
+import { getSeriesEpisodeThumbnail } from "../../services/thumbnails";
 
 const SERIES_PROVIDERS = [
   { id: "vidfast", label: "Matsuri" },
@@ -95,33 +97,49 @@ export default function SeriesWatch() {
   useEffect(() => {
     if (!series) return;
     
-    // Initial history write to register series watcher immediately
-    const history = getUnifiedHistory();
-    const existing = history.find((h: any) => 
-      h.type === "series" && 
-      (h.id === series.id || h.tmdbId === series.id) && 
-      h.seasonNumber === seasonNum && 
-      h.episodeNumber === episodeNum
-    );
-    const progress = existing ? existing.progress : 0;
-    const duration = (existing && typeof existing.duration === "number") ? existing.duration : 0;
-    const currentEp = seasonDetails?.episodes.find(e => e.episode_number === episodeNum);
-    const resolvedThumbnail = currentEp?.still_path 
-      ? `${TMDB_IMAGE_BASE_URL_W500}${currentEp.still_path}` 
-      : undefined;
+    const processHistory = async () => {
+      const history = getUnifiedHistory();
+      const existing = history.find((h: any) => 
+        h.type === "series" && 
+        (h.id === series.id || h.tmdbId === series.id) && 
+        h.seasonNumber === seasonNum && 
+        h.episodeNumber === episodeNum
+      );
+      const progress = existing ? existing.progress : 0;
+      const duration = (existing && typeof existing.duration === "number") ? existing.duration : 0;
+      const currentEp = seasonDetails?.episodes.find(e => e.episode_number === episodeNum);
+  
+      let resolvedThumbnail = currentEp?.still_path 
+        ? `${TMDB_IMAGE_BASE_URL_W500}${currentEp.still_path}` 
+        : undefined;
+        
+      if (!resolvedThumbnail && currentEp) {
+          const fetchedUrl = await getSeriesEpisodeThumbnail({
+              tmdbId: series.id,
+              seasonNumber: seasonNum,
+              episodeNumber: episodeNum,
+              stillPath: currentEp.still_path,
+              seasonPosterPath: seasonDetails?.poster_path || null,
+              seriesBackdropPath: series.backdrop_path
+          });
+          if (fetchedUrl) resolvedThumbnail = fetchedUrl;
+      }
+  
+      addToSeriesHistory({
+        tmdbId: series.id,
+        title: series.name,
+        seasonNumber: seasonNum,
+        episodeNumber: episodeNum,
+        provider: selectedProvider,
+        progress,
+        duration,
+        posterPath: series.poster_path,
+        backdropPath: series.backdrop_path,
+        thumbnailUrl: resolvedThumbnail
+      });
+    };
 
-    addToSeriesHistory({
-      tmdbId: series.id,
-      title: series.name,
-      seasonNumber: seasonNum,
-      episodeNumber: episodeNum,
-      provider: selectedProvider,
-      progress,
-      duration,
-      posterPath: series.poster_path,
-      backdropPath: series.backdrop_path,
-      thumbnailUrl: resolvedThumbnail
-    });
+    processHistory();
   }, [series, seasonDetails, seasonNum, episodeNum, selectedProvider]);
 
   useEffect(() => {
@@ -161,12 +179,25 @@ export default function SeriesWatch() {
     }
   };
 
-  const handleProgressUpdate = (percentage: number, currentTime?: number, duration?: number) => {
+  const handleProgressUpdate = async (percentage: number, currentTime?: number, duration?: number) => {
     if (!series) return;
     const currentEp = seasonDetails?.episodes.find(e => e.episode_number === episodeNum);
-    const resolvedThumbnail = currentEp?.still_path 
+    
+    let resolvedThumbnail = currentEp?.still_path 
       ? `${TMDB_IMAGE_BASE_URL_W500}${currentEp.still_path}` 
       : undefined;
+
+    if (!resolvedThumbnail && currentEp) {
+        const fetchedUrl = await getSeriesEpisodeThumbnail({
+            tmdbId: series.id,
+            seasonNumber: seasonNum,
+            episodeNumber: episodeNum,
+            stillPath: currentEp.still_path,
+            seasonPosterPath: seasonDetails?.poster_path || null,
+            seriesBackdropPath: series.backdrop_path
+        });
+        if (fetchedUrl) resolvedThumbnail = fetchedUrl;
+    }
 
     addToSeriesHistory({
       tmdbId: series.id,
@@ -205,7 +236,13 @@ export default function SeriesWatch() {
     <div className="w-full bg-[#0f0f0f] pb-20 pt-14 select-none z-10 relative animate-fade-in text-[#f1f1f1] min-h-screen">
       <Header
         variant="slim"
-        onSearch={() => navigate("/series")}
+        onSearch={(query) => {
+          if (query.trim()) {
+            navigate(`/series/search?q=${encodeURIComponent(query)}`);
+          } else {
+            navigate("/series");
+          }
+        }}
         onNavigateHome={() => navigate("/series")}
         breadcrumbs={[
           { label: "Home", onClick: () => navigate("/series"), color: accentColor },
@@ -335,15 +372,16 @@ export default function SeriesWatch() {
                            }`}
                          >
                            <div className="relative w-[120px] aspect-video bg-[#212121] rounded-md overflow-hidden flex-shrink-0">
-                             {ep.still_path ? (
-                               <LazyImage
-                                 src={`${TMDB_IMAGE_BASE_URL_W500}${ep.still_path}`}
-                                 alt={ep.name}
-                                 className={`w-full h-full object-cover ${isActive ? "opacity-100" : "opacity-80 group-hover:opacity-100 transition-opacity"}`}
-                               />
-                             ) : (
-                               <div className="w-full h-full flex items-center justify-center text-[10px] text-white/20">No Image</div>
-                             )}
+                             <SeriesEpisodeImage
+                               tmdbId={series.id}
+                               seasonNumber={seasonNum}
+                               episodeNumber={ep.episode_number}
+                               stillPath={ep.still_path}
+                               seasonPosterPath={seasonDetails?.poster_path || null}
+                               seriesBackdropPath={series.backdrop_path}
+                               alt={ep.name}
+                               className={`w-full h-full object-cover ${isActive ? "opacity-100" : "opacity-80 group-hover:opacity-100 transition-opacity"}`}
+                             />
                              {isActive && (
                                <div className="absolute inset-0 bg-white/10 flex items-center justify-center">
                                  <Play className="w-8 h-8 text-white drop-shadow-md" />

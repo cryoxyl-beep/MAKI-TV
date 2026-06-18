@@ -179,4 +179,6 @@ export const getTVDetails = async (id: number): Promise<TMDBTVDetails> => {
   return details;
 };
 
+export const getTVExternalIds = (id: number) => fetchFromTMDB<{ id: number; tvdb_id: number | null }>(`/tv/${id}/external_ids`);
+
 export const getTVSeasonDetails = (seriesId: number, seasonNumber: number) => fetchFromTMDB<TMDBSeasonDetails>(`/tv/${seriesId}/season/${seasonNumber}`);

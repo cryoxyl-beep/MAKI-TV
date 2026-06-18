@@ -7,6 +7,7 @@ import { storage } from "../../utils";
 import { motion, AnimatePresence } from "framer-motion";
 import SkeletonLoader from "../SkeletonLoader";
 import { useSeriesData } from "../../hooks/useSeriesData";
+import { SeriesEpisodeImage } from "./SeriesEpisodeImage";
 
 export default function SeriesChannel() {
   const { tmdbId } = useParams();
@@ -289,15 +290,16 @@ export default function SeriesChannel() {
                      className="group cursor-pointer flex flex-col gap-2 rounded-xl transition-all"
                    >
                      <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-white/[0.03] border border-white/[0.05] group-hover:border-white/[0.2] group-hover:shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all">
-                       {episode.still_path ? (
-                         <LazyImage
-                           src={`${TMDB_IMAGE_BASE_URL_W500}${episode.still_path}`}
-                           alt={episode.name}
-                           className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500 pointer-events-none"
-                         />
-                       ) : (
-                         <div className="w-full h-full flex items-center justify-center text-white/20 text-sm">No Image</div>
-                       )}
+                       <SeriesEpisodeImage
+                         tmdbId={series.id}
+                         seasonNumber={selectedSeason}
+                         episodeNumber={episode.episode_number}
+                         stillPath={episode.still_path}
+                         seasonPosterPath={seasonDetails?.poster_path || null}
+                         seriesBackdropPath={series.backdrop_path}
+                         alt={episode.name}
+                         className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500 pointer-events-none"
+                       />
                        
                        {/* Gradient overlay for text */}
                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />

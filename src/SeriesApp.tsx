@@ -19,6 +19,11 @@ export default function SeriesApp() {
     return new URLSearchParams(location.search).get("q") || "";
   });
 
+  useEffect(() => {
+    const q = new URLSearchParams(location.search).get("q") || "";
+    setSearchQuery(q);
+  }, [location.search]);
+
   const getActiveTab = () => {
     if (location.pathname === "/series/library") return "library";
     if (location.pathname === "/series/settings") return "settings";
