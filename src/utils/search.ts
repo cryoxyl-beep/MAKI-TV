@@ -11,6 +11,18 @@ export function normalizeTitle(title: string): string {
 }
 
 /**
+ * Super normalization: removes all spaces, punctuation, apostrophes for highly lenient matches.
+ */
+export function superNormalize(text: string): string {
+  if (!text) return "";
+  return text
+    .toLowerCase()
+    .replace(/['’"“”‘`[:;*\_./\-\t]/g, "") // remove punctuation and apostrophes completely
+    .replace(/\s+/g, "") // remove all whitespace
+    .trim();
+}
+
+/**
  * Levenshtein distance
  */
 function levenshteinDistance(a: string, b: string): number {
@@ -56,77 +68,104 @@ function isFuzzyMatch(normalizedQuery: string, normalizedTitleSub: string): bool
 
 export function rankSearchMatch(anime: AniListAnime, query: string): number {
   const normalizedQuery = normalizeTitle(query);
-  if (!normalizedQuery) return 0;
+  const superNormalizedQuery = superNormalize(query);
+  if (!normalizedQuery || !superNormalizedQuery) return 0;
 
-  const titles = [
-    anime.title.english,
-    anime.title.romaji,
-    anime.title.native,
-    anime.title.userPreferred,
-    ...(anime.synonyms || [])
-  ].filter(Boolean) as string[];
+  // Primary titles list (English, Romaji, UserPreferred, Native)
+  const primaryTitles = Array.from(new Set(
+    [
+      anime.title.english,
+      anime.title.romaji,
+      anime.title.userPreferred,
+      anime.title.native
+    ]
+    .map(t => t?.trim())
+    .filter(Boolean)
+  )) as string[];
+
+  // All titles (including synonyms)
+  const allSynonymsAndAlternate = Array.from(new Set(
+    [
+      ...(anime.synonyms || [])
+    ]
+    .map(t => t?.trim())
+    .filter(Boolean)
+  )) as string[];
 
   let maxScore = 0;
 
-  for (const t of titles) {
+  // Let's check primary titles first
+  for (const t of primaryTitles) {
     const normT = normalizeTitle(t);
-    if (!normT) continue;
+    const superNormT = superNormalize(t);
+    if (!normT || !superNormT) continue;
 
-    // Rank 100: Exact title match
-    if (normT === normalizedQuery) {
-      return 100; // Fast exit
+    // 1. Exact match on standard or super-normalized title
+    if (normT === normalizedQuery || superNormT === superNormalizedQuery) {
+      maxScore = Math.max(maxScore, 100);
+      continue;
     }
 
-    // Rank 80: Title starts with query
-    if (normT.startsWith(normalizedQuery + " ") || normT.startsWith(normalizedQuery)) {
+    // 2. Starts-with match
+    if (normT.startsWith(normalizedQuery) || superNormT.startsWith(superNormalizedQuery)) {
+      maxScore = Math.max(maxScore, 90);
+      continue;
+    }
+
+    // 3. Contains match
+    if (normT.includes(normalizedQuery) || superNormT.includes(superNormalizedQuery)) {
       maxScore = Math.max(maxScore, 80);
       continue;
     }
 
-    // Rank 60: Query appears inside title
-    if (normT.includes(" " + normalizedQuery + " ") || 
-        normT.endsWith(" " + normalizedQuery) || 
-        normT.includes(normalizedQuery)) {
-      maxScore = Math.max(maxScore, 60);
-      continue;
-    }
-
-    // Fuzzy matching
-    // Let's check if any word in the title fuzzy matches the query, or if the whole title fuzzy matches the query.
-    // Whole title fuzzy match:
-    if (isFuzzyMatch(normalizedQuery, normT)) {
-      // It's a valid fuzzy match.
-      maxScore = Math.max(maxScore, 55); // high fuzzy
-    } else {
-      // What if query "oshii no ko" and title "oshi no ko"?
-      // Let's do a substring check for fuzzy distance. Since that's expensive, we can check whole string.
-      // If titles are multi-word, we can check prefix or word-by-word.
-       // Actually, we can just do whole string first.
+    // 4. Fuzzy similarity match
+    const distanceNorm = levenshteinDistance(superNormalizedQuery, superNormT);
+    const maxLenNorm = Math.max(superNormalizedQuery.length, superNormT.length);
+    if (maxLenNorm > 0) {
+      const similarity = 1 - (distanceNorm / maxLenNorm);
+      // High similarity threshold
+      if (similarity >= 0.70) {
+        const fuzzyScore = 50 + Math.floor(similarity * 25); // At least 67 points, max 75
+        maxScore = Math.max(maxScore, fuzzyScore);
+        continue;
+      }
     }
   }
 
-  // To properly handle "oshi" matching "oshi no ko" if it was misspelled?
-  // If the query is "oshii" and the title is "oshi no ko".
-  // The user might type "oshii" -> startsWith("oshii no ko") wouldn't work.
-  // We can do fuzzy match on title prefixes of similar length.
-  if (maxScore < 60) {
-    for (const t of titles) {
-      const normT = normalizeTitle(t);
-      if (!normT) continue;
-      
-      const wordsQuery = normalizedQuery.split(" ");
-      const wordsT = normT.split(" ");
+  // If no good match on primary titles, check synonyms/alt titles
+  for (const t of allSynonymsAndAlternate) {
+    const normT = normalizeTitle(t);
+    const superNormT = superNormalize(t);
+    if (!normT || !superNormT) continue;
 
-      // Fuzzy prefix match:
-      // Compare `normalizedQuery` with `normT.substring(0, normalizedQuery.length)`
-      const prefixT = normT.substring(0, normalizedQuery.length);
-      if (isFuzzyMatch(normalizedQuery, prefixT)) {
-        maxScore = Math.max(maxScore, 50); 
+    // Exact synonym match
+    if (normT === normalizedQuery || superNormT === superNormalizedQuery) {
+      maxScore = Math.max(maxScore, 75);
+      continue;
+    }
+
+    // Starts with or contains synonym match
+    if (normT.startsWith(normalizedQuery) || 
+        superNormT.startsWith(superNormalizedQuery) || 
+        normT.includes(normalizedQuery) || 
+        superNormT.includes(superNormalizedQuery)) {
+      maxScore = Math.max(maxScore, 70);
+      continue;
+    }
+
+    // Fuzzy matching on synonym
+    const distanceNorm = levenshteinDistance(superNormalizedQuery, superNormT);
+    const maxLenNorm = Math.max(superNormalizedQuery.length, superNormT.length);
+    if (maxLenNorm > 0) {
+      const similarity = 1 - (distanceNorm / maxLenNorm);
+      if (similarity >= 0.70) {
+        const fuzzyScore = 50 + Math.floor(similarity * 15); // At least 60 points, max 65
+        maxScore = Math.max(maxScore, fuzzyScore);
+        continue;
       }
-      
-      // Fuzzy substring match... (maybe overkill?)
     }
   }
 
   return maxScore;
 }
+

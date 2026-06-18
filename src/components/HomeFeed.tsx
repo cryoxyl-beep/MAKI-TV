@@ -122,18 +122,38 @@ export default function HomeFeed({
       let data = await fetchAnimeFeed(activeCategory, activeSearch, pageNum);
 
       if (activeSearch) {
-        // Enforce Search Relevance Requirements
-        data = data
-          .map((anime) => ({ anime, score: rankSearchMatch(anime, activeSearch) }))
-          .filter((item) => item.score >= 50)
-          .sort((a, b) => b.score - a.score)
-          .map((item) => item.anime);
+        const query = activeSearch;
+        const apiCount = data.length;
+
+        // Enforce Search Relevance Requirements with upgraded ranking scoring
+        const scored = data.map((anime) => ({
+          anime,
+          score: rankSearchMatch(anime, query)
+        }));
+
+        const postFilter = scored.filter((item) => item.score >= 50);
+        const sorted = postFilter.sort((a, b) => b.score - a.score);
+        data = sorted.map((item) => item.anime);
         
+        let finalData: typeof data = [];
         if (isInitial) {
-          data = data.slice(0, 20); // Cap at 20
+          finalData = data.slice(0, 20); // Cap at 20
         } else {
-          data = []; // Do not fetch more for searches
+          finalData = []; // Do not fetch more for searches
         }
+
+        // Add debugging logs in development mode
+        if (process.env.NODE_ENV !== "production") {
+          console.group("[Anime Search Debug Audit]");
+          console.log(`- Search query: "${query}"`);
+          console.log(`- API result count (raw): ${apiCount}`);
+          console.log(`- Post-filter result count (score >= 50): ${postFilter.length}`);
+          console.log(`- Final displayed result count: ${isInitial ? Math.min(20, postFilter.length) : 0}`);
+          console.groupEnd();
+        }
+
+        data = finalData;
+        
         // Force end of pagination on search matches
         setHasMore(false);
       } else {

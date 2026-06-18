@@ -84,33 +84,212 @@ export async function fetchAniList(query: string, variables: any = {}): Promise<
   return json.data;
 }
 
+const ANILIST_SEARCH_QUERY = `
+  query ($search: String, $page: Int, $perPage: Int) {
+    Page (page: $page, perPage: $perPage) {
+      media (search: $search, type: ANIME) {
+        id
+        idMal
+        title {
+          romaji
+          english
+          native
+          userPreferred
+        }
+        coverImage {
+          extraLarge
+          large
+          medium
+          color
+        }
+        bannerImage
+        episodes
+        season
+        seasonYear
+        status
+        popularity
+        averageScore
+        description
+        genres
+        synonyms
+        format
+      }
+    }
+  }
+`;
+
 export async function fetchAnimeFeed(category?: string, searchWord?: string, page: number = 1): Promise<AniListAnime[]> {
+  if (searchWord && searchWord.trim()) {
+    const q = searchWord.trim();
+    // Cache key for search list containing BOTH
+    const cacheKey = `dual_search_cache_${btoa(q + "_" + page)}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (Date.now() - parsed.timestamp < 24 * 60 * 60 * 1000) {
+          return parsed.data;
+        }
+      } catch (e) {}
+    }
+
+    const jikanUrl = `https://api.jikan.moe/v4/anime?page=${page}&limit=25&q=${encodeURIComponent(q)}`;
+    
+    // We execute both requests in parallel using Promise.allSettled
+    const [jikanRes, anilistRes] = await Promise.allSettled([
+      fetch(jikanUrl).then(async (res) => {
+        if (!res.ok) {
+          if (res.status === 429) {
+            await new Promise(r => setTimeout(r, 1000));
+            // Retry once
+            const retryRes = await fetch(jikanUrl);
+            if (!retryRes.ok) throw new Error("Retry Jikan failed");
+            return retryRes.json();
+          }
+          throw new Error("Jikan failed status: " + res.status);
+        }
+        return res.json();
+      }),
+      fetchAniList(ANILIST_SEARCH_QUERY, { search: q, page, perPage: 25 })
+    ]);
+
+    const mergedMap = new Map<number, AniListAnime>();
+
+    await initializeFribbMapping();
+
+    // 1. Process Jikan results if successful
+    if (jikanRes.status === "fulfilled" && jikanRes.value?.data) {
+      const jikanData = jikanRes.value.data;
+      for (const item of jikanData) {
+        const malId = item.mal_id;
+        const anilistId = getAniListId(malId);
+        const itemSynonyms: string[] = [
+          ...(item.title_synonyms || []),
+          ...(item.titles?.map((t: any) => t.title) || [])
+        ].filter((val: string, idx: number, self: string[]) => val && self.indexOf(val) === idx);
+
+        mergedMap.set(malId, {
+          id: malId,
+          anilistId: anilistId || undefined,
+          title: {
+            romaji: item.title,
+            english: item.title_english || item.title,
+            native: item.title_japanese,
+            userPreferred: item.title,
+          },
+          coverImage: {
+            extraLarge: item.images?.jpg?.large_image_url || item.images?.jpg?.image_url,
+            large: item.images?.jpg?.large_image_url || item.images?.jpg?.image_url,
+            medium: item.images?.jpg?.image_url,
+            color: "#ff6b35"
+          },
+          bannerImage: "",
+          episodes: item.episodes || 12,
+          season: item.season || "UNKNOWN",
+          seasonYear: item.year || 2024,
+          status: item.status || "UNKNOWN",
+          popularity: item.members || 0,
+          averageScore: Math.round((item.score || 0) * 10),
+          description: item.synopsis || "No description available.",
+          genres: item.genres?.map((g: any) => g.name) || [],
+          synonyms: itemSynonyms,
+          format: item.type || "TV",
+        });
+      }
+    }
+
+    // 2. Process AniList results if successful
+    if (anilistRes.status === "fulfilled" && anilistRes.value?.Page?.media) {
+      const mediaList = anilistRes.value.Page.media;
+      for (const media of mediaList) {
+        const malId = media.idMal || media.id; // preference to idMal which is MAL ID
+        const finalAnilistId = media.id;
+        
+        const aniSynonyms = [
+          ...(media.synonyms || []),
+          media.title?.userPreferred,
+          media.title?.romaji,
+          media.title?.english,
+          media.title?.native
+        ].filter((val, idx, self) => val && self.indexOf(val) === idx) as string[];
+
+        const existing = mergedMap.get(malId);
+        if (!existing) {
+          mergedMap.set(malId, {
+            id: malId,
+            anilistId: finalAnilistId,
+            title: {
+              romaji: media.title?.romaji || "",
+              english: media.title?.english || media.title?.romaji || "",
+              native: media.title?.native || "",
+              userPreferred: media.title?.userPreferred || "",
+            },
+            coverImage: {
+              extraLarge: media.coverImage?.extraLarge || "",
+              large: media.coverImage?.large || "",
+              medium: media.coverImage?.medium || "",
+              color: media.coverImage?.color || "#ff6b35"
+            },
+            bannerImage: media.bannerImage || "",
+            episodes: media.episodes || 12,
+            season: media.season || "UNKNOWN",
+            seasonYear: media.seasonYear || 2024,
+            status: media.status || "UNKNOWN",
+            popularity: media.popularity || 0,
+            averageScore: media.averageScore || 0,
+            description: media.description || "No description available.",
+            genres: media.genres || [],
+            synonyms: aniSynonyms,
+            format: media.format || "TV",
+          });
+        } else {
+          // Merge synonyms
+          existing.synonyms = Array.from(new Set([
+            ...(existing.synonyms || []),
+            ...aniSynonyms
+          ])).filter(Boolean) as string[];
+          if (!existing.bannerImage && media.bannerImage) {
+            existing.bannerImage = media.bannerImage;
+          }
+          if (!existing.anilistId && finalAnilistId) {
+            existing.anilistId = finalAnilistId;
+          }
+        }
+      }
+    }
+
+    const mergedList = Array.from(mergedMap.values());
+    
+    // Save to cache
+    try {
+      safeSetItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data: mergedList }));
+    } catch (e) {}
+
+    return mergedList;
+  }
+
   let url = `https://api.jikan.moe/v4/anime?page=${page}&limit=25`;
   
-  if (searchWord && searchWord.trim()) {
-    url += `&q=${encodeURIComponent(searchWord)}`;
+  if (!category || category === "All" || category === "Trending") {
+    url = `https://api.jikan.moe/v4/top/anime?page=${page}&limit=25`;
+  } else if (category === "Most Watched") {
+    url = `https://api.jikan.moe/v4/top/anime?filter=bypopularity&page=${page}&limit=25`;
+  } else if (category === "Currently Airing") {
+    url = `https://api.jikan.moe/v4/top/anime?filter=airing&page=${page}&limit=25`;
   } else {
-    if (!category || category === "All" || category === "Trending") {
-      url = `https://api.jikan.moe/v4/top/anime?page=${page}&limit=25`;
-    } else if (category === "Most Watched") {
-      url = `https://api.jikan.moe/v4/top/anime?filter=bypopularity&page=${page}&limit=25`;
-    } else if (category === "Currently Airing") {
-      url = `https://api.jikan.moe/v4/top/anime?filter=airing&page=${page}&limit=25`;
+    // Basic genre matching for Jikan categories (Action: 1, Adventure: 2, Comedy: 4, etc.)
+    const genreMap: Record<string, string> = {
+      "Action": "1", "Adventure": "2", "Comedy": "4", "Drama": "8", "Fantasy": "10", 
+      "Romance": "22", "Sci-Fi": "24", "Slice of Life": "36", "Supernatural": "37", 
+      "Mystery": "7", "Sports": "30", "Suspense": "41", "Horror": "14"
+    };
+    if (category && category.startsWith("id:")) {
+       const catId = category.split(":")[1];
+       url = `https://api.jikan.moe/v4/anime?genres=${catId}&page=${page}&limit=25&order_by=popularity`;
+    } else if (genreMap[category]) {
+       url = `https://api.jikan.moe/v4/anime?genres=${genreMap[category]}&page=${page}&limit=25&order_by=popularity`;
     } else {
-      // Basic genre matching for Jikan categories (Action: 1, Adventure: 2, Comedy: 4, etc.)
-      const genreMap: Record<string, string> = {
-        "Action": "1", "Adventure": "2", "Comedy": "4", "Drama": "8", "Fantasy": "10", 
-        "Romance": "22", "Sci-Fi": "24", "Slice of Life": "36", "Supernatural": "37", 
-        "Mystery": "7", "Sports": "30", "Suspense": "41", "Horror": "14"
-      };
-      if (category && category.startsWith("id:")) {
-         const catId = category.split(":")[1];
-         url = `https://api.jikan.moe/v4/anime?genres=${catId}&page=${page}&limit=25&order_by=popularity`;
-      } else if (genreMap[category]) {
-         url = `https://api.jikan.moe/v4/anime?genres=${genreMap[category]}&page=${page}&limit=25&order_by=popularity`;
-      } else {
-         url = `https://api.jikan.moe/v4/top/anime?page=${page}&limit=25`;
-      }
+       url = `https://api.jikan.moe/v4/top/anime?page=${page}&limit=25`;
     }
   }
 
@@ -166,7 +345,10 @@ export async function fetchAnimeFeed(category?: string, searchWord?: string, pag
         averageScore: Math.round((item.score || 0) * 10),
         description: item.synopsis || "No description available.",
         genres: item.genres?.map((g: any) => g.name) || [],
-        synonyms: item.title_synonyms || [],
+        synonyms: [
+          ...(item.title_synonyms || []),
+          ...(item.titles?.map((t: any) => t.title) || [])
+        ].filter((val: string, idx: number, self: string[]) => val && self.indexOf(val) === idx),
         format: item.type || "TV",
       };
     });
