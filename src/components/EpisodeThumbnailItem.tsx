@@ -36,17 +36,10 @@ export const EpisodeThumbnailItem = React.memo(({
 
   useEffect(() => {
     let active = true;
-    async function load() {
-      // Check if it's already in the parent-provided TVDB map
-      if (tvdbThumbnailMap) {
-        const tvdbUrl = tvdbThumbnailMap[`${season}_${episode}`];
-        if (tvdbUrl) {
-          setThumbnailSrc(tvdbUrl);
-          return;
-        }
-      }
+    setThumbnailSrc("");
 
-      // Fallback to sequential resolver (caches internally)
+    async function load() {
+      // Fallback to sequential resolver (caches internally and respects source priority)
       const src = await getEpisodeThumbnail({
         animeId,
         season,
