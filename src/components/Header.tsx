@@ -8,6 +8,7 @@ import { Search, X, ArrowLeft, Home, Clapperboard, History, LogOut, Menu } from 
 import { motion, AnimatePresence } from "framer-motion";
 import { signInWithGoogle, signOut, onAuthStateChanged } from "../services/auth";
 import { User } from "firebase/auth";
+import { useLocation } from "react-router-dom";
 
 interface HeaderProps {
   onSearch: (query: string) => void;
@@ -48,6 +49,17 @@ export default function Header({
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const location = useLocation();
+
+  const getPlaceholderText = () => {
+    if (location.pathname.startsWith("/movies")) {
+      return "Search movies...";
+    }
+    if (location.pathname.startsWith("/series")) {
+      return "Search series...";
+    }
+    return "Search anime...";
+  };
 
   useEffect(() => {
     setSearchVal(initialSearchQuery);
@@ -124,7 +136,7 @@ export default function Header({
       <header className={`fixed top-0 left-0 right-0 z-50 select-none transform-gpu transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${variant === "slim" ? "h-14 bg-transparent" : "h-16 bg-transparent"} ${isVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0 pointer-events-none"}`}>
         {/* Search Header for Mobile overlay */}
         {showMobileSearch ? (
-          <form onSubmit={handleSubmit} className="absolute inset-0 bg-[#09090b] flex items-center px-4 gap-2 z-50">
+          <form onSubmit={handleSubmit} className="absolute inset-0 bg-[#09090b]/95 flex items-center px-4 gap-2 z-50">
             <button
               type="button"
               onClick={() => setShowMobileSearch(false)}
@@ -132,20 +144,20 @@ export default function Header({
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <div className="flex-1 flex items-center bg-white/[0.04] backdrop-blur-md rounded-full border border-white/[0.08] focus-within:border-[#ff6b35] focus-within:bg-black/40 px-3 py-1 transition-all">
+            <div className="flex-1 flex items-center bg-white/[0.08] hover:bg-white/[0.12] backdrop-blur-2xl border border-white/[0.18] transition-all duration-300 overflow-hidden relative shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25),_inset_0_-1px_0_0_rgba(255,255,255,0.05),_0_12px_40px_rgba(0,0,0,0.3)] rounded-full focus-within:border-white/[0.30] focus-within:bg-white/[0.14] px-3.5 py-1.5">
               <input
                 type="text"
-                placeholder="Search anime, genres or studios..."
+                placeholder={getPlaceholderText()}
                 value={searchVal}
                 onChange={(e) => setSearchVal(e.target.value)}
-                className="w-full bg-transparent border-none text-white placeholder-gray-500 focus:outline-none text-sm py-1"
+                className="w-full bg-transparent border-none text-white placeholder-white/75 focus:outline-none text-sm py-1 font-medium tracking-wide"
                 autoFocus
               />
               {searchVal && (
                 <button
                   type="button"
                   onClick={handleClear}
-                  className="p-1 hover:bg-white/[0.08] rounded-full text-[#aaa] transition-colors"
+                  className="p-1 hover:bg-white/20 rounded-full text-white/50 hover:text-white transition-colors cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -153,7 +165,7 @@ export default function Header({
             </div>
             <button
               type="submit"
-              className="p-2 bg-[#ff6b35] rounded-full text-white hover:bg-opacity-90 transition-colors"
+              className="p-2 bg-[#ff6b35] rounded-full text-white hover:bg-opacity-90 transition-colors shadow-lg shadow-[#ff6b35]/20"
             >
               <Search className="w-5 h-5" />
             </button>
@@ -211,14 +223,14 @@ export default function Header({
                     setIsFocused(true);
                     setTimeout(() => inputRef.current?.focus(), 50);
                   }}
-                  className={`w-full h-9 flex items-center bg-white/[0.03] hover:bg-white/[0.06] backdrop-blur-md border border-white/[0.08] transition-[width,background-color,border-color,box-shadow,padding-left,padding-right] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden relative shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),_0_8px_32px_rgba(0,0,0,0.22)] rounded-full focus-within:border-white/[0.16] focus-within:bg-white/[0.08] focus-within:ring-4 focus-within:ring-white/[0.01] ${isExpanded ? "px-3.5" : "px-0 justify-center"}`}
+                  className={`w-full h-9 flex items-center bg-white/[0.08] hover:bg-white/[0.12] backdrop-blur-2xl border border-white/[0.18] transition-[width,background-color,border-color,box-shadow,padding-left,padding-right] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden relative shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25),_inset_0_-1px_0_0_rgba(255,255,255,0.05),_0_12px_40px_rgba(0,0,0,0.3)] rounded-full focus-within:border-white/[0.30] focus-within:bg-white/[0.14] focus-within:ring-4 focus-within:ring-white/[0.02] ${isExpanded ? "px-3.5" : "px-0 justify-center"}`}
                 >
                   <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/[0.03] to-white/0 pointer-events-none" />
-                  <Search className={`text-white/70 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] shrink-0 w-[14px] h-[14px] group-focus-within:text-white ${isExpanded ? "mr-2.5" : "mr-0"}`} />
+                  <Search className={`text-white/85 group-hover:text-white transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] shrink-0 w-[14px] h-[14px] group-focus-within:text-white ${isExpanded ? "mr-2.5" : "mr-0"}`} />
                   <input
                     ref={inputRef}
                     type="text"
-                    placeholder="Search..."
+                    placeholder={getPlaceholderText()}
                     value={searchVal}
                     onChange={(e) => setSearchVal(e.target.value)}
                     onFocus={() => {
@@ -226,7 +238,7 @@ export default function Header({
                       setIsFocused(true);
                     }}
                     onBlur={() => setIsFocused(false)}
-                    className={`bg-transparent border-none text-white focus:outline-none text-[13px] font-medium tracking-wide placeholder-white/65 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isExpanded ? "w-full opacity-100" : "w-0 opacity-0 min-w-0 p-0"}`}
+                    className={`bg-transparent border-none text-white focus:outline-none text-[13px] font-medium tracking-wide placeholder-white/75 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isExpanded ? "w-full opacity-100" : "w-0 opacity-0 min-w-0 p-0"}`}
                   />
                   {isExpanded && searchVal && (
                     <button
@@ -301,14 +313,14 @@ export default function Header({
                     setIsFocused(true);
                     setTimeout(() => inputRef.current?.focus(), 50);
                   }}
-                  className={`w-full h-10 flex items-center bg-white/[0.03] hover:bg-white/[0.06] backdrop-blur-md border border-white/[0.08] transition-[width,background-color,border-color,box-shadow,padding-left,padding-right] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden relative shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),_0_8px_32px_rgba(0,0,0,0.22)] rounded-full focus-within:border-white/[0.16] focus-within:bg-white/[0.08] focus-within:ring-4 focus-within:ring-white/[0.01] ${isExpanded ? "px-4" : "px-0 justify-center"}`}
+                  className={`w-full h-10 flex items-center bg-white/[0.08] hover:bg-white/[0.12] backdrop-blur-2xl border border-white/[0.18] transition-[width,background-color,border-color,box-shadow,padding-left,padding-right] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden relative shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25),_inset_0_-1px_0_0_rgba(255,255,255,0.05),_0_12px_40px_rgba(0,0,0,0.3)] rounded-full focus-within:border-white/[0.30] focus-within:bg-white/[0.14] focus-within:ring-4 focus-within:ring-white/[0.02] ${isExpanded ? "px-4" : "px-0 justify-center"}`}
                 >
                   <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/[0.03] to-white/0 pointer-events-none" />
-                  <Search className={`text-white/70 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] shrink-0 w-[15px] h-[15px] group-focus-within:text-white ${isExpanded ? "mr-2.5" : "mr-0"}`} />
+                  <Search className={`text-white/85 group-hover:text-white transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] shrink-0 w-[15px] h-[15px] group-focus-within:text-white ${isExpanded ? "mr-2.5" : "mr-0"}`} />
                   <input
                     ref={inputRef}
                     type="text"
-                    placeholder="Search anime..."
+                    placeholder={getPlaceholderText()}
                     value={searchVal}
                     onChange={(e) => setSearchVal(e.target.value)}
                     onFocus={() => {
@@ -316,7 +328,7 @@ export default function Header({
                       setIsFocused(true);
                     }}
                     onBlur={() => setIsFocused(false)}
-                    className={`bg-transparent border-none text-white focus:outline-none text-sm font-medium tracking-wide placeholder-white/65 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isExpanded ? "w-full opacity-100" : "w-0 opacity-0 min-w-0 p-0"}`}
+                    className={`bg-transparent border-none text-white focus:outline-none text-sm font-medium tracking-wide placeholder-white/75 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isExpanded ? "w-full opacity-100" : "w-0 opacity-0 min-w-0 p-0"}`}
                   />
                   {isExpanded && searchVal && (
                     <button
