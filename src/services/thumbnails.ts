@@ -191,37 +191,30 @@ export async function getEpisodeThumbnail(options: {
   await initializeFribbMapping();
   const fribbEntry = getFribbEntryByAnilist(animeId);
   
-  // Custom Override: For Re:Zero, use TVDB as primary
-  const isReZero = 
-    [21355, 100049, 101291, 108632, 119661, 163134, 189046].includes(animeId) ||
-    [31240, 39587, 42203, 54857, 61316].includes(options.malId || 0) ||
-    options.animeTitle?.toLowerCase().includes("re:zero") ||
-    options.animeTitle?.toLowerCase().includes("re-zero") ||
-    (fribbEntry && typeof fribbEntry['anime-planet_id'] === 'string' && fribbEntry['anime-planet_id'].includes("re-zero"));
-
-  if (isReZero) {
-    if (tvdbThumbnailMap) {
-      const mappedSeason = fribbEntry?.season?.tvdb ?? season;
-      const mappedEpisode = episode + (fribbEntry?.episode_offset?.tvdb || 0);
-      const tvdbUrl = tvdbThumbnailMap[`${mappedSeason}_${mappedEpisode}`];
-      if (tvdbUrl) {
-        safeSetItem(cacheKey, tvdbUrl);
-        return tvdbUrl;
-      }
-    }
-
-    if (fribbEntry?.tvdb_id) {
-      const s = fribbEntry.season?.tvdb ?? season;
-      const e = episode + (fribbEntry.episode_offset?.tvdb || 0);
-      const tvdbImg = await getTVDBThumbnail(fribbEntry.tvdb_id, s, e);
-      if (tvdbImg) {
-        safeSetItem(cacheKey, tvdbImg);
-        return tvdbImg;
-      }
+  // Step 1: TheTVDB (PRIMARY)
+  // Try parent-provided map first if it actually contains the episode map
+  if (tvdbThumbnailMap) {
+    const mappedSeason = fribbEntry?.season?.tvdb ?? season;
+    const mappedEpisode = episode + (fribbEntry?.episode_offset?.tvdb || 0);
+    const tvdbUrl = tvdbThumbnailMap[`${mappedSeason}_${mappedEpisode}`];
+    if (tvdbUrl) {
+      safeSetItem(cacheKey, tvdbUrl);
+      return tvdbUrl;
     }
   }
 
-  // Step 1: TMDB (PRIMARY for general anime, SECONDARY for Re:Zero)
+  // Next try manual resolution via fribb entry id
+  if (fribbEntry?.tvdb_id) {
+    const s = fribbEntry.season?.tvdb ?? season;
+    const e = episode + (fribbEntry.episode_offset?.tvdb || 0);
+    const tvdbImg = await getTVDBThumbnail(fribbEntry.tvdb_id, s, e);
+    if (tvdbImg) {
+      safeSetItem(cacheKey, tvdbImg);
+      return tvdbImg;
+    }
+  }
+
+  // Step 2: TMDB (SECONDARY)
   if (fribbEntry) {
     const tmdbRaw = fribbEntry.themoviedb_id;
     const tmdbId = typeof tmdbRaw === 'object' ? tmdbRaw?.tv : tmdbRaw;
@@ -233,32 +226,6 @@ export async function getEpisodeThumbnail(options: {
       if (tmdbImg) {
         safeSetItem(cacheKey, tmdbImg);
         return tmdbImg;
-      }
-    }
-  }
-
-  // Step 2: TheTVDB (SECONDARY for general anime)
-  // Check if not already executed as primary in isReZero block
-  if (!isReZero) {
-    // Try parent-provided map first if it actually contains the episode map
-    if (tvdbThumbnailMap) {
-      const mappedSeason = fribbEntry?.season?.tvdb ?? season;
-      const mappedEpisode = episode + (fribbEntry?.episode_offset?.tvdb || 0);
-      const tvdbUrl = tvdbThumbnailMap[`${mappedSeason}_${mappedEpisode}`];
-      if (tvdbUrl) {
-        safeSetItem(cacheKey, tvdbUrl);
-        return tvdbUrl;
-      }
-    }
-
-    // Next try manual resolution via fribb entry id
-    if (fribbEntry?.tvdb_id) {
-      const s = fribbEntry.season?.tvdb ?? season;
-      const e = episode + (fribbEntry.episode_offset?.tvdb || 0);
-      const tvdbImg = await getTVDBThumbnail(fribbEntry.tvdb_id, s, e);
-      if (tvdbImg) {
-        safeSetItem(cacheKey, tvdbImg);
-        return tvdbImg;
       }
     }
   }
