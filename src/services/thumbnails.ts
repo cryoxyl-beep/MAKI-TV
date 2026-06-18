@@ -72,7 +72,7 @@ const pendingTVDBManifests: Record<number, Promise<Record<string, string>>> = {}
  * Bulk fetch TVDB manifest for a series (O(1) child lookups)
  */
 export async function getTVDBSeriesManifest(tvdbId: number, seasonOverrides?: { tvdb?: number }): Promise<Record<string, string>> {
-  const cacheKey = `makitv_tvdb_manifest_${tvdbId}`;
+  const cacheKey = `makitv_tvdb_manifest_v2_${tvdbId}`;
   const cached = localStorage.getItem(cacheKey);
   if (cached) {
     try {
@@ -112,8 +112,9 @@ export async function getTVDBSeriesManifest(tvdbId: number, seasonOverrides?: { 
         
         episodes.forEach((ep: any) => {
           if (ep.image) {
-            const s = seasonOverrides?.tvdb ?? ep.seasonNumber;
-            manifest[`${s}_${ep.number}`] = ep.image;
+            // Map naturally utilizing TVDB's native seasonNumber
+            // This prevents different seasons clobbering each other
+            manifest[`${ep.seasonNumber}_${ep.number}`] = ep.image;
           }
         });
 
