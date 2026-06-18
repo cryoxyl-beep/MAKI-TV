@@ -198,7 +198,8 @@ export async function getEpisodeThumbnail(options: {
     
     if (tmdbId && typeof tmdbId === 'number') {
       const mappedSeason = fribbEntry.season?.tmdb ?? season;
-      const tmdbImg = await getTMDBThumbnail(tmdbId, mappedSeason, episode);
+      const mappedEpisode = episode + (fribbEntry.episode_offset?.tmdb || 0);
+      const tmdbImg = await getTMDBThumbnail(tmdbId, mappedSeason, mappedEpisode);
       if (tmdbImg) {
         safeSetItem(cacheKey, tmdbImg);
         return tmdbImg;
@@ -209,7 +210,9 @@ export async function getEpisodeThumbnail(options: {
   // Step 2: TheTVDB (SECONDARY)
   // Try parent-provided map first if it actually contains the episode map
   if (tvdbThumbnailMap) {
-    const tvdbUrl = tvdbThumbnailMap[`${season}_${episode}`];
+    const mappedSeason = fribbEntry?.season?.tvdb ?? season;
+    const mappedEpisode = episode + (fribbEntry?.episode_offset?.tvdb || 0);
+    const tvdbUrl = tvdbThumbnailMap[`${mappedSeason}_${mappedEpisode}`];
     if (tvdbUrl) {
       safeSetItem(cacheKey, tvdbUrl);
       return tvdbUrl;
@@ -219,7 +222,8 @@ export async function getEpisodeThumbnail(options: {
   // Next try manual resolution via fribb entry id
   if (fribbEntry?.tvdb_id) {
     const s = fribbEntry.season?.tvdb ?? season;
-    const tvdbImg = await getTVDBThumbnail(fribbEntry.tvdb_id, s, episode);
+    const e = episode + (fribbEntry.episode_offset?.tvdb || 0);
+    const tvdbImg = await getTVDBThumbnail(fribbEntry.tvdb_id, s, e);
     if (tvdbImg) {
       safeSetItem(cacheKey, tvdbImg);
       return tvdbImg;

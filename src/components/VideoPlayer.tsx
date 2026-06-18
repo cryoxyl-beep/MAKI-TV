@@ -7,6 +7,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Landmark } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { saveUnifiedWatchState, getUnifiedWatchState } from "../utils";
+import { getFribbEntryByAnilist } from "../services/fribb";
 
 interface VideoPlayerProps {
   animeId: number;
@@ -223,6 +224,22 @@ export default function VideoPlayer({
   function getEmbedUrl(): string {
     if (!tmdbId) return "";
 
+    // Resolve season and episode based on Fribb mapping for TMDB
+    let mappedSeason = seasonNumber;
+    let mappedEpisode = episodeNumber;
+    
+    // Dynamically retrieve Fribb entry to properly offset TMDB backup players
+    // using the initializeFribbMapping/getFribbEntryByAnilist context.
+    // The WatchPage handles the main offset locally but for embedUrl we need the Fribb entry here
+    const fb = anilistId ? getFribbEntryByAnilist(anilistId) : null;
+    if (fb && fb.season?.tmdb !== undefined) {
+      mappedSeason = fb.season.tmdb;
+    }
+    if (fb && fb.episode_offset?.tmdb !== undefined && mappedSeason === 1) {
+      // Typically TMDB groups them, so we just add the offset 
+      mappedEpisode = episodeNumber + fb.episode_offset.tmdb;
+    }
+
     if (mediaType === "movie") {
       switch (selectedProvider) {
         case "cinesrc":
@@ -237,13 +254,13 @@ export default function VideoPlayer({
     } else {
       switch (selectedProvider) {
         case "cinesrc":
-          return `https://cinesrc.st/embed/tv/${tmdbId}?s=${seasonNumber}&e=${episodeNumber}&color=%23ffffff&autoplay=true&autonext=true&autoskip=true`;
+          return `https://cinesrc.st/embed/tv/${tmdbId}?s=${mappedSeason}&e=${mappedEpisode}&color=%23ffffff&autoplay=true&autonext=true&autoskip=true`;
         case "vidfast":
-          return `https://vidfast.pro/tv/${tmdbId}/${seasonNumber}/${episodeNumber}?autoPlay=true&theme=FFFFFF&nextButton=true&autoNext=true`;
+          return `https://vidfast.pro/tv/${tmdbId}/${mappedSeason}/${mappedEpisode}?autoPlay=true&theme=FFFFFF&nextButton=true&autoNext=true`;
         case "movies111":
-          return `https://111movies.net/tv/${tmdbId}/${seasonNumber}/${episodeNumber}`;
+          return `https://111movies.net/tv/${tmdbId}/${mappedSeason}/${mappedEpisode}`;
         default:
-          return `https://cinesrc.st/embed/tv/${tmdbId}?s=${seasonNumber}&e=${episodeNumber}&color=%23ffffff&autoplay=true&autonext=true&autoskip=true`;
+          return `https://cinesrc.st/embed/tv/${tmdbId}?s=${mappedSeason}&e=${mappedEpisode}&color=%23ffffff&autoplay=true&autonext=true&autoskip=true`;
       }
     }
   }
@@ -493,12 +510,29 @@ export default function VideoPlayer({
     : "";
   const embedUrl = getEmbedUrl();
 
-  // Development Logging for MegaPlay and Origami Integration
+  // Development Logging for Provider Resolution Pipeline Audit
   useEffect(() => {
-    if (selectedProvider === "megaplay") {
-    } else if (selectedProvider === "origami") {
+    if (process.env.NODE_ENV !== "production") {
+      console.group("[SEASON RESOLUTION AUDIT] Provider Request Pipeline");
+      console.log("- Current anime title:", animeTitle);
+      console.log("- Current MAL ID:", animeId);
+      console.log("- Current AniList ID:", anilistId);
+      console.log("- Current season number (UI):", seasonNumber);
+      console.log("- Current episode number:", episodeNumber);
+      console.log("- TMDB ID:", tmdbId);
+      
+      let payload = "";
+      if (selectedProvider === "megaplay") payload = megaPlayUrl;
+      else if (selectedProvider === "origami") payload = origamiUrl;
+      else if (selectedProvider === "vidnest") payload = vidnestUrl;
+      else if (selectedProvider === "animepahe") payload = animepaheUrl;
+      else if (selectedProvider === "anineko" || selectedProvider === "animegg") payload = dynamicEmbedUrl || "Dynamic embed loading...";
+      else payload = embedUrl;
+
+      console.log("- Final provider request payload:", payload);
+      console.groupEnd();
     }
-  }, [selectedProvider, animeId, episodeNumber, audioLanguage, megaPlayUrl, origamiUrl]);
+  }, [animeTitle, animeId, anilistId, seasonNumber, episodeNumber, tmdbId, selectedProvider, megaPlayUrl, origamiUrl, vidnestUrl, animepaheUrl, dynamicEmbedUrl, embedUrl]);
  
   return (
     <div
