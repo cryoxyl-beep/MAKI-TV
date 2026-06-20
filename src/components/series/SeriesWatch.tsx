@@ -228,9 +228,12 @@ export default function SeriesWatch() {
   const currentEpTitle = currentEp?.name || `Episode ${episodeNum}`;
   const accentColor = "#10b981";
 
-  const hasNextEpisode = episodeNum < episodes.length || series.seasons.find(s => s.season_number === seasonNum + 1);
+  const hasNextEpisode = episodeNum < episodes.length || !!series.seasons.find(s => s.season_number === seasonNum + 1);
   const nextEpNum = episodeNum + 1;
   const upNextHeader = hasNextEpisode ? `Up Next - Episode ${nextEpNum}` : "Up Next";
+
+  const nextEp = seasonDetails?.episodes.find(e => e.episode_number === episodeNum + 1);
+  const nextEpTitle = nextEp?.name ? nextEp.name : (hasNextEpisode ? (episodeNum < episodes.length ? `Episode ${episodeNum + 1}` : `Season ${seasonNum + 1} Episode 1`) : "Next Episode");
 
   return (
     <div className="w-full bg-[#0f0f0f] pb-20 pt-14 select-none z-10 relative animate-fade-in text-[#f1f1f1] min-h-screen">
@@ -265,6 +268,9 @@ export default function SeriesWatch() {
             onNextEpisode={handleNextEpisode}
             onProviderChange={handleSelectProvider}
             isAnime={false}
+            hasNextEpisode={hasNextEpisode}
+            nextEpisodeTitle={nextEpTitle}
+            onNavigateToChannel={() => navigate(`/series/show/${series.id}`)}
           />
         </div>
 

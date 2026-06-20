@@ -588,6 +588,9 @@ export default function WatchPage({
             mediaType={mediaType}
             onNextEpisode={handleNextEpisode}
             onProviderChange={handleSelectProvider}
+            hasNextEpisode={hasNextEpisode}
+            nextEpisodeTitle={nextEpTitle || `Episode ${nextEpNum}`}
+            onNavigateToChannel={() => onNavigateToChannel(animeId)}
           />
         </div>
 
@@ -965,8 +968,8 @@ export default function WatchPage({
                       setIsAudioDropdownOpen(!isAudioDropdownOpen);
                       setIsServerDropdownOpen(false);
                     }}
-                    disabled={!["megaplay", "origami", "vidnest", "animepahe", "anineko", "animegg"].includes(selectedProvider)}
-                    className={`px-4 py-2 rounded-full flex items-center justify-between gap-2 transition-colors font-semibold text-[13px] ${!["megaplay", "origami", "vidnest", "animepahe", "anineko", "animegg"].includes(selectedProvider) ? "opacity-50 cursor-not-allowed bg-white/[0.02] text-white/40" : "bg-white/[0.08] text-white hover:bg-white/[0.12]"}`}
+                    disabled={!["megaplay", "origami", "vidnest", "animepahe", "anineko", "animegg", "anineko-hd", "anidb-hd"].includes(selectedProvider)}
+                    className={`px-4 py-2 rounded-full flex items-center justify-between gap-2 transition-colors font-semibold text-[13px] ${!["megaplay", "origami", "vidnest", "animepahe", "anineko", "animegg", "anineko-hd", "anidb-hd"].includes(selectedProvider) ? "opacity-50 cursor-not-allowed bg-white/[0.02] text-white/40" : "bg-white/[0.08] text-white hover:bg-white/[0.12]"}`}
                   >
                     <span>{audioLanguage === "sub" ? "Sub" : "Dub"}</span>
                     <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isAudioDropdownOpen ? 'rotate-180' : ''}`} />
@@ -1024,7 +1027,9 @@ export default function WatchPage({
                        selectedProvider === "vidfast" ? "Matsuri" :
                        selectedProvider === "movies111" ? "Onigiri" :
                        selectedProvider === "anineko" ? "Neko" :
-                       selectedProvider === "animegg" ? "GG" : "Server"}
+                       selectedProvider === "animegg" ? "GG" :
+                       selectedProvider === "anineko-hd" ? "Neko HD" :
+                       selectedProvider === "anidb-hd" ? "AniDB HD" : "Server"}
                     </span>
                     <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isServerDropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
@@ -1040,8 +1045,10 @@ export default function WatchPage({
                         <div className="flex flex-col py-1">
                           {[
                             ...(anime?.anilistId ? [
-                              { id: "anineko", label: "Neko" },
-                              { id: "animegg", label: "GG" }
+                              { id: "anineko-hd", label: "Neko HD" },
+                              { id: "anidb-hd", label: "AniDB HD" },
+                              { id: "animegg", label: "GG" },
+                              { id: "anineko", label: "Neko" }
                             ] : []),
                             { id: "megaplay", label: "Kyou" },
                             { id: "origami", label: "Kami" },
@@ -1055,7 +1062,7 @@ export default function WatchPage({
                               onClick={() => {
                                 handleSelectProvider(provider.id);
                                 setIsServerDropdownOpen(false);
-                                if (!["megaplay", "origami", "vidnest", "animepahe", "anineko", "animegg"].includes(provider.id)) {
+                                if (!["megaplay", "origami", "vidnest", "animepahe", "anineko", "animegg", "anineko-hd", "anidb-hd"].includes(provider.id)) {
                                   setAudioLanguage("sub");
                                   safeSetItem("makitv_megaplay_language", "sub");
                                 }

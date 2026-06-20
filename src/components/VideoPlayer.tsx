@@ -8,6 +8,14 @@ import { Landmark } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { saveUnifiedWatchState, getUnifiedWatchState } from "../utils";
 import { getFribbEntryByAnilist } from "../services/fribb";
+import { useSettings } from "../hooks/useSettings";
+
+import { MediaPlayer, MediaProvider } from "@vidstack/react";
+import "@vidstack/react/player/styles/default/theme.css";
+import "@vidstack/react/player/styles/default/layouts/video.css";
+import { DefaultVideoLayout, defaultLayoutIcons } from "@vidstack/react/player/layouts/default";
+
+const hlsCache: Record<string, string> = {};
 
 interface VideoPlayerProps {
   animeId: number;
@@ -28,6 +36,9 @@ interface VideoPlayerProps {
   romajiTitle?: string;
   synonyms?: string[];
   isAnime?: boolean;
+  hasNextEpisode?: boolean;
+  nextEpisodeTitle?: string;
+  onNavigateToChannel?: () => void;
 }
 
 export default function VideoPlayer({
@@ -49,7 +60,72 @@ export default function VideoPlayer({
   romajiTitle,
   synonyms,
   isAnime = true,
+  hasNextEpisode = false,
+  nextEpisodeTitle,
+  onNavigateToChannel,
 }: VideoPlayerProps) {
+  const { settings } = useSettings();
+  const autoNextEnabled = settings.playback.autoPlayNext;
+
+  const [showAutoNextOverlay, setShowAutoNextOverlay] = useState(false);
+  const [autoNextCountdown, setAutoNextCountdown] = useState(10);
+  const [countdownCancelled, setCountdownCancelled] = useState(false);
+
+  useEffect(() => {
+    setShowAutoNextOverlay(false);
+    setCountdownCancelled(false);
+    setAutoNextCountdown(10);
+  }, [animeId, seasonNumber, episodeNumber, anilistId]);
+
+  useEffect(() => {
+    let t: any;
+    if (showAutoNextOverlay && hasNextEpisode && !countdownCancelled) {
+      if (autoNextCountdown > 0) {
+        t = setTimeout(() => setAutoNextCountdown(prev => prev - 1), 1000);
+      } else {
+        setShowAutoNextOverlay(false);
+        onNextEpisode();
+      }
+    }
+    return () => clearTimeout(t);
+  }, [showAutoNextOverlay, autoNextCountdown, hasNextEpisode, countdownCancelled, onNextEpisode]);
+
+  const handlePlayerProgress = (cur: number, dur: number, percentFallback?: number) => {
+    const percent = percentFallback !== undefined ? percentFallback : parseFloat(((cur / dur) * 100).toFixed(1));
+    
+    const remaining = dur - cur;
+    if (remaining <= 15 && !showAutoNextOverlay && !countdownCancelled) {
+      if (hasNextEpisode && autoNextEnabled) {
+        setShowAutoNextOverlay(true);
+        setAutoNextCountdown(10);
+      } else if (!hasNextEpisode) {
+        setShowAutoNextOverlay(true);
+      }
+    }
+
+    onProgressUpdate(percent, cur, dur);
+
+    if (isAnime) {
+      saveUnifiedWatchState({
+        anilistId: animeId,
+        tmdbId: tmdbId,
+        title: animeTitle,
+        provider: selectedProvider,
+        progress: { watched: cur, duration: dur },
+        last_season_watched: seasonNumber,
+        last_episode_watched: episodeNumber,
+        percentage: percent,
+        updatedAt: new Date().toISOString()
+      });
+    }
+  };
+
+  const handlePlayerEnded = () => {
+    if (autoNextEnabled && hasNextEpisode && !countdownCancelled) {
+       onNextEpisode();
+    }
+  };
+
   const [iframeLoading, setIframeLoading] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -61,6 +137,8 @@ export default function VideoPlayer({
   const [dynamicEmbedUrl, setDynamicEmbedUrl] = useState<string>("");
   const [dynamicEmbedError, setDynamicEmbedError] = useState<boolean>(false);
 
+  const [nativeHlsUrl, setNativeHlsUrl] = useState<string>("");
+  const [nativeHlsError, setNativeHlsError] = useState<boolean>(false);
 
   useEffect(() => {
     if (selectedProvider === "animegg" && dynamicEmbedUrl) {
@@ -220,6 +298,86 @@ export default function VideoPlayer({
     return () => { canceled = true; };
   }, [selectedProvider, anilistId, episodeNumber, audioLanguage]);
 
+  // Native HLS Fetching for Neko HD and AniDB HD
+  useEffect(() => {
+    let canceled = false;
+
+    if (selectedProvider === "anineko-hd" || selectedProvider === "anidb-hd") {
+      setIframeLoading(true);
+      setNativeHlsError(false);
+      setNativeHlsUrl("");
+
+      const fetchHls = async () => {
+        try {
+          const cacheKey = `${anilistId}-${episodeNumber}-${selectedProvider}`;
+          if (hlsCache[cacheKey]) {
+            if (!canceled) {
+              setNativeHlsUrl(hlsCache[cacheKey]);
+              setIframeLoading(false);
+            }
+            return;
+          }
+
+          if (selectedProvider === "anidb-hd") {
+            const res = await fetch(`https://anivexa-api-nine.vercel.app/watch/anidbapp/${anilistId}/${audioLanguage}/anidbapp-${episodeNumber}`);
+            if (!res.ok) throw new Error("AniDB failed");
+            const data = await res.json();
+            const stream = data.streams?.find((s: any) => s.type === "hls");
+            if (!stream && !canceled) {
+              setNativeHlsError(true);
+              return;
+            }
+            if (!canceled && stream?.url) {
+              hlsCache[cacheKey] = stream.url;
+              setNativeHlsUrl(stream.url);
+            }
+          } else if (selectedProvider === "anineko-hd") {
+            const res = await fetch(`https://anivexa-api-nine.vercel.app/watch/anineko/${anilistId}/${audioLanguage}/anineko-${episodeNumber}`);
+            if (!res.ok) throw new Error("Anineko HD failed");
+            const data = await res.json();
+            
+            const validHlsStreams = data.streams?.filter((s: any) => {
+              if (s.type !== "hls") return false;
+              if (s.url.includes("vibeplayer.site") || s.url.includes("playmogo") || s.url.includes("otakuhg") || s.url.includes("otakuvid")) return false;
+              return true;
+            }) || [];
+            
+            let stream = validHlsStreams.find((s: any) => s.priority === 8) || validHlsStreams[0];
+
+            if (!stream && !canceled) {
+              setNativeHlsError(true);
+              return;
+            }
+            if (!canceled && stream?.url) {
+              hlsCache[cacheKey] = stream.url;
+              setNativeHlsUrl(stream.url);
+            }
+          }
+        } catch (e) {
+          if (!canceled) {
+            setNativeHlsError(true);
+          }
+        } finally {
+          if (!canceled) {
+            setIframeLoading(false);
+          }
+        }
+      };
+
+      if (anilistId) {
+        fetchHls();
+      } else {
+        setNativeHlsError(true);
+        setIframeLoading(false);
+      }
+    } else {
+      setNativeHlsUrl("");
+      setNativeHlsError(false);
+    }
+
+    return () => { canceled = true; };
+  }, [selectedProvider, anilistId, episodeNumber, audioLanguage]);
+
   // Construct standard Embed URLs for backup providers
   function getEmbedUrl(): string {
     if (!tmdbId) return "";
@@ -280,25 +438,10 @@ export default function VideoPlayer({
               const cur = parseFloat(data.currentTime || data.time || 0);
               const dur = parseFloat(data.duration || 0);
               if (dur > 0) {
-                const percent = parseFloat(((cur / dur) * 100).toFixed(1));
-                onProgressUpdate(percent, cur, dur);
-                
-                if (isAnime) {
-                  saveUnifiedWatchState({
-                    anilistId: animeId,
-                    tmdbId: tmdbId,
-                    title: animeTitle,
-                    provider: selectedProvider,
-                    progress: { watched: cur, duration: dur },
-                    last_season_watched: seasonNumber,
-                    last_episode_watched: episodeNumber,
-                    percentage: percent,
-                    updatedAt: new Date().toISOString()
-                  });
-                }
+                handlePlayerProgress(cur, dur);
               }
             } else if (eventType === "cinesrc:nextepisode") {
-              onNextEpisode();
+              handlePlayerEnded();
             }
           }
         } catch (e) {
@@ -357,90 +500,31 @@ export default function VideoPlayer({
               const percent = data.percent !== undefined 
                 ? parseFloat(data.percent) 
                 : parseFloat(((cur / dur) * 100).toFixed(1));
-              onProgressUpdate(percent, cur, dur);
-              
-              if (isAnime) {
-                saveUnifiedWatchState({
-                  anilistId: animeId,
-                  tmdbId: tmdbId,
-                  title: animeTitle,
-                  provider: selectedProvider,
-                  progress: { watched: cur, duration: dur },
-                  last_season_watched: seasonNumber,
-                  last_episode_watched: episodeNumber,
-                  percentage: percent,
-                  updatedAt: new Date().toISOString()
-                });
-              }
+              handlePlayerProgress(cur, dur, percent);
             }
           } else if (eventType === "complete") {
             // MegaPlay auto-advance
-            onNextEpisode();
+            handlePlayerEnded();
           } else if (data.type === "watching-log") {
             // MegaPlay watching-log updates
             const cur = parseFloat(data.currentTime || 0);
             const dur = parseFloat(data.duration || 0);
             if (dur > 0) {
-              const percent = parseFloat(((cur / dur) * 100).toFixed(1));
-              onProgressUpdate(percent, cur, dur);
-              
-              if (isAnime) {
-                saveUnifiedWatchState({
-                  anilistId: animeId,
-                  tmdbId: tmdbId,
-                  title: animeTitle,
-                  provider: selectedProvider,
-                  progress: { watched: cur, duration: dur },
-                  last_season_watched: seasonNumber,
-                  last_episode_watched: episodeNumber,
-                  percentage: percent,
-                  updatedAt: new Date().toISOString()
-                });
-              }
+              handlePlayerProgress(cur, dur);
             }
           } else if (eventType === "PLAYER_EVENT" || data.event === "PLAYER_EVENT") {
             const cur = parseFloat(data.currentTime || data.time || 0);
             const dur = parseFloat(data.duration || 0);
             
             if (dur > 0) {
-              const percent = parseFloat(((cur / dur) * 100).toFixed(1));
-              onProgressUpdate(percent, cur, dur);
-              
-              if (isAnime) {
-                saveUnifiedWatchState({
-                  anilistId: animeId,
-                  tmdbId: tmdbId,
-                  title: animeTitle,
-                  provider: selectedProvider,
-                  progress: { watched: cur, duration: dur },
-                  last_season_watched: seasonNumber,
-                  last_episode_watched: episodeNumber,
-                  percentage: percent,
-                  updatedAt: new Date().toISOString()
-                });
-              }
+              handlePlayerProgress(cur, dur);
             }
           } else if (eventType === "MEDIA_DATA" || data.mediaData) {
             const mediaObj = data.mediaData || data;
             const cur = parseFloat(mediaObj.currentTime || mediaObj.time || 0);
             const dur = parseFloat(mediaObj.duration || 0);
             if (dur > 0) {
-              const percent = parseFloat(((cur / dur) * 100).toFixed(1));
-              onProgressUpdate(percent, cur, dur);
-              
-              if (isAnime) {
-                saveUnifiedWatchState({
-                  anilistId: animeId,
-                  tmdbId: tmdbId,
-                  title: animeTitle,
-                  provider: selectedProvider,
-                  progress: { watched: cur, duration: dur },
-                  last_season_watched: seasonNumber,
-                  last_episode_watched: episodeNumber,
-                  percentage: percent,
-                  updatedAt: new Date().toISOString()
-                });
-              }
+              handlePlayerProgress(cur, dur);
             }
           }
         }
@@ -459,24 +543,10 @@ export default function VideoPlayer({
               const cur = parseFloat(data.time);
               const dur = parseFloat(data.duration);
               if (dur > 0) {
-                const percent = parseFloat(((cur / dur) * 100).toFixed(1));
-                onProgressUpdate(percent, cur, dur);
-                if (isAnime) {
-                  saveUnifiedWatchState({
-                    anilistId: animeId,
-                    tmdbId: tmdbId,
-                    title: animeTitle,
-                    provider: selectedProvider,
-                    progress: { watched: cur, duration: dur },
-                    last_season_watched: seasonNumber,
-                    last_episode_watched: episodeNumber,
-                    percentage: percent,
-                    updatedAt: new Date().toISOString()
-                  });
-                }
+                handlePlayerProgress(cur, dur);
               }
             } else if (eventType === "ENDED") {
-              onNextEpisode();
+              handlePlayerEnded();
             }
           }
         } catch (e) {
@@ -663,6 +733,44 @@ export default function VideoPlayer({
             title={`Miru Player: ${animeTitle}`}
           />
         </motion.div>
+      ) : selectedProvider === "anineko-hd" || selectedProvider === "anidb-hd" ? (
+        nativeHlsError ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-gray-400 z-10 gap-3 bg-[#0a0a0c]">
+            <Landmark className="w-12 h-12 text-white/50 mb-2" />
+            <h4 className="text-white text-sm font-bold">Unable to load stream.</h4>
+            <p className="text-xs text-gray-500 max-w-sm leading-relaxed">
+              Try another server.
+            </p>
+          </div>
+        ) : nativeHlsUrl ? (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.25 }}
+            className="w-full h-full z-10"
+          >
+            <MediaPlayer
+              src={{ src: nativeHlsUrl, type: "application/x-mpegurl" }}
+              autoPlay
+              playsInline
+              className="w-full h-full"
+              onTimeUpdate={(e: any) => {
+                const target = e.target as any;
+                if (target && target.state) {
+                  const duration = target.state.duration;
+                  const currentTime = target.state.currentTime;
+                  if (duration > 0) handlePlayerProgress(currentTime, duration);
+                }
+              }}
+              onEnded={handlePlayerEnded}
+            >
+              <MediaProvider />
+              <DefaultVideoLayout icons={defaultLayoutIcons} />
+            </MediaPlayer>
+          </motion.div>
+        ) : (
+          <div className="absolute inset-0 bg-[#0a0a0c]" />
+        )
       ) : selectedProvider === "anineko" || selectedProvider === "animegg" ? (
         dynamicEmbedError ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-gray-500 z-10 gap-2">
@@ -714,7 +822,7 @@ export default function VideoPlayer({
  
       {/* Anime-themed Loading Experience */}
       <AnimatePresence>
-        {(iframeLoading && !megaplayLoadError && !origamiLoadError && !dynamicEmbedError) && (
+        {(iframeLoading && !megaplayLoadError && !origamiLoadError && !dynamicEmbedError && !nativeHlsError) && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -733,6 +841,68 @@ export default function VideoPlayer({
               }}
               referrerPolicy="no-referrer"
             />
+          </motion.div>
+        )}
+
+        {showAutoNextOverlay && (
+          <motion.div 
+             initial={{ opacity: 0 }}
+             animate={{ opacity: 1 }}
+             exit={{ opacity: 0 }}
+             className="absolute inset-0 bg-black/50 backdrop-blur-md z-[100] flex flex-col items-center justify-center p-6 select-none pointer-events-auto"
+          >
+            {hasNextEpisode ? (
+              <div className="flex flex-col items-center bg-[#121214]/90 border border-white/10 p-8 rounded-2xl shadow-[0_10px_50px_rgba(0,0,0,0.8)] max-w-sm w-full backdrop-blur-xl text-center transition-all duration-300 transform scale-100">
+                <span className="text-[11px] font-extrabold text-[#8b5cf6] uppercase tracking-[0.2em] mb-2 drop-shadow-sm">Next Episode</span>
+                <span className="text-xs text-white/50 uppercase tracking-widest font-semibold mb-3">Episode {episodeNumber + 1}</span>
+                <h3 className="text-xl font-bold text-white mb-8 line-clamp-2">{nextEpisodeTitle || `Episode ${episodeNumber + 1}`}</h3>
+                <div className="flex items-center justify-center gap-2 mb-8 text-white/80 text-sm font-medium">
+                   Playing in <span className="text-white font-bold text-lg w-6 tabular-nums">{autoNextCountdown}</span>
+                </div>
+                <div className="flex gap-3 w-full">
+                  <button
+                    onClick={() => {
+                      setShowAutoNextOverlay(false);
+                      onNextEpisode();
+                    }}
+                    className="flex-1 px-4 py-3 bg-white text-black hover:bg-gray-200 text-sm font-bold rounded-xl transition-all shadow-lg active:scale-95 focus:outline-none focus:ring-2 focus:ring-white/50"
+                  >
+                    Play Now
+                  </button>
+                  <button
+                    onClick={() => {
+                      setCountdownCancelled(true);
+                      setShowAutoNextOverlay(false);
+                    }}
+                    className="flex-1 px-4 py-3 bg-white/10 hover:bg-white/20 text-white text-sm font-bold rounded-xl transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-white/20"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center bg-[#121214]/90 border border-white/10 p-8 rounded-2xl shadow-[0_10px_50px_rgba(0,0,0,0.8)] max-w-sm w-full backdrop-blur-xl text-center transition-all duration-300 transform scale-100">
+                <span className="text-[11px] font-extrabold text-[#8b5cf6] uppercase tracking-[0.2em] mb-4">Complete</span>
+                <h3 className="text-xl font-bold text-white mb-6">You've reached the final episode.</h3>
+                {onNavigateToChannel && (
+                  <button
+                    onClick={onNavigateToChannel}
+                    className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white text-sm font-bold rounded-xl transition-all active:scale-95 w-full focus:outline-none focus:ring-2 focus:ring-white/20"
+                  >
+                    {isAnime ? "Back To Channel" : "Back To Series"}
+                  </button>
+                )}
+                <button
+                   onClick={() => {
+                     setCountdownCancelled(true);
+                     setShowAutoNextOverlay(false);
+                   }}
+                   className="mt-4 text-xs text-white/50 hover:text-white transition-colors uppercase tracking-widest font-semibold focus:outline-none"
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
