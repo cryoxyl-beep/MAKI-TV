@@ -10,12 +10,26 @@ import { saveUnifiedWatchState, getUnifiedWatchState } from "../utils";
 import { getFribbEntryByAnilist } from "../services/fribb";
 import { useSettings } from "../hooks/useSettings";
 
-import { MediaPlayer, MediaProvider } from "@vidstack/react";
+import { MediaPlayer, MediaProvider, Track } from "@vidstack/react";
 import "@vidstack/react/player/styles/default/theme.css";
 import "@vidstack/react/player/styles/default/layouts/video.css";
 import { DefaultVideoLayout, defaultLayoutIcons } from "@vidstack/react/player/layouts/default";
 
 const hlsCache: Record<string, string> = {};
+const hlsSubCache: Record<string, string | null> = {};
+
+function extractSubtitleUrl(stream: any): string | null {
+  if (!stream?.embed) return null;
+  try {
+    const url = new URL(stream.embed);
+    return (
+      url.searchParams.get("sub") ||
+      url.searchParams.get("caption_1")
+    );
+  } catch {
+    return null;
+  }
+}
 
 interface VideoPlayerProps {
   animeId: number;
@@ -90,8 +104,10 @@ export default function VideoPlayer({
     return () => clearTimeout(t);
   }, [showAutoNextOverlay, autoNextCountdown, hasNextEpisode, countdownCancelled, onNextEpisode]);
 
-  const handlePlayerProgress = (cur: number, dur: number, percentFallback?: number) => {
-    const percent = percentFallback !== undefined ? percentFallback : parseFloat(((cur / dur) * 100).toFixed(1));
+  const handlePlayerProgress = (rawCur: number, rawDur: number, percentFallback?: number) => {
+    const cur = Number(rawCur) || 0;
+    const dur = Number(rawDur) || 0;
+    const percent = percentFallback !== undefined ? Number(percentFallback) : parseFloat(((cur / dur) * 100).toFixed(1));
     
     const remaining = dur - cur;
     if (remaining <= 15 && !showAutoNextOverlay && !countdownCancelled) {
@@ -138,6 +154,7 @@ export default function VideoPlayer({
   const [dynamicEmbedError, setDynamicEmbedError] = useState<boolean>(false);
 
   const [nativeHlsUrl, setNativeHlsUrl] = useState<string>("");
+  const [nativeSubtitleUrl, setNativeSubtitleUrl] = useState<string | null>(null);
   const [nativeHlsError, setNativeHlsError] = useState<boolean>(false);
 
   useEffect(() => {
@@ -306,6 +323,7 @@ export default function VideoPlayer({
       setIframeLoading(true);
       setNativeHlsError(false);
       setNativeHlsUrl("");
+      setNativeSubtitleUrl(null);
 
       const fetchHls = async () => {
         try {
@@ -313,6 +331,7 @@ export default function VideoPlayer({
           if (hlsCache[cacheKey]) {
             if (!canceled) {
               setNativeHlsUrl(hlsCache[cacheKey]);
+              setNativeSubtitleUrl(hlsSubCache[cacheKey] || null);
               setIframeLoading(false);
             }
             return;
@@ -351,6 +370,14 @@ export default function VideoPlayer({
             if (!canceled && stream?.url) {
               hlsCache[cacheKey] = stream.url;
               setNativeHlsUrl(stream.url);
+              
+              const subtitleUrl = extractSubtitleUrl(stream);
+              hlsSubCache[cacheKey] = subtitleUrl;
+              setNativeSubtitleUrl(subtitleUrl);
+              
+              if (process.env.NODE_ENV !== "production") {
+                console.log("[NEKO SUBTITLE]", subtitleUrl);
+              }
             }
           }
         } catch (e) {
@@ -372,6 +399,7 @@ export default function VideoPlayer({
       }
     } else {
       setNativeHlsUrl("");
+      setNativeSubtitleUrl(null);
       setNativeHlsError(false);
     }
 
@@ -755,16 +783,42 @@ export default function VideoPlayer({
               playsInline
               className="w-full h-full"
               onTimeUpdate={(e: any) => {
-                const target = e.target as any;
-                if (target && target.state) {
-                  const duration = target.state.duration;
-                  const currentTime = target.state.currentTime;
-                  if (duration > 0) handlePlayerProgress(currentTime, duration);
+                const target = e?.target as any;
+                if (!target) return;
+                
+                let cur = 0;
+                let dur = 0;
+
+                if (target.state !== undefined) {
+                  dur = Number(target.state.duration) || 0;
+                  cur = Number(target.state.currentTime) || 0;
+                } else {
+                  dur = Number(target.duration) || 0;
+                  cur = Number(target.currentTime) || 0;
+                }
+
+                if (typeof e?.detail === 'number') {
+                  cur = Number(e.detail);
+                }
+
+                if (dur > 0 && !isNaN(cur) && !isNaN(dur)) {
+                  handlePlayerProgress(cur, dur);
                 }
               }}
               onEnded={handlePlayerEnded}
             >
-              <MediaProvider />
+              <MediaProvider>
+                {nativeSubtitleUrl && (
+                  <Track
+                    src={nativeSubtitleUrl}
+                    kind="subtitles"
+                    label="English"
+                    lang="en-US"
+                    type="vtt"
+                    default
+                  />
+                )}
+              </MediaProvider>
               <DefaultVideoLayout icons={defaultLayoutIcons} />
             </MediaPlayer>
           </motion.div>
