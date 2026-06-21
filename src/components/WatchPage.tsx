@@ -157,7 +157,17 @@ export default function WatchPage({
         const { fetchAllJikanEpisodes } = await import('../services/anilist');
         const eps = await fetchAllJikanEpisodes(anime.id);
         if (mounted && eps && eps.length > 0) {
-          setJikanEpisodes(eps);
+          const visibleEpisodes = eps.filter((ep: any) => {
+            if (!ep?.aired) return false;
+
+            const airedTime = new Date(ep.aired).getTime();
+
+            return (
+              !Number.isNaN(airedTime) &&
+              airedTime <= Date.now()
+            );
+          });
+          setJikanEpisodes(visibleEpisodes);
         }
       } catch (e) {
       } finally {
@@ -199,7 +209,12 @@ export default function WatchPage({
     setIsWatchLaterState(isWatchLater(animeId, seasonNumber, episodeNumber));
   }, [animeId, seasonNumber, episodeNumber]);
 
-  const episodesCount = anime?.episodes || 12;
+  const episodesCount = useMemo(() => {
+    if (jikanEpisodes && jikanEpisodes.length > 0) {
+      return jikanEpisodes.length;
+    }
+    return anime?.episodes || 12;
+  }, [jikanEpisodes, anime?.episodes]);
   const isLongRunning = episodesCount >= 100;
 
   // Optimization: Memoize watch progress map to avoid repetitive localStorage hits during scroll
@@ -505,7 +520,7 @@ export default function WatchPage({
   const nextEpData = episodesMap[targetRange]?.find(e => Number(e.mal_id) === nextEpNum) || episodesMap[targetRange]?.[(nextEpNum - 1) % 100];
   const nextJikanEp = jikanEpisodes.find(e => Number(e.number) === nextEpNum) || jikanEpisodes[nextEpNum - 1];
   const nextEpTitle = nextEpData?.title || nextJikanEp?.title || "";
-  const hasNextEpisode = nextEpNum <= (anime.episodes || 9999);
+  const hasNextEpisode = nextEpNum <= episodesCount;
   
   const upNextHeader = hasNextEpisode 
     ? `Up Next - ${nextEpTitle ? nextEpTitle : `Episode ${nextEpNum}`}` 

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { AniListAnime } from "../types";
 import { fetchAnimeDetails, formatAiringStatus } from "../services/anilist";
 import { getEpisodeProgress } from "../utils";
@@ -120,7 +120,12 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
         const { fetchAllJikanEpisodes } = await import('../services/anilist');
         const eps = await fetchAllJikanEpisodes(anime.id);
         if (mounted && eps && eps.length > 0) {
-          setJikanEpisodes(eps);
+          const visibleEpisodes = eps.filter((ep: any) => {
+            if (!ep?.aired) return false;
+            const airedTime = new Date(ep.aired).getTime();
+            return !Number.isNaN(airedTime) && airedTime <= Date.now();
+          });
+          setJikanEpisodes(visibleEpisodes);
         }
       } catch (e) {
       } finally {
@@ -137,6 +142,13 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
       document.title = `${titleVal} - Miyoro`;
     }
   }, [anime]);
+
+  const episodesCount = useMemo(() => {
+    if (jikanEpisodes && jikanEpisodes.length > 0) {
+      return jikanEpisodes.length;
+    }
+    return anime?.episodes || 12;
+  }, [jikanEpisodes, anime?.episodes]);
 
   const handleLibraryToggle = async () => {
     if (anime) {
@@ -169,7 +181,6 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
   const profileAvatar = anime.coverImage.large || anime.coverImage.medium || "";
   const studioName = anime.studios?.nodes?.[0]?.name || anime.format || "Unknown Studio";
 
-  const episodesCount = anime.episodes || 12;
   const subscribed = isSubscribed(anime.id);
 
   return (
@@ -328,15 +339,6 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
             <div className="flex items-center gap-6 sm:gap-8 border-b border-white/[0.08] mb-6 overflow-x-auto scrollbar-hide">
               <button className="pb-3 text-white text-sm sm:text-base font-bold border-b-2 border-white whitespace-nowrap">
                 Episodes
-              </button>
-              <button className="pb-3 text-white/50 hover:text-white/80 text-sm sm:text-base font-semibold border-b-2 border-transparent transition-colors whitespace-nowrap">
-                Characters
-              </button>
-              <button className="pb-3 text-white/50 hover:text-white/80 text-sm sm:text-base font-semibold border-b-2 border-transparent transition-colors whitespace-nowrap">
-                Related
-              </button>
-              <button className="pb-3 text-white/50 hover:text-white/80 text-sm sm:text-base font-semibold border-b-2 border-transparent transition-colors whitespace-nowrap">
-                More like this
               </button>
             </div>
 

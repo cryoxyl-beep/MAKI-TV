@@ -48,7 +48,7 @@ export const MovieCard = React.memo(
       viewport: { once: true, amount: 0.1 },
       transition: {
         duration: 0.4,
-        ease: [0.25, 0.1, 0.25, 1],
+        ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number],
         delay: Math.min(index * 0.03, 0.2),
       },
     };

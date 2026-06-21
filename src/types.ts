@@ -91,6 +91,7 @@ export interface MovieHistoryItem {
   id: number;
   title: string;
   thumbnail: string;
+  posterImage?: string;
   backdropImage?: string;
   progress: number;
   duration?: number | string;

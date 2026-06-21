@@ -15,6 +15,7 @@ export interface TMDBMovie {
   genre_ids: number[];
   adult: boolean;
   logo_path?: string | null;
+  original_language?: string;
 }
 
 export interface TMDBMovieDetails extends TMDBMovie {
@@ -25,6 +26,8 @@ export interface TMDBMovieDetails extends TMDBMovie {
   credits?: {
     cast: { id: number; name: string; character: string; profile_path: string | null }[];
   };
+  recommendations?: { results: TMDBMovie[] };
+  similar?: { results: TMDBMovie[] };
 }
 
 export interface TMDBTVShow {
@@ -38,6 +41,7 @@ export interface TMDBTVShow {
   vote_average: number;
   genre_ids: number[];
   logo_path?: string | null;
+  original_language?: string;
 }
 
 export interface TMDBTVDetails extends TMDBTVShow {
@@ -50,7 +54,8 @@ export interface TMDBTVDetails extends TMDBTVShow {
   credits?: {
     cast: { id: number; name: string; character: string; profile_path: string | null }[];
   };
-  recommendations?: TMDBResponse<TMDBTVShow>;
+  recommendations?: { results: TMDBTVShow[] };
+  similar?: { results: TMDBTVShow[] };
 }
 
 export interface TMDBSeason {
