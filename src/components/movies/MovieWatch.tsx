@@ -10,7 +10,6 @@ import Header from "../Header";
 import VideoPlayer from "../VideoPlayer";
 import SkeletonLoader from "../SkeletonLoader";
 import LazyImage from "../LazyImage";
-import Footer from "../Footer";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, Info, Bookmark, Clock, Flag } from "lucide-react";
 import { useMoviesData } from "../../hooks/useMoviesData";
@@ -133,7 +132,7 @@ export default function MovieWatch() {
   const accentColor = "#f43f5e"; // Rose
 
   return (
-    <div className="w-full bg-[#0f0f0f] pb-6 pt-14 select-none z-10 relative animate-fade-in text-[#f1f1f1] min-h-screen">
+    <div className="w-full bg-[#0f0f0f] pb-20 pt-14 select-none z-10 relative animate-fade-in text-[#f1f1f1] min-h-screen">
       <Header
         variant="slim"
         onSearch={(query) => {
@@ -366,7 +365,6 @@ export default function MovieWatch() {
           </div>
         </div>
       </div>
-      <Footer />
     </div>
   );
 }

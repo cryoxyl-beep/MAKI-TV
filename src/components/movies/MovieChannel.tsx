@@ -10,7 +10,6 @@ import {
 } from "../../services/tmdb";
 import LazyImage from "../LazyImage";
 import SkeletonLoader from "../SkeletonLoader";
-import Footer from "../Footer";
 import { storage } from "../../utils";
 import { useMoviesData } from "../../hooks/useMoviesData";
 
@@ -219,7 +218,6 @@ export default function MovieChannel() {
           </div>
         </div>
       </div>
-      <Footer />
     </div>
   );
 }

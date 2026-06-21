@@ -22,7 +22,6 @@ import {
 import MovieCard from "./MovieCard";
 import LazyImage from "../LazyImage";
 import ShelfScroller from "../ShelfScroller";
-import Footer from "../Footer";
 import { getMovieHistory, MovieHistoryItem, storage } from "../../utils";
 import { useMoviesData } from "../../hooks/useMoviesData";
 
@@ -159,7 +158,7 @@ export default function MoviesHome() {
       )}
 
       <div
-        className={`w-full flex flex-col pb-6 transition-opacity duration-700 ease-out text-white ${showSplash && !splashFading ? "opacity-0" : "opacity-100"}`}
+        className={`w-full flex flex-col pb-20 transition-opacity duration-700 ease-out text-white ${showSplash && !splashFading ? "opacity-0" : "opacity-100"}`}
       >
         {/* Premium Hero Banner Style */}
         {heroMovies.length > 0 && (
@@ -378,7 +377,6 @@ export default function MoviesHome() {
           />
         </div>
       </div>
-      <Footer />
     </>
   );
 }

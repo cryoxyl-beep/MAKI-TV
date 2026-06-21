@@ -6,7 +6,6 @@ import Header from "../Header";
 import VideoPlayer from "../VideoPlayer";
 import SkeletonLoader from "../SkeletonLoader";
 import LazyImage from "../LazyImage";
-import Footer from "../Footer";
 import { motion, AnimatePresence } from "framer-motion";
 import { Virtuoso, VirtuosoGrid } from "react-virtuoso";
 import { Play, ChevronLeft, ChevronRight, ChevronDown, Grid, List, Search, Info, Bookmark, Clock, Flag } from "lucide-react";
@@ -237,7 +236,7 @@ export default function SeriesWatch() {
   const nextEpTitle = nextEp?.name ? nextEp.name : (hasNextEpisode ? (episodeNum < episodes.length ? `Episode ${episodeNum + 1}` : `Season ${seasonNum + 1} Episode 1`) : "Next Episode");
 
   return (
-    <div className="w-full bg-[#0f0f0f] pb-6 pt-14 select-none z-10 relative animate-fade-in text-[#f1f1f1] min-h-screen">
+    <div className="w-full bg-[#0f0f0f] pb-20 pt-14 select-none z-10 relative animate-fade-in text-[#f1f1f1] min-h-screen">
       <Header
         variant="slim"
         onSearch={(query) => {
@@ -584,7 +583,6 @@ export default function SeriesWatch() {
           </div>
         </div>
       </div>
-      <Footer />
     </div>
   );
 }

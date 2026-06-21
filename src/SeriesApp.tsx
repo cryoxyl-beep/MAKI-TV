@@ -15,7 +15,6 @@ export default function SeriesApp() {
   const location = useLocation();
   const navigate = useNavigate();
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const [scrollTopBottom, setScrollTopBottom] = useState(24); // bottom offset in px
   const [searchQuery, setSearchQuery] = useState(() => {
     return new URLSearchParams(location.search).get("q") || "";
   });
@@ -48,23 +47,6 @@ export default function SeriesApp() {
   useEffect(() => {
     const handleScroll = () => {
       setShowScrollTop(window.scrollY > 400);
-
-      // Calculate distance to bottom to dynamically shift above footer
-      const scrollHeight = document.documentElement.scrollHeight;
-      const clientHeight = document.documentElement.clientHeight;
-      const scrollY = window.scrollY;
-      const distanceToBottom = scrollHeight - (scrollY + clientHeight);
-
-      const isMobile = window.innerWidth < 768;
-      const footerThreshold = isMobile ? 180 : 100; // threshold where footer starts entering
-      const basePadding = isMobile ? 24 : 32;
-
-      if (distanceToBottom < footerThreshold) {
-        const offset = basePadding + (footerThreshold - distanceToBottom);
-        setScrollTopBottom(offset);
-      } else {
-        setScrollTopBottom(basePadding);
-      }
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
@@ -133,10 +115,9 @@ export default function SeriesApp() {
       <button
         type="button"
         onClick={handleScrollToTop}
-        style={{ bottom: `${scrollTopBottom}px` }}
-        className={`fixed right-6 md:right-8 z-50 w-12 h-12 flex items-center justify-center rounded-full bg-zinc-900/90 backdrop-blur-xl border border-white/25 text-white shadow-[0_0_20px_rgba(244,63,94,0.25),0_4px_24px_rgba(0,0,0,0.6)] hover:shadow-[0_0_30px_rgba(244,63,94,0.45),0_8px_32px_rgba(0,0,0,0.8)] border-white/20 hover:border-rose-500/40 text-white transition-all duration-300 ease-out cursor-pointer ${
+        className={`fixed bottom-6 right-6 md:bottom-8 md:right-8 z-50 w-12 h-12 flex items-center justify-center rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-white shadow-[0_8px_30px_rgb(0,0,0,0.5)] transition-all duration-300 ease-out cursor-pointer ${
           showScrollTop ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-90 translate-y-4 pointer-events-none"
-        } hover:scale-105 active:scale-95`}
+        } hover:bg-black/80 hover:border-white/20 active:scale-95`}
       >
         <ChevronUp className="w-6 h-6 stroke-[2.5]" />
       </button>

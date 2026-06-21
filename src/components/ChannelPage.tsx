@@ -17,7 +17,6 @@ import { Check, Star, Play, Info, Plus, X } from "lucide-react";
 import LazyImage from "./LazyImage";
 import EpisodeThumbnailItem from "./EpisodeThumbnailItem";
 import { motion, AnimatePresence } from "framer-motion";
-import Footer from "./Footer";
 import { useLibrary } from "../hooks/useLibrary";
 
 interface ChannelPageProps {
@@ -185,7 +184,7 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
   const subscribed = isSubscribed(anime.id);
 
   return (
-    <div className="relative z-10 w-full bg-[#09090b] min-h-screen select-none pb-0 font-sans group/page -mt-[56px]">
+    <div className="relative z-10 w-full bg-[#09090b] min-h-screen select-none pb-20 font-sans group/page -mt-[56px]">
       
       {/* =============== HERO ATMOSPHERE =============== */}
       <div className="absolute top-0 left-0 right-0 h-[480px] z-0 overflow-hidden pointer-events-none">
@@ -442,7 +441,6 @@ export default function ChannelPage({ animeId, onWatchEpisode, onSubscriptionCha
           </div>
         </div>
       </div>
-      <Footer />
     </div>
   );
 }
