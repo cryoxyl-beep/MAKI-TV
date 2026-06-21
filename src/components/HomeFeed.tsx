@@ -15,6 +15,7 @@ import PremiumHero from "./PremiumHero";
 import { rankSearchMatch } from "../utils/search";
 import ShelfScroller from "./ShelfScroller";
 import WatchHistory from "./WatchHistory";
+import Footer from "./Footer";
 import { useLibrary } from "../hooks/useLibrary";
 import { useSettings } from "../hooks/useSettings";
 
@@ -199,7 +200,7 @@ export default function HomeFeed({
         </div>
       )}
 
-      <div className={`w-full min-h-screen bg-transparent pb-20 transition-opacity duration-700 ease-out ${showSplash && !splashFading ? "opacity-0" : "opacity-100"}`}>
+      <div className={`w-full bg-transparent pb-6 transition-opacity duration-700 ease-out ${showSplash && !splashFading ? "opacity-0" : "opacity-100"}`}>
         {/* Premium Hero Banner */}
         {!searchQuery && selectedCategory === "All" && (
           <>
@@ -343,6 +344,7 @@ export default function HomeFeed({
         </div>
       )}
     </div>
+    <Footer />
     </>
   );
 }

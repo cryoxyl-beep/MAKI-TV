@@ -22,6 +22,7 @@ import {
 import SeriesCard from "./SeriesCard";
 import LazyImage from "../LazyImage";
 import ShelfScroller from "../ShelfScroller";
+import Footer from "../Footer";
 import { getSeriesHistory, SeriesHistoryItem, storage } from "../../utils";
 import { useSeriesData } from "../../hooks/useSeriesData";
 
@@ -158,7 +159,7 @@ export default function SeriesHome() {
       )}
 
       <div
-        className={`w-full flex flex-col pb-20 transition-opacity duration-700 ease-out text-white ${showSplash && !splashFading ? "opacity-0" : "opacity-100"}`}
+        className={`w-full flex flex-col pb-6 transition-opacity duration-700 ease-out text-white ${showSplash && !splashFading ? "opacity-0" : "opacity-100"}`}
       >
         {/* Premium Hero Banner Style */}
         {heroSeries.length > 0 && (
@@ -382,6 +383,7 @@ export default function SeriesHome() {
           />
         </div>
       </div>
+      <Footer />
     </>
   );
 }

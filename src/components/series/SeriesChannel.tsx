@@ -6,6 +6,7 @@ import LazyImage from "../LazyImage";
 import { storage } from "../../utils";
 import { motion, AnimatePresence } from "framer-motion";
 import SkeletonLoader from "../SkeletonLoader";
+import Footer from "../Footer";
 import { useSeriesData } from "../../hooks/useSeriesData";
 import { SeriesEpisodeImage } from "./SeriesEpisodeImage";
 
@@ -86,7 +87,7 @@ export default function SeriesChannel() {
   const subscribed = isInLibrary(series.id);
 
   return (
-    <div className="relative z-10 w-full bg-[#09090b] min-h-screen select-none pb-20 font-sans group/page -mt-[56px]">
+    <div className="relative z-10 w-full bg-[#09090b] min-h-screen select-none pb-0 font-sans group/page -mt-[56px]">
       
       {/* =============== HERO ATMOSPHERE =============== */}
       <div className="absolute top-0 left-0 right-0 h-[480px] z-0 overflow-hidden pointer-events-none">
@@ -340,6 +341,7 @@ export default function SeriesChannel() {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

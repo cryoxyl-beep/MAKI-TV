@@ -23,6 +23,7 @@ import { safeSetItem } from "../lib/cacheManager";
 import { useLibrary } from "../hooks/useLibrary";
 import LazyImage from "./LazyImage";
 import VideoPlayer from "./VideoPlayer";
+import Footer from "./Footer";
 import SkeletonLoader from "./SkeletonLoader";
 import Header from "./Header";
 import { Share2, Bookmark, Play, ChevronLeft, ChevronRight, CheckSquare, Square, ChevronDown, Grid, List, Search, Info, Check, Heart, Flag, Clock } from "lucide-react";
@@ -527,7 +528,7 @@ export default function WatchPage({
     : "Up Next";
 
   return (
-    <div className="w-full bg-[#0f0f0f] pb-20 pt-14 select-none z-10 relative animate-fade-in text-[#f1f1f1] min-h-screen">
+    <div className="w-full bg-[#0f0f0f] pb-6 pt-14 select-none z-10 relative animate-fade-in text-[#f1f1f1] min-h-screen">
       {/* =============== HEADER WITH INTEGRATED BREADCRUMBS =============== */}
       <Header
         variant="slim"
@@ -1131,6 +1132,7 @@ export default function WatchPage({
         </div>
 
       </div>
+      <Footer />
     </div>
   );
 }
