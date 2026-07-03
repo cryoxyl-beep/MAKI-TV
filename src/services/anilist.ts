@@ -6,6 +6,7 @@
 import { AniListAnime } from "../types";
 import { getAniListId, initializeFribbMapping } from "./fribb";
 import { safeSetItem } from "../lib/cacheManager";
+import { filterReleasedAnime, filterReleasedEpisodes, isAnimeReleased } from '../utils/releaseGate';
 
 const ANILIST_API_URL = "https://graphql.anilist.co";
 
@@ -87,7 +88,7 @@ export async function fetchAniList(query: string, variables: any = {}): Promise<
 const ANILIST_SEARCH_QUERY = `
   query ($search: String, $page: Int, $perPage: Int) {
     Page (page: $page, perPage: $perPage) {
-      media (search: $search, type: ANIME) {
+      media (search: $search, type: ANIME, status_not: NOT_YET_RELEASED) {
         id
         idMal
         title {
@@ -265,7 +266,7 @@ export async function fetchAnimeFeed(category?: string, searchWord?: string, pag
       safeSetItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data: mergedList }));
     } catch (e) {}
 
-    return mergedList;
+    return filterReleasedAnime(mergedList).filter(anime => anime.status !== "Not yet aired");
   }
 
   let url = `https://api.jikan.moe/v4/anime?page=${page}&limit=25`;
@@ -318,7 +319,7 @@ export async function fetchAnimeFeed(category?: string, searchWord?: string, pag
 
     await initializeFribbMapping();
 
-    const result: AniListAnime[] = jikanData.map((item: any) => {
+    const result: AniListAnime[] = jikanData.filter((item: any) => item.status !== "Not yet aired").map((item: any) => {
       const anilistId = getAniListId(item.mal_id);
 
       return {
@@ -357,7 +358,7 @@ export async function fetchAnimeFeed(category?: string, searchWord?: string, pag
         safeSetItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data: result }));
     } catch(e) { }
 
-    return result;
+    return filterReleasedAnime(result);
   } catch (err) {
     return [];
   }
@@ -495,7 +496,7 @@ export async function fetchAnimeDetails(id: number): Promise<AniListAnime | null
              safeSetItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data: result }));
          } catch(e) { }
 
-         return result as AniListAnime;
+         if (!isAnimeReleased(result)) throw new Error("Anime is unreleased"); return result as AniListAnime;
       }
     } catch (fallbackErr) {
       return null;
@@ -585,7 +586,7 @@ export async function fetchAnimeDetails(id: number): Promise<AniListAnime | null
         safeSetItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data: result }));
     } catch(e) { }
 
-    return result as AniListAnime;
+    if (!isAnimeReleased(result)) throw new Error("Anime is unreleased"); return result as AniListAnime;
 }
 
 export async function fetchNewReleases(page: number = 1): Promise<AniListAnime[]> {
@@ -615,7 +616,7 @@ export async function fetchNewReleases(page: number = 1): Promise<AniListAnime[]
 
     await initializeFribbMapping();
 
-    const result: AniListAnime[] = jikanData.map((item: any) => {
+    const result: AniListAnime[] = jikanData.filter((item: any) => item.status !== "Not yet aired").map((item: any) => {
       const anilistId = getAniListId(item.mal_id);
       return {
         id: item.mal_id,
@@ -650,7 +651,7 @@ export async function fetchNewReleases(page: number = 1): Promise<AniListAnime[]
       safeSetItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data: result }));
     } catch(e) { }
 
-    return result;
+    return filterReleasedAnime(result);
   } catch (err) {
     return [];
   }
@@ -731,6 +732,9 @@ export async function fetchJikanEpisodes(malId: number, page: number = 1): Promi
         const response = await fetch(url);
         if (response.ok) {
             const data = await response.json();
+            if (data && data.data) {
+                data.data = filterReleasedEpisodes(data.data);
+            }
             try {
                 safeSetItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data }));
             } catch(e) {}

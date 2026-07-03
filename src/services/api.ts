@@ -4,6 +4,7 @@
  */
 
 import { AniListAnime } from "../types";
+import { filterReleasedAnime, isAnimeReleased } from "../utils/releaseGate";
 import { getAniListId, initializeFribbMapping } from "./fribb";
 
 export async function fetchJikanAnimeFeed(category?: string, searchWord?: string, page: number = 1): Promise<AniListAnime[]> {
@@ -65,7 +66,7 @@ export async function fetchJikanAnimeFeed(category?: string, searchWord?: string
     };
   }));
 
-  return result;
+  return filterReleasedAnime(result).filter(anime => anime.status !== "Not yet aired");
 }
 
 export async function fetchJikanAnimeDetails(id: number): Promise<AniListAnime | null> {
@@ -80,7 +81,7 @@ export async function fetchJikanAnimeDetails(id: number): Promise<AniListAnime |
 
   const anilistId = getAniListId(item.mal_id);
 
-  return {
+  const resultObj = {
       id: item.mal_id,
       anilistId: anilistId || undefined,
       title: {
@@ -107,4 +108,5 @@ export async function fetchJikanAnimeDetails(id: number): Promise<AniListAnime |
       synonyms: item.title_synonyms || [],
       format: item.type || "TV",
   };
+  if (!isAnimeReleased(resultObj)) throw new Error("Anime is unreleased"); return resultObj as AniListAnime;
 }

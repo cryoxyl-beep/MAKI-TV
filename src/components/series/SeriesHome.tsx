@@ -214,7 +214,7 @@ export default function SeriesHome() {
                       <div className="absolute inset-0 pointer-events-none z-10 top-auto h-2/3 bg-gradient-to-t from-[#09090b] via-[#09090b]/80 to-transparent" />
 
                       <div className="absolute inset-0 z-20 flex flex-col justify-end px-6 md:px-10 lg:px-14 py-8 lg:py-12 pb-12 md:pb-16 pointer-events-none wrapper">
-                        <div className="w-full h-full flex flex-col justify-end pointer-events-auto">
+                        <div className="w-full h-full flex flex-col justify-end pointer-events-auto cursor-pointer" onClick={() => navigate(`/series/show/${series.id}`)}>
                           <div className="max-w-3xl lg:max-w-4xl flex flex-col items-start gap-2">
                             {series.logo_path && !failedLogos[series.id] ? (
                               <motion.img
@@ -250,9 +250,7 @@ export default function SeriesHome() {
 
                             <div className="flex items-center gap-3 mt-3 md:mt-5 px-1">
                               <button
-                                onClick={() =>
-                                  navigate(`/series/watch/${series.id}/1/1`)
-                                }
+                                onClick={(e) => { e.stopPropagation(); navigate(`/series/watch/${series.id}/1/1`); }}
                                 className="px-6 py-2.5 md:px-8 md:py-3 bg-white/[0.08] hover:bg-white/[0.12] backdrop-blur-[20px] border border-white/[0.15] text-white font-bold rounded-md flex items-center gap-2 shadow-[0_8px_32px_rgba(0,0,0,0.2)] hover:shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer group"
                               >
                                 <Play className="w-5 h-5 fill-white stroke-none group-hover:scale-105 transition-transform" />
@@ -262,9 +260,7 @@ export default function SeriesHome() {
                               </button>
 
                               <button
-                                onClick={async () => {
-                                  await toggleLibrary(series as any);
-                                }}
+                                onClick={async (e) => { e.stopPropagation(); await toggleLibrary(series as any); }}
                                 className={`px-6 py-2.5 md:px-8 md:py-3 bg-white/[0.08] hover:bg-white/[0.12] backdrop-blur-[20px] border ${subscribed ? "border-white/[0.4]" : "border-white/[0.15]"} text-white font-bold rounded-md flex items-center gap-2 shadow-[0_8px_32px_rgba(0,0,0,0.2)] hover:shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer group`}
                               >
                                 <Bookmark

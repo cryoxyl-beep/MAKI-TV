@@ -93,7 +93,7 @@ export default function HomeFeed({
       // Also load new releases specifically for the shelf
       setIsNewReleasesLoading(true);
       fetchNewReleases(1).then(data => {
-        setNewReleases(data);
+        setNewReleases(data.filter(anime => anime.status !== "Not yet aired"));
         setIsNewReleasesLoading(false);
       }).catch(() => setIsNewReleasesLoading(false));
     }
@@ -120,6 +120,7 @@ export default function HomeFeed({
       const activeSearch = searchQuery ? searchQuery : undefined;
       const activeCategory = selectedCategory;
       let data = await fetchAnimeFeed(activeCategory, activeSearch, pageNum);
+      data = data.filter(anime => anime.status !== "Not yet aired");
 
       if (activeSearch) {
         const query = activeSearch;

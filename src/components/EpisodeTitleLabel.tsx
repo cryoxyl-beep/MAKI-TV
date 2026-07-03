@@ -1,3 +1,4 @@
+import { filterReleasedEpisodes } from "../utils/releaseGate";
 import { useState, useEffect } from "react";
 import { safeSetItem } from "../lib/cacheManager";
 
@@ -49,6 +50,7 @@ export function useEpisodeTitle(animeId: number, episodeNumber: number, fallback
         }
         
         const json = await response.json();
+        if (json.data) { json.data = filterReleasedEpisodes(json.data); }
         if (json.data) {
           safeSetItem(cacheKey, JSON.stringify({
             timestamp: Date.now(),

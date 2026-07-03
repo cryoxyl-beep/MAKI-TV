@@ -1,4 +1,7 @@
+import { filterReleasedMovies, filterReleasedSeries, isMovieReleased, isSeriesReleased, isSeasonReleased, isEpisodeReleased } from '../utils/releaseGate';
+
 export const TMDB_API_KEY = (import.meta as any).env.VITE_TMDB_API_KEY || "YOUR_TMDB_API_KEY"; // Ensure your TMDB API Key is in VITE_TMDB_API_KEY
+
 export const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 export const TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p/original";
 export const TMDB_IMAGE_BASE_URL_W500 = "https://image.tmdb.org/t/p/w500";
@@ -158,32 +161,147 @@ export const getLogoPath = async (type: 'movie' | 'tv', id: number): Promise<str
   return result;
 };
 
-export const getTrendingMovies = () => fetchFromTMDB<TMDBResponse<TMDBMovie>>('/trending/movie/day');
-export const getPopularMovies = () => fetchFromTMDB<TMDBResponse<TMDBMovie>>('/movie/popular');
-export const getTopRatedMovies = () => fetchFromTMDB<TMDBResponse<TMDBMovie>>('/movie/top_rated');
-export const getUpcomingMovies = () => fetchFromTMDB<TMDBResponse<TMDBMovie>>('/movie/upcoming');
-export const searchMovies = (query: string) => fetchFromTMDB<TMDBResponse<TMDBMovie>>('/search/movie', { query });
+export const getTrendingMovies = async () => {
+  const today = new Date().toISOString().split('T')[0];
+  const data = await fetchFromTMDB<TMDBResponse<TMDBMovie>>('/discover/movie', {
+    sort_by: 'popularity.desc',
+    'release_date.lte': today,
+  });
+  data.results = filterReleasedMovies(data.results);
+  return data;
+};
+export const getPopularMovies = async () => {
+  const today = new Date().toISOString().split('T')[0];
+  const data = await fetchFromTMDB<TMDBResponse<TMDBMovie>>('/discover/movie', {
+    sort_by: 'popularity.desc',
+    'release_date.lte': today,
+  });
+  data.results = filterReleasedMovies(data.results);
+  return data;
+};
+export const getTopRatedMovies = async () => {
+  const today = new Date().toISOString().split('T')[0];
+  const data = await fetchFromTMDB<TMDBResponse<TMDBMovie>>('/discover/movie', {
+    sort_by: 'vote_average.desc',
+    'vote_count.gte': '300',
+    'release_date.lte': today,
+  });
+  data.results = filterReleasedMovies(data.results);
+  return data;
+};
+export const getUpcomingMovies = async () => {
+  const today = new Date().toISOString().split('T')[0];
+  const lastMonth = new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const data = await fetchFromTMDB<TMDBResponse<TMDBMovie>>('/discover/movie', {
+    sort_by: 'popularity.desc',
+    'release_date.lte': today,
+    'release_date.gte': lastMonth,
+    with_release_type: '2|3|4|5|6'
+  });
+  data.results = filterReleasedMovies(data.results);
+  return data;
+};
+export const searchMovies = async (query: string) => {
+  const data = await fetchFromTMDB<TMDBResponse<TMDBMovie>>('/search/movie', { query });
+  data.results = filterReleasedMovies(data.results);
+  return data;
+};
 
 export const getMovieDetails = async (id: number): Promise<TMDBMovieDetails> => {
   const details = await fetchFromTMDB<TMDBMovieDetails>(`/movie/${id}`, { append_to_response: 'credits,recommendations' });
+  
+  if (!isMovieReleased(details)) {
+    throw new Error("Movie is unreleased");
+  }
+
   const logoUrl = await getLogoPath('movie', id);
   details.logo_path = logoUrl;
+  
+  if (details.recommendations?.results) {
+    details.recommendations.results = filterReleasedMovies(details.recommendations.results);
+  }
+  if (details.similar?.results) {
+    details.similar.results = filterReleasedMovies(details.similar.results);
+  }
+  
   return details;
 };
 
-export const getTrendingTV = () => fetchFromTMDB<TMDBResponse<TMDBTVShow>>('/trending/tv/day');
-export const getPopularTV = () => fetchFromTMDB<TMDBResponse<TMDBTVShow>>('/tv/popular');
-export const getTopRatedTV = () => fetchFromTMDB<TMDBResponse<TMDBTVShow>>('/tv/top_rated');
-export const getAiringThisWeekTV = () => fetchFromTMDB<TMDBResponse<TMDBTVShow>>('/tv/on_the_air');
-export const searchTV = (query: string) => fetchFromTMDB<TMDBResponse<TMDBTVShow>>('/search/tv', { query });
+export const getTrendingTV = async () => {
+  const today = new Date().toISOString().split('T')[0];
+  const data = await fetchFromTMDB<TMDBResponse<TMDBTVShow>>('/discover/tv', {
+    sort_by: 'popularity.desc',
+    'first_air_date.lte': today,
+  });
+  data.results = filterReleasedSeries(data.results);
+  return data;
+};
+export const getPopularTV = async () => {
+  const today = new Date().toISOString().split('T')[0];
+  const data = await fetchFromTMDB<TMDBResponse<TMDBTVShow>>('/discover/tv', {
+    sort_by: 'popularity.desc',
+    'first_air_date.lte': today,
+  });
+  data.results = filterReleasedSeries(data.results);
+  return data;
+};
+export const getTopRatedTV = async () => {
+  const today = new Date().toISOString().split('T')[0];
+  const data = await fetchFromTMDB<TMDBResponse<TMDBTVShow>>('/discover/tv', {
+    sort_by: 'vote_average.desc',
+    'vote_count.gte': '300',
+    'first_air_date.lte': today,
+  });
+  data.results = filterReleasedSeries(data.results);
+  return data;
+};
+export const getAiringThisWeekTV = async () => {
+  const today = new Date().toISOString().split('T')[0];
+  const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const data = await fetchFromTMDB<TMDBResponse<TMDBTVShow>>('/discover/tv', {
+    sort_by: 'popularity.desc',
+    'air_date.lte': nextWeek,
+    'air_date.gte': today,
+    'first_air_date.lte': today,
+  });
+  data.results = filterReleasedSeries(data.results);
+  return data;
+};
+export const searchTV = async (query: string) => {
+  const data = await fetchFromTMDB<TMDBResponse<TMDBTVShow>>('/search/tv', { query });
+  data.results = filterReleasedSeries(data.results);
+  return data;
+};
 
 export const getTVDetails = async (id: number): Promise<TMDBTVDetails> => {
   const details = await fetchFromTMDB<TMDBTVDetails>(`/tv/${id}`, { append_to_response: 'credits,recommendations' });
+  
+  if (!isSeriesReleased(details)) {
+    throw new Error("Series is unreleased");
+  }
+
   const logoUrl = await getLogoPath('tv', id);
   details.logo_path = logoUrl;
+  
+  if (details.recommendations?.results) {
+    details.recommendations.results = filterReleasedSeries(details.recommendations.results);
+  }
+  if (details.similar?.results) {
+    details.similar.results = filterReleasedSeries(details.similar.results);
+  }
+  if (details.seasons) {
+    details.seasons = details.seasons.filter(isSeasonReleased);
+  }
+  
   return details;
 };
 
 export const getTVExternalIds = (id: number) => fetchFromTMDB<{ id: number; tvdb_id: number | null }>(`/tv/${id}/external_ids`);
 
-export const getTVSeasonDetails = (seriesId: number, seasonNumber: number) => fetchFromTMDB<TMDBSeasonDetails>(`/tv/${seriesId}/season/${seasonNumber}`);
+export const getTVSeasonDetails = async (seriesId: number, seasonNumber: number) => {
+  const data = await fetchFromTMDB<TMDBSeasonDetails>(`/tv/${seriesId}/season/${seasonNumber}`);
+  if (data.episodes) {
+    data.episodes = data.episodes.filter(isEpisodeReleased);
+  }
+  return data;
+};

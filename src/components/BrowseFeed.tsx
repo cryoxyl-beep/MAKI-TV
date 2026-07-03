@@ -75,7 +75,8 @@ export default function BrowseFeed({ onSelectAnime }: BrowseFeedProps) {
 
     try {
       const categoryParam = genreId === "trending" ? "Trending" : `id:${genreId}`;
-      const data = await fetchAnimeFeed(categoryParam, "", pageNum);
+      let data = await fetchAnimeFeed(categoryParam, "", pageNum);
+      data = data.filter(anime => anime.status !== "Not yet aired");
       
       if (data.length < 25) setHasMore(false);
 

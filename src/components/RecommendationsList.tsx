@@ -1,3 +1,4 @@
+import { filterReleasedAnime } from "../utils/releaseGate";
 import React, { useEffect, useState } from 'react';
 import LazyImage from "./LazyImage";
 
@@ -48,6 +49,12 @@ export default function RecommendationsList({ anilistId, onNavigateToChannel, li
                       romaji
                       userPreferred
                     }
+                    status
+                    startDate {
+                      year
+                      month
+                      day
+                    }
                     coverImage {
                       large
                       medium
@@ -65,6 +72,8 @@ export default function RecommendationsList({ anilistId, onNavigateToChannel, li
                   node {
                     id
                     idMal
+                    status
+                    startDate { year month day }
                     title {
                       english
                       romaji
@@ -102,13 +111,13 @@ export default function RecommendationsList({ anilistId, onNavigateToChannel, li
           let recs: Recommendation[] = [];
           
           if (json.data.Media.recommendations?.nodes?.length > 0) {
-            recs = json.data.Media.recommendations.nodes
+            recs = filterReleasedAnime(json.data.Media.recommendations.nodes
               .map((n: any) => n.mediaRecommendation)
-              .filter(Boolean);
+              .filter(Boolean));
           } else if (json.data.Media.relations?.edges?.length > 0) {
-            recs = json.data.Media.relations.edges
+            recs = filterReleasedAnime(json.data.Media.relations.edges
               .map((e: any) => e.node)
-              .filter(Boolean);
+              .filter(Boolean));
           }
           
           if (limit) {

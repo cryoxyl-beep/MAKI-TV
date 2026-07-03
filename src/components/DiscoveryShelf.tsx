@@ -20,7 +20,8 @@ const DiscoveryShelf = React.memo(({ title, subtitle, category, onSelectAnime }:
     let mounted = true;
     async function load() {
       try {
-        const data = await fetchAnimeFeed(category, undefined, 1);
+        let data = await fetchAnimeFeed(category, undefined, 1);
+        data = data.filter(anime => anime.status !== "Not yet aired");
         if (mounted) {
           setAnimes(data.slice(0, 15)); // Take top 15 for shelf
         }

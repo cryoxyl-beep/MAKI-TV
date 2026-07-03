@@ -1,3 +1,4 @@
+import { filterReleasedEpisodes, isEpisodeReleased } from "../utils/releaseGate";
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -360,7 +361,7 @@ export default function WatchPage({
         if (res.ok) {
           const data = await res.json();
           if (mounted && data.data) {
-            setEpisodesMap(prev => ({ ...prev, [page]: data.data }));
+            setEpisodesMap(prev => ({ ...prev, [page]: filterReleasedEpisodes(data.data) }));
           }
         }
       } catch (e) {
@@ -379,7 +380,7 @@ export default function WatchPage({
         const res = await fetch(`https://api.jikan.moe/v4/anime/${animeId}/episodes/${episodeNumber}`);
         if (res.ok) {
           const data = await res.json();
-          if (mounted && data.data?.synopsis) {
+          if (mounted && data.data?.synopsis && isEpisodeReleased(data.data)) {
             setEpisodeDescription(data.data.synopsis);
           }
         }
