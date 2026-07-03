@@ -355,13 +355,17 @@ export default function VideoPlayer({
             if (!res.ok) throw new Error("Anineko HD failed");
             const data = await res.json();
             
-            const validHlsStreams = data.streams?.filter((s: any) => {
-              if (s.type !== "hls") return false;
-              if (s.url.includes("vibeplayer.site") || s.url.includes("playmogo") || s.url.includes("otakuhg") || s.url.includes("otakuvid")) return false;
-              return true;
-            }) || [];
+            let stream = data.streams?.find((s: any) => s.type === "hls" && s.url.includes("morning-credit-3bcc.vibevibe.workers.dev"));
             
-            let stream = validHlsStreams.find((s: any) => s.priority === 8) || validHlsStreams[0];
+            if (!stream) {
+              const validHlsStreams = data.streams?.filter((s: any) => {
+                if (s.type !== "hls") return false;
+                if (s.url.includes("vibeplayer.site") || s.url.includes("playmogo") || s.url.includes("otakuhg") || s.url.includes("otakuvid")) return false;
+                return true;
+              }) || [];
+              
+              stream = validHlsStreams.find((s: any) => s.priority === 8) || validHlsStreams[0];
+            }
 
             if (!stream && !canceled) {
               setNativeHlsError(true);

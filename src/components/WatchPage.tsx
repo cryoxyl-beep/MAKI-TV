@@ -217,6 +217,15 @@ export default function WatchPage({
   }, [jikanEpisodes, anime?.episodes]);
   const isLongRunning = episodesCount >= 100;
 
+  useEffect(() => {
+    const saved = localStorage.getItem("makitv_view_mode");
+    if (saved === "list" || saved === "grid") {
+      setViewMode(saved);
+    } else {
+      setViewMode(isLongRunning ? "grid" : "list");
+    }
+  }, [isLongRunning]);
+
   // Optimization: Memoize watch progress map to avoid repetitive localStorage hits during scroll
   const progressMap = useMemo(() => {
     if (!anime) return {};
@@ -636,8 +645,9 @@ export default function WatchPage({
                      <button 
                        onClick={() => setIsEpisodeDropdownOpen(!isEpisodeDropdownOpen)}
                        className="p-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-white/60 transition-colors cursor-pointer flex items-center justify-center w-8 h-8"
+                       title="Episode Range"
                      >
-                       <List className="w-4 h-4" />
+                       <ChevronDown className="w-4 h-4" />
                      </button>
                      <AnimatePresence>
                        {isEpisodeDropdownOpen && (
@@ -667,8 +677,16 @@ export default function WatchPage({
                      </AnimatePresence>
                    </div>
                  )}
-                 <button className="p-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-white/60 transition-colors cursor-pointer w-8 h-8 flex items-center justify-center">
-                   <Grid className="w-4 h-4" />
+                 <button 
+                   onClick={() => {
+                     const nextMode = viewMode === "list" ? "grid" : "list";
+                     setViewMode(nextMode);
+                     localStorage.setItem("makitv_view_mode", nextMode);
+                   }}
+                   className="p-1.5 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white rounded-lg transition-colors cursor-pointer w-8 h-8 flex items-center justify-center"
+                   title={viewMode === "list" ? "Switch to Grid View" : "Switch to List View"}
+                 >
+                   {viewMode === "list" ? <Grid className="w-4 h-4" /> : <List className="w-4 h-4" />}
                  </button>
               </div>
             </div>
@@ -717,7 +735,7 @@ export default function WatchPage({
                   });
                 }
 
-                if (viewMode === "grid" && isLongRunning) {
+                if (viewMode === "grid") {
                   return (
                     <motion.div
                       key="grid-view"
