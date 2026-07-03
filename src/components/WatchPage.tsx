@@ -1054,7 +1054,7 @@ export default function WatchPage({
                     <span>
                       {selectedProvider === "megaplay" ? "Kyou" :
                        selectedProvider === "origami" ? "Kami" :
-                       selectedProvider === "vidnest" ? "Haya" :
+                       selectedProvider === "vidnest" ? "Nest" :
                        selectedProvider === "animepahe" ? "Miru" :
                        selectedProvider === "cinesrc" ? "Taberu" :
                        selectedProvider === "vidfast" ? "Matsuri" :
@@ -1086,7 +1086,7 @@ export default function WatchPage({
                             { id: "megaplay", label: "Kyou" },
                             { id: "origami", label: "Kami" },
                             ...(anime?.anilistId ? [
-                              { id: "vidnest", label: "Haya" },
+                              { id: "vidnest", label: "Nest" },
                               { id: "animepahe", label: "Miru" }
                             ] : [])
                           ].map(provider => (

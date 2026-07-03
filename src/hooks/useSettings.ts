@@ -40,8 +40,8 @@ export interface AppSettings {
 export const defaultSettings: AppSettings = {
   playback: {
     defaultServer: "animegg",
-    defaultServerMovies: "cinesrc",
-    defaultServerSeries: "cinesrc",
+    defaultServerMovies: "vidnest",
+    defaultServerSeries: "vidnest",
     defaultAudio: "Auto",
     defaultSubtitle: "Auto",
     autoPlayNext: true,

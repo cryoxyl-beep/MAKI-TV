@@ -15,6 +15,7 @@ import { ChevronDown, Info, Bookmark, Clock, Flag } from "lucide-react";
 import { useMoviesData } from "../../hooks/useMoviesData";
 
 const MOVIE_PROVIDERS = [
+  { id: "vidnest", label: "Nest" },
   { id: "vidfast", label: "Matsuri" },
   { id: "movies111", label: "Onigiri" },
   { id: "cinesrc", label: "Taberu" },
@@ -31,7 +32,7 @@ export default function MovieWatch() {
 
   const getSettings = () => storage.get<any>("miyoro_settings", null);
   const defaultProvider =
-    getSettings()?.playback?.defaultServerMovies || "vidfast";
+    getSettings()?.playback?.defaultServerMovies || "vidnest";
   const [selectedProvider, setSelectedProvider] =
     useState<string>(defaultProvider);
 

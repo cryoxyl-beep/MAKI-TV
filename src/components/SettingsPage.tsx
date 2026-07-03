@@ -106,15 +106,16 @@ export default function SettingsPage() {
                     {label: "AniNeko (Neko)", value: "anineko"},
                     {label: "Kyou", value: "megaplay"},
                     {label: "Kami", value: "origami"},
-                    {label: "Haya", value: "vidnest"},
+                    {label: "Nest", value: "vidnest"},
                     {label: "Miru", value: "animepahe"}
                   ]}
                   onChange={(v) => handleUpdate("playback", "defaultServer", v)}
                 />
                 <SelectRow 
                   label="Default Start Server (Movies)" 
-                  value={settings.playback.defaultServerMovies || "cinesrc"}
+                  value={settings.playback.defaultServerMovies || "vidnest"}
                   options={[
+                    {label: "Nest", value: "vidnest"},
                     {label: "Taberu", value: "cinesrc"},
                     {label: "Matsuri", value: "vidfast"},
                     {label: "Onigiri", value: "movies111"}
@@ -123,8 +124,9 @@ export default function SettingsPage() {
                 />
                 <SelectRow 
                   label="Default Start Server (Series)" 
-                  value={settings.playback.defaultServerSeries || "cinesrc"}
+                  value={settings.playback.defaultServerSeries || "vidnest"}
                   options={[
+                    {label: "Nest", value: "vidnest"},
                     {label: "Taberu", value: "cinesrc"},
                     {label: "Matsuri", value: "vidfast"},
                     {label: "Onigiri", value: "movies111"}

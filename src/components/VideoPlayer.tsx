@@ -432,6 +432,8 @@ export default function VideoPlayer({
 
     if (mediaType === "movie") {
       switch (selectedProvider) {
+        case "vidnest":
+          return `https://vidnest.fun/movie/${tmdbId}`;
         case "cinesrc":
           return `https://cinesrc.st/embed/movie/${tmdbId}?color=%23ffffff&autoplay=true&autonext=true&autoskip=true`;
         case "vidfast":
@@ -443,6 +445,8 @@ export default function VideoPlayer({
       }
     } else {
       switch (selectedProvider) {
+        case "vidnest":
+          return `https://vidnest.fun/tv/${tmdbId}/${mappedSeason}/${mappedEpisode}`;
         case "cinesrc":
           return `https://cinesrc.st/embed/tv/${tmdbId}?s=${mappedSeason}&e=${mappedEpisode}&color=%23ffffff&autoplay=true&autonext=true&autoskip=true`;
         case "vidfast":
@@ -746,7 +750,7 @@ export default function VideoPlayer({
             allow="autoplay; fullscreen; picture-in-picture"
             allowFullScreen
             onLoad={handleIframeLoad}
-            title={`Haya Player: ${animeTitle}`}
+            title={`Nest Player: ${animeTitle}`}
           />
         </motion.div>
       ) : selectedProvider === "animepahe" ? (

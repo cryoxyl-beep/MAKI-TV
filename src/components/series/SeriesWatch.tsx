@@ -14,6 +14,7 @@ import { SeriesEpisodeImage } from "./SeriesEpisodeImage";
 import { getSeriesEpisodeThumbnail } from "../../services/thumbnails";
 
 const SERIES_PROVIDERS = [
+  { id: "vidnest", label: "Nest" },
   { id: "vidfast", label: "Matsuri" },
   { id: "movies111", label: "Onigiri" },
   { id: "cinesrc", label: "Taberu" }
@@ -32,7 +33,7 @@ export default function SeriesWatch() {
   const [logoError, setLogoError] = useState(false);
   
   const getSettings = () => storage.get<any>("miyoro_settings", null);
-  const defaultProvider = getSettings()?.playback?.defaultServerSeries || "vidfast";
+  const defaultProvider = getSettings()?.playback?.defaultServerSeries || "vidnest";
   const [selectedProvider, setSelectedProvider] = useState<string>(defaultProvider);
   
   const [isServerDropdownOpen, setIsServerDropdownOpen] = useState(false);
