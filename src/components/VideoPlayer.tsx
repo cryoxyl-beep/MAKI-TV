@@ -737,7 +737,7 @@ export default function VideoPlayer({
             />
           </motion.div>
         )
-      ) : selectedProvider === "vidnest" ? (
+      ) : selectedProvider === "vidnest" && isAnime ? (
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
