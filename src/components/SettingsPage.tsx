@@ -102,6 +102,8 @@ export default function SettingsPage() {
                   label="Default Start Server (Anime)" 
                   value={settings.playback.defaultServer}
                   options={[
+                    {label: "AniDB HD", value: "anidb-hd"},
+                    {label: "Neko HD", value: "anineko-hd"},
                     {label: "AnimeGG (GG)", value: "animegg"},
                     {label: "AniNeko (Neko)", value: "anineko"},
                     {label: "Kyou", value: "megaplay"},
