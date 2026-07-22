@@ -1,7 +1,7 @@
 import { db } from "../lib/firebase";
 import { 
   collection, doc, setDoc, getDoc, getDocs, query, where, 
-  onSnapshot, deleteDoc, updateDoc, serverTimestamp, arrayUnion, arrayRemove
+  onSnapshot, deleteDoc, updateDoc, serverTimestamp, arrayUnion, arrayRemove, runTransaction
 } from "firebase/firestore";
 import { User } from "firebase/auth";
 
@@ -21,6 +21,15 @@ export interface BoxdMember {
   joinedAt: any;
 }
 
+export interface BoxdEpisode {
+  id: string; // `${titleId}_${episodeId}`
+  titleId: string;
+  episodeId: string;
+  avgRating?: number;
+  ratingsCount?: number;
+  ratingsByUser?: Record<string, { rating: number; review: string; updatedAt: any }>;
+}
+
 export interface BoxdTitle {
   id: string; // Type + ID e.g. 'movie_123', 'anime_456'
   type: 'movie' | 'tv' | 'anime';
@@ -30,6 +39,9 @@ export interface BoxdTitle {
   backdrop: string;
   addedBy: string;
   addedAt: any;
+  avgRating?: number;
+  ratingsCount?: number;
+  ratingsByUser?: Record<string, { rating: number; review: string; updatedAt: any }>;
 }
 
 export interface BoxdRating {
@@ -141,6 +153,24 @@ export function subscribeToRatings(groupId: string, callback: (ratings: BoxdRati
   });
 }
 
+export function subscribeToTitle(groupId: string, titleId: string, callback: (title: BoxdTitle | null) => void) {
+  return onSnapshot(doc(db, `boxd/${groupId}/titles`, titleId), (docSnap) => {
+    if (docSnap.exists()) {
+      callback({ id: docSnap.id, ...docSnap.data() } as BoxdTitle);
+    } else {
+      callback(null);
+    }
+  });
+}
+
+export function subscribeToEpisodes(groupId: string, titleId: string, callback: (episodes: BoxdEpisode[]) => void) {
+  const q = query(collection(db, `boxd/${groupId}/episodes`), where("titleId", "==", titleId));
+  return onSnapshot(q, (snapshot) => {
+    const episodes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BoxdEpisode));
+    callback(episodes);
+  });
+}
+
 export async function addTitle(groupId: string, title: BoxdTitle) {
   const titleRef = doc(db, `boxd/${groupId}/titles`, title.id);
   const snap = await getDoc(titleRef);
@@ -169,18 +199,72 @@ export async function submitRating(
   const ratingId = episodeId ? `${titleId}_${episodeId}_${userId}` : `${titleId}_${userId}`;
   const ratingRef = doc(db, `boxd/${groupId}/ratings`, ratingId);
   
-  if (rating === 0 && !review) {
-    // Delete if 0 stars and no review
-    await deleteDoc(ratingRef);
-  } else {
-    await setDoc(ratingRef, {
-      id: ratingId,
-      titleId,
-      episodeId,
-      userId,
-      rating,
-      review,
-      updatedAt: serverTimestamp()
-    });
-  }
+  const entityRef = episodeId 
+    ? doc(db, `boxd/${groupId}/episodes`, `${titleId}_${episodeId}`)
+    : doc(db, `boxd/${groupId}/titles`, titleId);
+
+  await runTransaction(db, async (transaction) => {
+    // 1. Maintain legacy ratings collection
+    if (rating === 0 && !review) {
+      transaction.delete(ratingRef);
+    } else {
+      transaction.set(ratingRef, {
+        id: ratingId,
+        titleId,
+        episodeId,
+        userId,
+        rating,
+        review,
+        updatedAt: serverTimestamp()
+      });
+    }
+
+    // 2. Update the Title or Episode document with new averages
+    const entitySnap = await transaction.get(entityRef);
+    let entityData = entitySnap.exists() ? entitySnap.data() : null;
+    
+    // Initialize if it's a new episode document
+    if (!entityData && episodeId) {
+      entityData = {
+        id: `${titleId}_${episodeId}`,
+        titleId,
+        episodeId,
+        ratingsByUser: {},
+        avgRating: 0,
+        ratingsCount: 0
+      };
+    }
+
+    if (entityData) {
+      const ratingsByUser = entityData.ratingsByUser || {};
+      
+      if (rating === 0 && !review) {
+        delete ratingsByUser[userId];
+      } else {
+        ratingsByUser[userId] = {
+          rating,
+          review,
+          updatedAt: new Date().toISOString()
+        };
+      }
+
+      let sum = 0;
+      let count = 0;
+      for (const uid in ratingsByUser) {
+        if (ratingsByUser[uid].rating > 0) {
+          sum += ratingsByUser[uid].rating;
+          count++;
+        }
+      }
+
+      const avgRating = count > 0 ? sum / count : 0;
+
+      transaction.set(entityRef, {
+        ...entityData,
+        ratingsByUser,
+        avgRating,
+        ratingsCount: count
+      }, { merge: true });
+    }
+  });
 }

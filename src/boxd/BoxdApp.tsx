@@ -6,7 +6,6 @@ import Header from "../components/Header";
 import BoxdHome from "./BoxdHome";
 import BoxdGroupView from "./BoxdGroupView";
 import BoxdTitleView from "./BoxdTitleView";
-import BoxdEpisodeView from "./BoxdEpisodeView";
 
 export default function BoxdApp() {
   const [user, setUser] = useState<User | null>(null);
@@ -36,7 +35,6 @@ export default function BoxdApp() {
           <Route path="/" element={user ? <BoxdHome user={user} /> : <Navigate to="/" replace />} />
           <Route path="/:groupId" element={user ? <BoxdGroupView user={user} /> : <Navigate to="/" replace />} />
           <Route path="/:groupId/title/:titleId" element={user ? <BoxdTitleView user={user} /> : <Navigate to="/" replace />} />
-          <Route path="/:groupId/title/:titleId/episode/:episodeId" element={user ? <BoxdEpisodeView user={user} /> : <Navigate to="/" replace />} />
         </Routes>
       </div>
     </div>
