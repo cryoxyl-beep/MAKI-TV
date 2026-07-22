@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useRef } from "react";
-import { Search, X, ArrowLeft, Home, Clapperboard, History, LogOut, Menu, Users } from "lucide-react";
+import { Search, X, ArrowLeft, Home, Clapperboard, History, LogOut, Menu, Users, MoreVertical, LayoutGrid } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { signInWithGoogle, signOut, onAuthStateChanged } from "../services/auth";
 import { User } from "firebase/auth";
@@ -36,6 +36,7 @@ export default function Header({
 }: HeaderProps & { onNavigateSchedule?: () => void; variant?: "global" | "slim"; breadcrumbs?: { label: string; onClick?: () => void; color?: string }[] }) {
   const [searchVal, setSearchVal] = useState(initialSearchQuery);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [isFocused, setIsFocused] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -173,8 +174,22 @@ export default function Header({
           </form>
         ) : variant === "slim" ? (
           <div className="w-full h-full px-4 md:px-8 lg:px-10 flex items-center justify-between">
-            {/* Breadcrumb Left */}
+            {/* Breadcrumb Left & Logo */}
             <nav className="flex-1 flex items-center text-[15px] md:text-base font-semibold tracking-wide overflow-x-auto scrollbar-hide py-2 pr-4">
+              {breadcrumbs.length === 0 && (
+                <div className="flex items-center cursor-pointer group" onClick={onNavigateHome || (() => window.location.href = '/')}>
+                  <span className="text-xl md:text-2xl font-black tracking-wider bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-transparent hover:opacity-90 transition-all duration-300">
+                    miyoro
+                  </span>
+                </div>
+              )}
+              {breadcrumbs.length > 0 && (
+                <div className="flex items-center cursor-pointer group mr-4" onClick={onNavigateHome || (() => window.location.href = '/')}>
+                  <span className="text-xl font-black tracking-wider bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-transparent hover:opacity-90 transition-all duration-300">
+                    M
+                  </span>
+                </div>
+              )}
               {breadcrumbs.map((item, index) => {
                 const isLast = index === breadcrumbs.length - 1;
                 const isInteractive = !!item.onClick && !isLast;
@@ -266,19 +281,48 @@ export default function Header({
               </button>
 
               
-              {/* Boxd Collaborative */}
-              <div 
-                onClick={() => {
-                  if (currentUser) {
-                    navigate('/boxd');
-                  } else {
-                    setShowAuthModal(true);
-                  }
-                }}
-                className="w-[34px] h-[34px] rounded-full flex flex-shrink-0 items-center justify-center text-white/80 hover:text-white hover:bg-white/[0.08] cursor-pointer transition-all duration-300"
-                title="Boxd Collaborative"
-              >
-                <Users className="w-[18px] h-[18px]" />
+              {/* More Menu */}
+              <div className="relative">
+                <button 
+                  onClick={() => setShowMoreMenu(!showMoreMenu)}
+                  className="w-[34px] h-[34px] rounded-full flex flex-shrink-0 items-center justify-center text-white/80 hover:text-white hover:bg-white/[0.08] cursor-pointer transition-all duration-300"
+                  title="More Options"
+                >
+                  <MoreVertical className="w-[18px] h-[18px]" />
+                </button>
+                <AnimatePresence>
+                  {showMoreMenu && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setShowMoreMenu(false)} />
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                        className="absolute right-0 top-[calc(100%+8px)] w-56 bg-[#0a0a0c] border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50 p-2"
+                      >
+                        <div 
+                          onClick={() => {
+                            setShowMoreMenu(false);
+                            if (currentUser) {
+                              navigate('/boxd');
+                            } else {
+                              setShowAuthModal(true);
+                            }
+                          }}
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-white cursor-pointer transition-colors"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#ff6b35]/20 to-[#ffa585]/20 flex items-center justify-center border border-[#ff6b35]/30">
+                            <LayoutGrid className="w-4 h-4 text-[#ff6b35]" />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-sm">Boxd</span>
+                            <span className="text-[10px] text-white/50">Collaborative Ratings</span>
+                          </div>
+                        </div>
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
               </div>
 
               {/* User Profile Avatar */}
@@ -372,19 +416,48 @@ export default function Header({
               </button>
 
               
-              {/* Boxd Collaborative */}
-              <div 
-                onClick={() => {
-                  if (currentUser) {
-                    navigate('/boxd');
-                  } else {
-                    setShowAuthModal(true);
-                  }
-                }}
-                className="w-8.5 h-8.5 rounded-full flex flex-shrink-0 items-center justify-center text-white/80 hover:text-white hover:bg-white/[0.08] cursor-pointer transition-all duration-300"
-                title="Boxd Collaborative"
-              >
-                <Users className="w-5 h-5" />
+              {/* More Menu */}
+              <div className="relative">
+                <button 
+                  onClick={() => setShowMoreMenu(!showMoreMenu)}
+                  className="w-8.5 h-8.5 rounded-full flex flex-shrink-0 items-center justify-center text-white/80 hover:text-white hover:bg-white/[0.08] cursor-pointer transition-all duration-300"
+                  title="More Options"
+                >
+                  <MoreVertical className="w-5 h-5" />
+                </button>
+                <AnimatePresence>
+                  {showMoreMenu && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setShowMoreMenu(false)} />
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                        className="absolute right-0 top-[calc(100%+8px)] w-56 bg-[#0a0a0c]/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50 p-2"
+                      >
+                        <div 
+                          onClick={() => {
+                            setShowMoreMenu(false);
+                            if (currentUser) {
+                              navigate('/boxd');
+                            } else {
+                              setShowAuthModal(true);
+                            }
+                          }}
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-white cursor-pointer transition-colors"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#ff6b35]/20 to-[#ffa585]/20 flex items-center justify-center border border-[#ff6b35]/30">
+                            <LayoutGrid className="w-4 h-4 text-[#ff6b35]" />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-sm">Boxd</span>
+                            <span className="text-[10px] text-white/50">Collaborative Ratings</span>
+                          </div>
+                        </div>
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
               </div>
 
               {/* User Profile Avatar */}

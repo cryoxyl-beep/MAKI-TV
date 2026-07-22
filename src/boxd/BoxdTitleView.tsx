@@ -1,3 +1,4 @@
+import LazyImage from "../components/LazyImage";
 import React, { useState, useEffect } from "react";
 import { User } from "firebase/auth";
 import { useParams, useNavigate } from "react-router-dom";
@@ -195,7 +196,7 @@ export default function BoxdTitleView({ user }: { user: User }) {
       {/* Backdrop */}
       {title.backdrop && (
         <div className="absolute top-0 left-0 w-full h-[60vh] z-0 overflow-hidden pointer-events-none">
-          <img src={title.backdrop} alt={title.title} className="w-full h-full object-cover opacity-20" />
+          <LazyImage src={title.backdrop} alt={title.title} className="w-full h-full object-cover opacity-20" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#060608] via-[#060608]/80 to-transparent" />
         </div>
       )}
@@ -212,7 +213,7 @@ export default function BoxdTitleView({ user }: { user: User }) {
           {/* Poster */}
           <div className="w-[180px] md:w-[280px] flex-shrink-0 rounded-2xl overflow-hidden shadow-[0_20px_40px_rgba(0,0,0,0.4)] border border-white/10 relative">
             {title.poster ? (
-              <img src={title.poster} alt={title.title} className="w-full h-full object-cover" />
+              <LazyImage src={title.poster} alt={title.title} className="w-full h-full object-cover" />
             ) : (
               <div className="w-full aspect-[2/3] bg-white/5 flex items-center justify-center text-white/20">No Poster</div>
             )}
@@ -362,7 +363,7 @@ export default function BoxdTitleView({ user }: { user: User }) {
                         {/* Thumbnail */}
                         <div className="w-32 sm:w-40 aspect-video bg-black/40 flex-shrink-0 relative overflow-hidden">
                           {epImage ? (
-                            <img src={epImage} alt={epTitle} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                            <LazyImage src={epImage} alt={epTitle} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-white/10 text-xs font-bold">EP {epNumber}</div>
                           )}

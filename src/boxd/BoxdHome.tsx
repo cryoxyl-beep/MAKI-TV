@@ -3,6 +3,7 @@ import { User } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { subscribeToUserGroups, createGroup, getGroupByInviteCode, joinGroup, BoxdGroup } from "../services/boxd";
 import { Users, Plus, ArrowRight, Loader2, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function BoxdHome({ user }: { user: User }) {
   const navigate = useNavigate();
@@ -62,7 +63,12 @@ export default function BoxdHome({ user }: { user: User }) {
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-12 animate-fade-in">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="w-full max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-12">
+
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-12">
         <div>
           <h1 className="text-3xl md:text-5xl font-black tracking-tight mb-2">Boxd</h1>
@@ -123,9 +129,20 @@ export default function BoxdHome({ user }: { user: User }) {
       )}
 
       {/* Modals for Create/Join */}
+      <AnimatePresence>
       {(showCreate || showJoin) && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in">
-          <div className="w-full max-w-md bg-[#0a0a0c]/90 border border-white/10 p-6 md:p-8 rounded-3xl shadow-2xl relative">
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+          
+          <motion.div 
+            initial={{ scale: 0.95, opacity: 0, y: 10 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.95, opacity: 0, y: 10 }}
+            className="w-full max-w-md bg-[#0a0a0c]/90 border border-white/10 p-6 md:p-8 rounded-3xl shadow-2xl relative"
+          >
             <button 
               onClick={() => {
                 setShowCreate(false);
@@ -178,9 +195,10 @@ export default function BoxdHome({ user }: { user: User }) {
                 {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : showCreate ? "Create Group" : "Join"}
               </button>
             </form>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
-    </div>
+      </AnimatePresence>
+    </motion.div>
   );
 }

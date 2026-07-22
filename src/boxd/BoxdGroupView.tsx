@@ -1,3 +1,5 @@
+import { motion } from "framer-motion";
+import LazyImage from "../components/LazyImage";
 import React, { useState, useEffect } from "react";
 import { User } from "firebase/auth";
 import { useParams, useNavigate } from "react-router-dom";
@@ -57,7 +59,11 @@ export default function BoxdGroupView({ user }: { user: User }) {
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-10 pb-32 animate-fade-in">
+    <motion.div 
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="w-full max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-10 pb-32">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-10">
         <div className="flex items-center gap-4">
@@ -105,14 +111,21 @@ export default function BoxdGroupView({ user }: { user: User }) {
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-6">
               {titles.map(title => (
-                <div 
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.4 }}
                   key={title.id}
                   onClick={() => navigate(`/boxd/${group.id}/title/${title.id}`)}
                   className="group cursor-pointer flex flex-col gap-3 relative"
                 >
                   <div className="w-full aspect-[2/3] rounded-2xl overflow-hidden bg-white/5 relative border border-white/10 group-hover:border-white/30 transition-all duration-300 shadow-xl group-hover:shadow-2xl">
                     {title.poster ? (
-                      <img src={title.poster} alt={title.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      <LazyImage 
+                          src={title.poster} 
+                          alt={title.title} 
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                        />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-white/20 text-xs font-medium text-center p-2">No Poster</div>
                     )}
@@ -138,11 +151,11 @@ export default function BoxdGroupView({ user }: { user: User }) {
                       </div>
                     )}
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                </motion.div>
+                ))}
+              </div>
+            )}
+          </div>
 
         {/* Sidebar: Invite & Members */}
         <div className="flex flex-col gap-6">
@@ -188,7 +201,7 @@ export default function BoxdGroupView({ user }: { user: User }) {
                     <span className="text-xs text-white/40">Joined recently</span>
                   </div>
                 </div>
-              ))}
+                ))}
             </div>
           </div>
         </div>
@@ -201,6 +214,6 @@ export default function BoxdGroupView({ user }: { user: User }) {
           onClose={() => setShowAddModal(false)} 
         />
       )}
-    </div>
+    </motion.div>
   );
 }

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { User } from "firebase/auth";
 import { X, Search, Loader2 } from "lucide-react";
-import { searchMovies, searchTV, TMDB_IMAGE_BASE_URL_W500 } from "../services/tmdb";
+import LazyImage from "../components/LazyImage";
+import { searchMovies, searchTV, TMDB_IMAGE_BASE_URL_W500, getTrendingMovies, getTrendingTV } from "../services/tmdb";
 import { fetchAnimeFeed } from "../services/anilist";
 import { addTitle, BoxdTitle } from "../services/boxd";
 
@@ -15,8 +16,35 @@ export default function BoxdAddTitleModal({ groupId, user, onClose }: BoxdAddTit
   const [tab, setTab] = useState<'movie' | 'tv' | 'anime'>('movie');
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<any[]>([]);
+  const [recommendations, setRecommendations] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingRecs, setLoadingRecs] = useState(false);
   const [addingId, setAddingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchRecs = async () => {
+      setLoadingRecs(true);
+      try {
+        if (tab === 'movie') {
+          const data = await getTrendingMovies();
+          setRecommendations(data.results.slice(0, 12));
+        } else if (tab === 'tv') {
+          const data = await getTrendingTV();
+          setRecommendations(data.results.slice(0, 12));
+        } else if (tab === 'anime') {
+          const data = await fetchAnimeFeed("TRENDING_DESC");
+          setRecommendations(data.slice(0, 12));
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoadingRecs(false);
+      }
+    };
+    if (query.trim().length <= 2) {
+      fetchRecs();
+    }
+  }, [tab, query]);
 
   useEffect(() => {
     const delay = setTimeout(() => {
@@ -26,6 +54,7 @@ export default function BoxdAddTitleModal({ groupId, user, onClose }: BoxdAddTit
         setResults([]);
       }
     }, 500);
+
     return () => clearTimeout(delay);
   }, [query, tab]);
 
@@ -80,6 +109,9 @@ export default function BoxdAddTitleModal({ groupId, user, onClose }: BoxdAddTit
     }
   };
 
+  const displayList = results.length > 0 ? results : recommendations;
+  const isLoading = loading || (query.length <= 2 && loadingRecs);
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md transition-opacity duration-300">
       <div className="w-full max-w-4xl bg-[#0a0a0c]/95 border border-white/10 rounded-3xl shadow-2xl flex flex-col h-[85vh] max-h-[800px] overflow-hidden relative">
@@ -128,15 +160,15 @@ export default function BoxdAddTitleModal({ groupId, user, onClose }: BoxdAddTit
 
         {/* Results Grid */}
         <div className="flex-1 overflow-y-auto px-6 md:px-8 py-8 relative z-10">
-          {loading && results.length === 0 ? (
+          {isLoading && displayList.length === 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 animate-pulse">
               {Array.from({ length: 12 }).map((_, i) => (
                 <div key={i} className="aspect-[2/3] bg-white/5 rounded-xl"></div>
               ))}
             </div>
-          ) : results.length > 0 ? (
+          ) : displayList.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 lg:gap-6">
-              {results.map(item => {
+              {displayList.map(item => {
                 const isAnime = tab === 'anime';
                 const id = isAnime ? (item.idMal || item.id) : item.id;
                 const boxdId = `${tab}_${id}`;
@@ -150,7 +182,7 @@ export default function BoxdAddTitleModal({ groupId, user, onClose }: BoxdAddTit
                   <div key={id} className="flex flex-col gap-3 group relative cursor-pointer" onClick={() => handleAdd(item)}>
                     <div className="w-full aspect-[2/3] rounded-xl overflow-hidden bg-white/5 relative">
                       {poster ? (
-                        <img 
+                        <LazyImage 
                           src={poster} 
                           alt={title} 
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
@@ -182,12 +214,12 @@ export default function BoxdAddTitleModal({ groupId, user, onClose }: BoxdAddTit
               <p className="text-white/40 text-lg font-medium">No titles found for "{query}"</p>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center h-full text-center pb-20">
-              <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4 border border-white/10">
-                <Search className="w-8 h-8 text-white/20" />
-              </div>
-              <p className="text-white/40 text-lg font-medium">Search to add titles</p>
-            </div>
+             <div className="flex flex-col items-center justify-center h-full text-center pb-20">
+               <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4 border border-white/10">
+                 <Search className="w-8 h-8 text-white/20" />
+               </div>
+               <p className="text-white/40 text-lg font-medium">Search to add titles</p>
+             </div>
           )}
         </div>
         
