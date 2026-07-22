@@ -30,7 +30,7 @@ export default function LazyImage({
 }: LazyImageProps) {
   const isAlreadyLoaded = LOADED_IMAGES_CACHE.has(src);
   const [shouldLoad, setShouldLoad] = useState(isAlreadyLoaded);
-  const [isLoaded, setIsLoaded] = useState(isAlreadyLoaded);
+  const [isLoaded, setIsLoaded] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   // Call onLoadComplete immediately if already loaded
@@ -50,7 +50,7 @@ export default function LazyImage({
       if (src && !LOADED_IMAGES_CACHE.has(src)) {
         setIsLoaded(false);
       } else if (LOADED_IMAGES_CACHE.has(src)) {
-        setIsLoaded(true);
+        setIsLoaded(false);
         setShouldLoad(true);
       }
       prevSrcRef.current = src;

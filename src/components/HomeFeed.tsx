@@ -227,7 +227,7 @@ export default function HomeFeed({
               <SkeletonLoader type="shelf" />
             ) : (
               newReleases.length > 0 && (
-                <div className="flex flex-col gap-4 relative isolate mb-8 animate-fade-in">
+                <div className="flex flex-col gap-4 relative isolate mb-8 transition-opacity duration-300">
                   <div className="px-4 md:px-6 flex flex-col">
                     <h2 className="text-2xl font-bold text-[#f1f1f1] tracking-tight">New Releases</h2>
                     <p className="text-[13px] text-gray-400 font-medium mt-0.5">Fresh from this season</p>
@@ -251,7 +251,7 @@ export default function HomeFeed({
             isLoading ? (
               <SkeletonLoader type="shelf" />
             ) : (
-              <div className="flex flex-col gap-4 relative isolate mb-8 animate-fade-in">
+              <div className="flex flex-col gap-4 relative isolate mb-8 transition-opacity duration-300">
                 <div className="px-4 md:px-6 flex flex-col">
                   <h2 className="text-2xl font-bold text-[#f1f1f1] tracking-tight">Trending Now</h2>
                   <p className="text-[13px] text-gray-400 font-medium mt-0.5">Most watched this week</p>

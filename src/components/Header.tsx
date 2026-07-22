@@ -4,11 +4,11 @@
  */
 
 import React, { useState, useEffect, useRef } from "react";
-import { Search, X, ArrowLeft, Home, Clapperboard, History, LogOut, Menu } from "lucide-react";
+import { Search, X, ArrowLeft, Home, Clapperboard, History, LogOut, Menu, Users } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { signInWithGoogle, signOut, onAuthStateChanged } from "../services/auth";
 import { User } from "firebase/auth";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 interface HeaderProps {
   onSearch: (query: string) => void;
@@ -50,6 +50,7 @@ export default function Header({
 
   const inputRef = useRef<HTMLInputElement>(null);
   const location = useLocation();
+  const navigate = useNavigate();
 
   const getPlaceholderText = () => {
     if (location.pathname.startsWith("/movies")) {
@@ -264,6 +265,22 @@ export default function Header({
                 <Search className="w-[18px] h-[18px]" />
               </button>
 
+              
+              {/* Boxd Collaborative */}
+              <div 
+                onClick={() => {
+                  if (currentUser) {
+                    navigate('/boxd');
+                  } else {
+                    setShowAuthModal(true);
+                  }
+                }}
+                className="w-[34px] h-[34px] rounded-full flex flex-shrink-0 items-center justify-center text-white/80 hover:text-white hover:bg-white/[0.08] cursor-pointer transition-all duration-300"
+                title="Boxd Collaborative"
+              >
+                <Users className="w-[18px] h-[18px]" />
+              </div>
+
               {/* User Profile Avatar */}
               <div 
                 onClick={() => setShowAuthModal(true)}
@@ -353,6 +370,22 @@ export default function Header({
               >
                 <Search className="w-5 h-5" />
               </button>
+
+              
+              {/* Boxd Collaborative */}
+              <div 
+                onClick={() => {
+                  if (currentUser) {
+                    navigate('/boxd');
+                  } else {
+                    setShowAuthModal(true);
+                  }
+                }}
+                className="w-8.5 h-8.5 rounded-full flex flex-shrink-0 items-center justify-center text-white/80 hover:text-white hover:bg-white/[0.08] cursor-pointer transition-all duration-300"
+                title="Boxd Collaborative"
+              >
+                <Users className="w-5 h-5" />
+              </div>
 
               {/* User Profile Avatar */}
               <div 

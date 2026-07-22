@@ -43,7 +43,7 @@ const DiscoveryShelf = React.memo(({ title, subtitle, category, onSelectAnime }:
   if (animes.length === 0) return null;
 
   return (
-    <div className="flex flex-col gap-4 relative isolate mb-8 animate-fade-in">
+    <div className="flex flex-col gap-4 relative isolate mb-8 transition-opacity duration-300">
       {/* Shelf Header */}
       <div className="px-4 md:px-6 flex flex-col">
         <h2 className="text-2xl font-bold text-[#f1f1f1] tracking-tight">{title}</h2>

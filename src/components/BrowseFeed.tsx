@@ -181,7 +181,7 @@ export default function BrowseFeed({ onSelectAnime }: BrowseFeedProps) {
           </div>
         ) : (
           animeList.length > 0 && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-8 px-4 md:px-6 w-full select-none group/row animate-fade-in transition-opacity duration-300">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-8 px-4 md:px-6 w-full select-none group/row transition-opacity duration-300">
               {animeList.map((anime, index) => {
                 const isLastElement = index === animeList.length - 1;
                 return (
