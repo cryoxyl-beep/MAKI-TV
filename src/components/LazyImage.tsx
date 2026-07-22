@@ -18,6 +18,8 @@ interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
 // This prevents "flickering" or "re-fading" when components re-render or remount during scrolling.
 const LOADED_IMAGES_CACHE = new Set<string>();
 
+export const isImageCached = (url: string) => LOADED_IMAGES_CACHE.has(url);
+
 export default function LazyImage({
   src,
   alt,
@@ -30,6 +32,16 @@ export default function LazyImage({
   const [shouldLoad, setShouldLoad] = useState(isAlreadyLoaded);
   const [isLoaded, setIsLoaded] = useState(isAlreadyLoaded);
   const containerRef = useRef<HTMLDivElement | null>(null);
+
+  // Call onLoadComplete immediately if already loaded
+  const onLoadCompleteRef = useRef(onLoadComplete);
+  onLoadCompleteRef.current = onLoadComplete;
+
+  useEffect(() => {
+    if (isLoaded && onLoadCompleteRef.current) {
+      onLoadCompleteRef.current();
+    }
+  }, [isLoaded]);
 
   // Reset loaded status ONLY if src changes to a completely different URL
   const prevSrcRef = useRef<string>(src);

@@ -195,8 +195,15 @@ function HeroSlide({ trailer, isActive, isFirstSlide, onSelect, onEnded, onHeroL
   const [videoReady, setVideoReady] = useState(false);
   const [useBanner, setUseBanner] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
   const [metadata, setMetadata] = useState<AniListAnime | null>(null);
   const { isSubscribed, toggleSubscription, currentUser } = useLibrary();
+
+  useEffect(() => {
+    if (isFirstSlide && imgRef.current?.complete) {
+      onHeroLoad?.();
+    }
+  }, [isFirstSlide, onHeroLoad]);
 
   useEffect(() => {
     let mounted = true;
@@ -283,6 +290,7 @@ function HeroSlide({ trailer, isActive, isFirstSlide, onSelect, onEnded, onHeroL
     >
       {useBanner && (
         <img
+          ref={imgRef}
           src={trailer.heroBanner || trailer.trailerUrl.replace('.mp4', '.jpg')}
           alt={trailer.title}
           className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[400ms] ease-in-out ${videoReady ? 'opacity-0' : 'opacity-100'}`}

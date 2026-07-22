@@ -1,3 +1,4 @@
+import { fetchJikan } from "../services/fetchUtils";
 import { filterReleasedEpisodes } from "../utils/releaseGate";
 import { useState, useEffect } from "react";
 import { safeSetItem } from "../lib/cacheManager";
@@ -41,15 +42,7 @@ export function useEpisodeTitle(animeId: number, episodeNumber: number, fallback
 
       // Fetch from Jikan API (with basic 429 backoff)
       try {
-        const response = await fetch(`https://api.jikan.moe/v4/anime/${animeId}/episodes`);
-        if (!response.ok) {
-          if (response.status === 429) {
-             return;
-          }
-          throw new Error("Failed to fetch episodes");
-        }
-        
-        const json = await response.json();
+        const json = await fetchJikan(`https://api.jikan.moe/v4/anime/${animeId}/episodes`);
         if (json.data) { json.data = filterReleasedEpisodes(json.data); }
         if (json.data) {
           safeSetItem(cacheKey, JSON.stringify({

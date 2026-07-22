@@ -1,3 +1,4 @@
+import { fetchJikan } from "./fetchUtils";
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -5,6 +6,8 @@
 
 import { AniListAnime } from "../types";
 import { filterReleasedAnime, isAnimeReleased } from "../utils/releaseGate";
+import { enrichWithAniListImages } from "./anilist";
+// import { filterReleasedAnime, isAnimeReleased } from "../utils/releaseGate";
 import { getAniListId, initializeFribbMapping } from "./fribb";
 
 export async function fetchJikanAnimeFeed(category?: string, searchWord?: string, page: number = 1): Promise<AniListAnime[]> {
@@ -26,10 +29,8 @@ export async function fetchJikanAnimeFeed(category?: string, searchWord?: string
     }
   }
 
-  const response = await fetch(url);
-  if (!response.ok) throw new Error("Jikan API error");
-  const json = await response.json();
-  const jikanData = json.data || [];
+  const json = await fetchJikan(url);
+  const jikanData = json?.data || [];
 
   await initializeFribbMapping();
 
@@ -66,15 +67,15 @@ export async function fetchJikanAnimeFeed(category?: string, searchWord?: string
     };
   }));
 
-  return filterReleasedAnime(result).filter(anime => anime.status !== "Not yet aired");
+  const filtered = filterReleasedAnime(result).filter(anime => anime.status !== "Not yet aired");
+  await enrichWithAniListImages(filtered);
+  return filtered;
 }
 
 export async function fetchJikanAnimeDetails(id: number): Promise<AniListAnime | null> {
   const url = `https://api.jikan.moe/v4/anime/${id}`;
-  const response = await fetch(url);
-  if (!response.ok) return null;
-  const json = await response.json();
-  const item = json.data;
+  const json = await fetchJikan(url);
+  const item = json?.data;
   if (!item) return null;
 
   await initializeFribbMapping();
@@ -108,5 +109,7 @@ export async function fetchJikanAnimeDetails(id: number): Promise<AniListAnime |
       synonyms: item.title_synonyms || [],
       format: item.type || "TV",
   };
-  if (!isAnimeReleased(resultObj)) throw new Error("Anime is unreleased"); return resultObj as AniListAnime;
+  if (!isAnimeReleased(resultObj)) throw new Error("Anime is unreleased"); 
+  await enrichWithAniListImages([resultObj as AniListAnime]);
+  return resultObj as AniListAnime;
 }

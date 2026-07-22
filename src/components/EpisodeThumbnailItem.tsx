@@ -36,7 +36,6 @@ export const EpisodeThumbnailItem = React.memo(({
 
   useEffect(() => {
     let active = true;
-    setThumbnailSrc("");
 
     async function load() {
       // Fallback to sequential resolver (caches internally and respects source priority)
@@ -49,12 +48,12 @@ export const EpisodeThumbnailItem = React.memo(({
         tvdbThumbnailMap
       });
       if (active && src) {
-        setThumbnailSrc(src);
+        setThumbnailSrc(prev => prev !== src ? src : prev);
       }
     }
     load();
     return () => { active = false; };
-  }, [animeId, season, episode, fallbackImages, animeTitle, tvdbThumbnailMap]);
+  }, [animeId, season, episode, animeTitle, tvdbThumbnailMap]);
 
   return (
     <LazyImage

@@ -1,3 +1,4 @@
+import { fetchJikan } from "./fetchUtils";
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -138,19 +139,7 @@ export async function fetchAnimeFeed(category?: string, searchWord?: string, pag
     
     // We execute both requests in parallel using Promise.allSettled
     const [jikanRes, anilistRes] = await Promise.allSettled([
-      fetch(jikanUrl).then(async (res) => {
-        if (!res.ok) {
-          if (res.status === 429) {
-            await new Promise(r => setTimeout(r, 1000));
-            // Retry once
-            const retryRes = await fetch(jikanUrl);
-            if (!retryRes.ok) throw new Error("Retry Jikan failed");
-            return retryRes.json();
-          }
-          throw new Error("Jikan failed status: " + res.status);
-        }
-        return res.json();
-      }),
+      Promise.resolve(null),
       fetchAniList(ANILIST_SEARCH_QUERY, { search: q, page, perPage: 25 })
     ]);
 
@@ -269,94 +258,106 @@ export async function fetchAnimeFeed(category?: string, searchWord?: string, pag
     return filterReleasedAnime(mergedList).filter(anime => anime.status !== "Not yet aired");
   }
 
-  let url = `https://api.jikan.moe/v4/anime?page=${page}&limit=25`;
-  
-  if (!category || category === "All" || category === "Trending") {
-    url = `https://api.jikan.moe/v4/top/anime?page=${page}&limit=25`;
-  } else if (category === "Most Watched") {
-    url = `https://api.jikan.moe/v4/top/anime?filter=bypopularity&page=${page}&limit=25`;
-  } else if (category === "Currently Airing") {
-    url = `https://api.jikan.moe/v4/top/anime?filter=airing&page=${page}&limit=25`;
-  } else {
-    // Basic genre matching for Jikan categories (Action: 1, Adventure: 2, Comedy: 4, etc.)
-    const genreMap: Record<string, string> = {
-      "Action": "1", "Adventure": "2", "Comedy": "4", "Drama": "8", "Fantasy": "10", 
-      "Romance": "22", "Sci-Fi": "24", "Slice of Life": "36", "Supernatural": "37", 
-      "Mystery": "7", "Sports": "30", "Suspense": "41", "Horror": "14"
-    };
-    if (category && category.startsWith("id:")) {
-       const catId = category.split(":")[1];
-       url = `https://api.jikan.moe/v4/anime?genres=${catId}&page=${page}&limit=25&order_by=popularity`;
-    } else if (genreMap[category]) {
-       url = `https://api.jikan.moe/v4/anime?genres=${genreMap[category]}&page=${page}&limit=25&order_by=popularity`;
-    } else {
-       url = `https://api.jikan.moe/v4/top/anime?page=${page}&limit=25`;
-    }
-  }
+  return await fetchAniListCategoryFallback(category, page);
+}
 
-  const cacheKey = `jikan_cache_${btoa(url)}`;
-  const cached = localStorage.getItem(cacheKey);
-  if (cached) {
-      try {
-          const parsed = JSON.parse(cached);
-          if (Date.now() - parsed.timestamp < 24 * 60 * 60 * 1000) {
-              return parsed.data;
-          }
-      } catch (e) {}
-  }
+const MAL_GENRE_NAME_MAP: Record<string, string> = {
+  "1": "Action", "2": "Adventure", "4": "Comedy", "7": "Mystery", "8": "Drama",
+  "10": "Fantasy", "14": "Horror", "22": "Romance", "24": "Sci-Fi", "30": "Sports",
+  "36": "Slice of Life", "37": "Supernatural", "41": "Psychological", "44": "Award Winning",
+  "45": "Gourmet"
+};
 
-  try {
-    const response = await fetch(url);
-    if (!response.ok) {
-        if (response.status === 429) {
-          await new Promise(r => setTimeout(r, 1000));
-          return fetchAnimeFeed(category, searchWord, page);
+const ANILIST_CATEGORY_QUERY = `
+  query ($genre: String, $status: MediaStatus, $sort: [MediaSort], $page: Int, $perPage: Int) {
+    Page (page: $page, perPage: $perPage) {
+      media (genre: $genre, status: $status, type: ANIME, sort: $sort, status_not: NOT_YET_RELEASED) {
+        id
+        idMal
+        title {
+          romaji
+          english
+          native
+          userPreferred
         }
-        return [];
+        coverImage {
+          extraLarge
+          large
+          medium
+          color
+        }
+        bannerImage
+        episodes
+        season
+        seasonYear
+        status
+        popularity
+        averageScore
+        description
+        genres
+        synonyms
+        format
+      }
     }
-    const json = await response.json();
-    const jikanData = json.data || [];
+  }
+`;
 
-    await initializeFribbMapping();
+async function fetchAniListCategoryFallback(category?: string, page: number = 1): Promise<AniListAnime[]> {
+  try {
+    let genreName: string | undefined = undefined;
+    let status: string | undefined = undefined;
+    let sort: string[] = ["POPULARITY_DESC", "SCORE_DESC"];
 
-    const result: AniListAnime[] = jikanData.filter((item: any) => item.status !== "Not yet aired").map((item: any) => {
-      const anilistId = getAniListId(item.mal_id);
+    if (category === "Currently Airing") {
+      status = "RELEASING";
+      sort = ["POPULARITY_DESC"];
+    } else if (category === "Most Watched") {
+      sort = ["POPULARITY_DESC"];
+    } else if (category && category !== "All" && category !== "Trending") {
+      if (category.startsWith("id:")) {
+        const catId = category.split(":")[1];
+        genreName = MAL_GENRE_NAME_MAP[catId] || catId;
+      } else {
+        genreName = ANILIST_GENRE_MAP[category] || MAL_GENRE_NAME_MAP[category] || category;
+      }
+    } else {
+      sort = ["TRENDING_DESC", "POPULARITY_DESC"];
+    }
 
-      return {
-        id: item.mal_id,
-        anilistId: anilistId || undefined,
-        title: {
-          romaji: item.title,
-          english: item.title_english || item.title,
-          native: item.title_japanese,
-          userPreferred: item.title,
-        },
-        coverImage: {
-          extraLarge: item.images?.jpg?.large_image_url || item.images?.jpg?.image_url,
-          large: item.images?.jpg?.large_image_url || item.images?.jpg?.image_url,
-          medium: item.images?.jpg?.image_url,
-          color: "#ff6b35"
-        },
-        bannerImage: "",
-        episodes: item.episodes || 12,
-        season: item.season || "UNKNOWN",
-        seasonYear: item.year || 2024,
-        status: item.status || "UNKNOWN",
-        popularity: item.members || 0,
-        averageScore: Math.round((item.score || 0) * 10),
-        description: item.synopsis || "No description available.",
-        genres: item.genres?.map((g: any) => g.name) || [],
-        synonyms: [
-          ...(item.title_synonyms || []),
-          ...(item.titles?.map((t: any) => t.title) || [])
-        ].filter((val: string, idx: number, self: string[]) => val && self.indexOf(val) === idx),
-        format: item.type || "TV",
-      };
-    });
+    const variables: any = { page, perPage: 25, sort };
+    if (genreName) variables.genre = genreName;
+    if (status) variables.status = status;
 
-    try {
-        safeSetItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data: result }));
-    } catch(e) { }
+    const res = await fetchAniList(ANILIST_CATEGORY_QUERY, variables);
+    const mediaList = res?.Page?.media || [];
+
+    const result: AniListAnime[] = mediaList.map((m: any) => ({
+      id: m.idMal || m.id,
+      anilistId: m.id,
+      title: {
+        romaji: m.title?.romaji || "",
+        english: m.title?.english || m.title?.romaji || "",
+        native: m.title?.native || "",
+        userPreferred: m.title?.userPreferred || m.title?.english || m.title?.romaji || "",
+      },
+      coverImage: {
+        extraLarge: m.coverImage?.extraLarge || m.coverImage?.large || "",
+        large: m.coverImage?.large || m.coverImage?.extraLarge || "",
+        medium: m.coverImage?.medium || "",
+        color: m.coverImage?.color || "#ff6b35"
+      },
+      bannerImage: m.bannerImage || "",
+      episodes: m.episodes || 12,
+      season: m.season || "UNKNOWN",
+      seasonYear: m.seasonYear || 2024,
+      status: m.status || "UNKNOWN",
+      popularity: m.popularity || 0,
+      averageScore: m.averageScore || 0,
+      description: m.description || "No description available.",
+      genres: m.genres || [],
+      synonyms: m.synonyms || [],
+      format: m.format || "TV",
+    }));
 
     return filterReleasedAnime(result);
   } catch (err) {
@@ -382,11 +383,9 @@ export async function fetchAnimeDetails(id: number): Promise<AniListAnime | null
   let json: any = null;
 
   try {
-    const response = await fetch(url);
-    if (!response.ok) {
+    json = await fetchJikan(url);
+    if (!json || !json.data) {
       jikanFailed = true;
-    } else {
-      json = await response.json();
     }
   } catch (err) {
     jikanFailed = true;
@@ -590,71 +589,7 @@ export async function fetchAnimeDetails(id: number): Promise<AniListAnime | null
 }
 
 export async function fetchNewReleases(page: number = 1): Promise<AniListAnime[]> {
-  const url = `https://api.jikan.moe/v4/seasons/now?page=${page}&limit=25`;
-  const cacheKey = `jikan_cache_new_releases_${page}`;
-  const cached = localStorage.getItem(cacheKey);
-  if (cached) {
-    try {
-      const parsed = JSON.parse(cached);
-      if (Date.now() - parsed.timestamp < 24 * 60 * 60 * 1000) {
-        return parsed.data;
-      }
-    } catch (e) {}
-  }
-
-  try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      if (response.status === 429) {
-        await new Promise(r => setTimeout(r, 1000));
-        return fetchNewReleases(page);
-      }
-      return [];
-    }
-    const json = await response.json();
-    const jikanData = json.data || [];
-
-    await initializeFribbMapping();
-
-    const result: AniListAnime[] = jikanData.filter((item: any) => item.status !== "Not yet aired").map((item: any) => {
-      const anilistId = getAniListId(item.mal_id);
-      return {
-        id: item.mal_id,
-        anilistId: anilistId || undefined,
-        title: {
-          romaji: item.title,
-          english: item.title_english || item.title,
-          native: item.title_japanese,
-          userPreferred: item.title,
-        },
-        coverImage: {
-          extraLarge: item.images?.jpg?.large_image_url || item.images?.jpg?.image_url,
-          large: item.images?.jpg?.large_image_url || item.images?.jpg?.image_url,
-          medium: item.images?.jpg?.image_url,
-          color: "#ff6b35"
-        },
-        bannerImage: "",
-        episodes: item.episodes || 12,
-        season: item.season || "UNKNOWN",
-        seasonYear: item.year || 2024,
-        status: item.status || "UNKNOWN",
-        popularity: item.members || 0,
-        averageScore: Math.round((item.score || 0) * 10),
-        description: item.synopsis || "No description available.",
-        genres: item.genres?.map((g: any) => g.name) || [],
-        synonyms: item.title_synonyms || [],
-        format: item.type || "TV",
-      };
-    });
-
-    try {
-      safeSetItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data: result }));
-    } catch(e) { }
-
-    return filterReleasedAnime(result);
-  } catch (err) {
-    return [];
-  }
+  return await fetchAniListCategoryFallback("Currently Airing", page);
 }
 
 export function formatAiringStatus(status?: string): string {
@@ -729,17 +664,14 @@ export async function fetchJikanEpisodes(malId: number, page: number = 1): Promi
     }
 
     try {
-        const response = await fetch(url);
-        if (response.ok) {
-            const data = await response.json();
-            if (data && data.data) {
-                data.data = filterReleasedEpisodes(data.data);
-            }
-            try {
-                safeSetItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data }));
-            } catch(e) {}
-            return data;
+        const data = await fetchJikan(url);
+        if (data && data.data) {
+            data.data = filterReleasedEpisodes(data.data);
         }
+        try {
+            safeSetItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data }));
+        } catch(e) {}
+        return data;
     } catch(e) {}
     
     return null;
@@ -769,4 +701,45 @@ export async function fetchAllJikanEpisodes(malId: number): Promise<any[]> {
     }
     
     return allEpisodes;
+}
+
+export async function enrichWithAniListImages(results: AniListAnime[]): Promise<void> {
+  const malIds = results.map(r => r.id);
+  if (malIds.length === 0) return;
+  
+  const query = `
+    query ($idMal_in: [Int]) {
+      Page(page: 1, perPage: 50) {
+        media(idMal_in: $idMal_in, type: ANIME) {
+          idMal
+          coverImage { extraLarge large medium color }
+          bannerImage
+        }
+      }
+    }
+  `;
+  try {
+    const aniData = await fetchAniList(query, { idMal_in: malIds });
+    const mediaList = aniData?.Page?.media || [];
+    const aniMap = new Map();
+    for (const m of mediaList) {
+      if (m.idMal) aniMap.set(m.idMal, m);
+    }
+    for (const r of results) {
+      const aniMedia = aniMap.get(r.id);
+      if (aniMedia) {
+        if (aniMedia.coverImage) {
+          r.coverImage = {
+            extraLarge: aniMedia.coverImage.extraLarge || aniMedia.coverImage.large || r.coverImage.extraLarge,
+            large: aniMedia.coverImage.large || aniMedia.coverImage.extraLarge || r.coverImage.large,
+            medium: aniMedia.coverImage.medium || r.coverImage.medium,
+            color: aniMedia.coverImage.color || r.coverImage.color
+          };
+        }
+        if (aniMedia.bannerImage) {
+          r.bannerImage = aniMedia.bannerImage;
+        }
+      }
+    }
+  } catch (err) {}
 }

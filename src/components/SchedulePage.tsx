@@ -1,3 +1,4 @@
+import { fetchJikan } from "../services/fetchUtils";
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Calendar } from "lucide-react";
@@ -76,6 +77,82 @@ function formatCountdown(targetUnix: number): { text: string; state: "live" | "s
   return { text: `Airs in ${minutes}m`, state: "normal" };
 }
 
+async function fetchAniListScheduleForDay(dayIndex: number): Promise<ScheduleAnime[]> {
+  const now = new Date();
+  const currentDay = (now.getDay() + 6) % 7; // 0 = Monday ... 6 = Sunday
+  let daysDiff = dayIndex - currentDay;
+
+  const targetDate = new Date();
+  targetDate.setDate(now.getDate() + daysDiff);
+  targetDate.setHours(0, 0, 0, 0);
+  const startUnix = Math.floor(targetDate.getTime() / 1000);
+
+  const endDate = new Date(targetDate);
+  endDate.setHours(23, 59, 59, 999);
+  const endUnix = Math.floor(endDate.getTime() / 1000);
+
+  const query = `
+    query ($airingAt_greater: Int, $airingAt_lesser: Int) {
+      Page(page: 1, perPage: 50) {
+        airingSchedules(airingAt_greater: $airingAt_greater, airingAt_lesser: $airingAt_lesser, sort: TIME) {
+          id
+          airingAt
+          timeUntilAiring
+          episode
+          media {
+            id
+            idMal
+            title {
+              userPreferred
+              english
+              romaji
+            }
+            coverImage {
+              extraLarge
+              large
+            }
+            bannerImage
+            format
+          }
+        }
+      }
+    }
+  `;
+
+  try {
+    const aniData = await fetchAniList(query, { airingAt_greater: startUnix, airingAt_lesser: endUnix });
+    const schedules = aniData?.Page?.airingSchedules || [];
+    const seen = new Set<number>();
+    const results: ScheduleAnime[] = [];
+
+    for (const item of schedules) {
+      if (!item.media) continue;
+      const malId = item.media.idMal || item.media.id;
+      if (seen.has(malId)) continue;
+      seen.add(malId);
+
+      const airDate = new Date(item.airingAt * 1000);
+      const broadcastTime = airDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
+
+      results.push({
+        mal_id: malId,
+        title: item.media.title?.english || item.media.title?.userPreferred || item.media.title?.romaji || "Anime",
+        image: item.media.coverImage?.extraLarge || item.media.coverImage?.large || "",
+        bannerImage: item.media.bannerImage || "",
+        format: item.media.format || "TV",
+        broadcastTimeJST: broadcastTime,
+        airingAtUnix: item.airingAt,
+        episode: item.episode,
+        anilistId: item.media.id
+      });
+    }
+
+    return results;
+  } catch (err) {
+    return [];
+  }
+}
+
 export default function SchedulePage({ onSelectAnime }: SchedulePageProps) {
   const [selectedDay, setSelectedDay] = useState<number>(() => (new Date().getDay() + 6) % 7);
   const [scheduleData, setScheduleData] = useState<Record<number, ScheduleAnime[]>>({});
@@ -98,18 +175,10 @@ export default function SchedulePage({ onSelectAnime }: SchedulePageProps) {
       }
 
       const dayString = DAYS[dayIndex];
-      const res = await fetch(`https://api.jikan.moe/v4/schedules?filter=${dayString}`);
-      let json = await res.json();
-      if (!res.ok || json.error) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        const retry = await fetch(`https://api.jikan.moe/v4/schedules?filter=${dayString}`);
-        const retryJson = await retry.json();
-        if (retryJson.error) throw new Error(retryJson.error);
-        json = retryJson;
-      }
+      const json = await fetchJikan(`https://api.jikan.moe/v4/schedules?filter=${dayString}`);
       
       const initAnimes: ScheduleAnime[] = [];
-      const data = json.data || [];
+      const data = json?.data || [];
       const seenIds = new Set<number>();
       
       const malIdsToFetch: number[] = [];
@@ -137,8 +206,12 @@ export default function SchedulePage({ onSelectAnime }: SchedulePageProps) {
         });
       }
 
-      // Batch fetch from AniList to overwrite Jikan images with AniList ones & get banners
-      if (malIdsToFetch.length > 0) {
+      // If Jikan schedule returns nothing or failed, fetch directly from AniList schedule
+      if (initAnimes.length === 0) {
+        const fallbackSchedules = await fetchAniListScheduleForDay(dayIndex);
+        initAnimes.push(...fallbackSchedules);
+      } else if (malIdsToFetch.length > 0) {
+        // Batch fetch from AniList to overwrite Jikan images with AniList ones & get banners
         try {
           const query = `
             query ($idMal_in: [Int]) {

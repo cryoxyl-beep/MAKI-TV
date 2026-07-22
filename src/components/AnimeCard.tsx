@@ -7,8 +7,7 @@ import { AniListAnime } from "../types";
 import { formatAiringStatus } from "../services/anilist";
 import { Star, Play, Tv } from "lucide-react";
 import React, { useState } from "react";
-import LazyImage from "./LazyImage";
-import { motion } from "motion/react";
+import LazyImage, { isImageCached } from "./LazyImage";
 
 interface AnimeCardProps {
   anime: AniListAnime;
@@ -18,8 +17,9 @@ interface AnimeCardProps {
 }
 
 export const AnimeCard = React.memo(({ anime, onClick, layout = "grid", index = 0 }: AnimeCardProps) => {
-  const [isCardReady, setIsCardReady] = useState(false);
-  const [rotate, setRotate] = useState({ x: 0, y: 0 });
+  const poster = anime.coverImage?.extraLarge || anime.coverImage?.large || anime.bannerImage || "";
+  const thumbnail = anime.bannerImage || anime.coverImage?.extraLarge || anime.coverImage?.large || "";
+    const [rotate, setRotate] = useState({ x: 0, y: 0 });
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     // Only apply on devices with hover capability
@@ -48,26 +48,17 @@ export const AnimeCard = React.memo(({ anime, onClick, layout = "grid", index = 
   
   // Choose the best thumbnail. Banner image has custom 16:9 feel, but cover image is often higher quality.
   // For Youtube visual, 16:9 ratio is critical, so we use bannerImage if available, fallback to coverImage.
-  const thumbnail = anime.bannerImage || anime.coverImage.extraLarge || anime.coverImage.large || "";
   
   // Dynamic status/season detail
   const episodesCount = anime.episodes ? `${anime.episodes} eps` : "Ongoing";
   const studioName = anime.studios?.nodes?.[0]?.name || anime.format || "Anime Studio";
 
   // Animation configuration
-  const motionProps = {
-    initial: { opacity: 0, y: 24 },
-    whileInView: { opacity: 1, y: 0 },
-    viewport: { once: true, amount: 0.1 },
-    transition: { duration: 0.4, ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number], delay: Math.min(index * 0.03, 0.2) }
-  };
-
   // Layout specific classes
   if (layout === "list") {
     // Search result list layout: Ultra-Clean Streaming Platform Row
     return (
-      <motion.div
-        {...motionProps}
+      <div
         onClick={onClick}
         className="flex flex-col sm:flex-row gap-5 md:gap-6 py-4 px-2 sm:px-4 rounded-xl hover:bg-white/[0.03] cursor-pointer transition-colors duration-200 group max-w-4xl"
       >
@@ -78,26 +69,22 @@ export const AnimeCard = React.memo(({ anime, onClick, layout = "grid", index = 
             alt={mainTitle}
             className="w-full h-full object-cover transition-transform duration-500 ease-out sm:group-hover:scale-[1.02]"
             referrerPolicy="no-referrer"
-            onLoadComplete={() => setIsCardReady(true)}
+            
           />
           {/* Action indicator on hover */}
-          {isCardReady && (
-            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-300">
+          <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-300">
               <div className="p-3 bg-white/20 backdrop-blur-md border border-white/20 rounded-full text-white shadow-lg transform scale-90 group-hover:scale-100 transition-transform duration-300">
                 <Play className="w-5 h-5 fill-white stroke-none" />
               </div>
             </div>
-          )}
-          {isCardReady && (
-            <span className="absolute bottom-2 right-2 px-1.5 py-0.5 bg-black/80 text-white text-[10px] font-bold rounded tracking-wide">
+          <span className="absolute bottom-2 right-2 px-1.5 py-0.5 bg-black/80 text-white text-[10px] font-bold rounded tracking-wide">
               {episodesCount}
             </span>
-          )}
         </div>
 
         {/* Content right */}
         <div className="flex-1 flex flex-col pt-1 min-w-0 justify-start relative">
-          <div className={`absolute top-1 left-0 right-0 space-y-4 animate-pulse pointer-events-none transition-opacity duration-300 ease-out ${isCardReady ? "opacity-0" : "opacity-100"}`}>
+          <div className="hidden">
             <div className="h-5 bg-white/[0.06] rounded-md w-3/4" />
             <div className="flex items-center gap-2 pt-0.5">
               <div className="h-3.5 bg-white/[0.04] rounded w-24" />
@@ -109,7 +96,7 @@ export const AnimeCard = React.memo(({ anime, onClick, layout = "grid", index = 
             </div>
           </div>
           
-          <div className={`flex flex-col min-w-0 transition-opacity duration-300 ease-out ${isCardReady ? "opacity-100" : "opacity-0"}`}>
+          <div className="flex flex-col min-w-0">
             <h3 className="text-white text-base md:text-xl font-bold leading-tight group-hover:text-white transition-colors truncate font-sans">
               {mainTitle}
             </h3>
@@ -147,15 +134,14 @@ export const AnimeCard = React.memo(({ anime, onClick, layout = "grid", index = 
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
     );
   }
 
   if (layout === "sidebar") {
     // Watch Page suggestions sidebar layout
     return (
-      <motion.div
-        {...motionProps}
+      <div
         onClick={onClick}
         className="flex gap-3 bg-[#0d0d11]/50 hover:bg-[#15151c] border border-transparent hover:border-white/[0.05] p-2.5 rounded-xl cursor-pointer transition-all duration-300 group hover:shadow-lg"
       >
@@ -165,21 +151,19 @@ export const AnimeCard = React.memo(({ anime, onClick, layout = "grid", index = 
             alt={mainTitle}
             className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500 ease-out"
             referrerPolicy="no-referrer"
-            onLoadComplete={() => setIsCardReady(true)}
+            
           />
-          {isCardReady && (
-            <span className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 bg-black/80 text-white text-[9px] font-bold rounded">
+          <span className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 bg-black/80 text-white text-[9px] font-bold rounded">
               {episodesCount}
             </span>
-          )}
         </div>
         <div className="flex-1 min-w-0 flex flex-col justify-center relative">
-          <div className={`absolute inset-0 flex flex-col justify-center space-y-2 animate-pulse pointer-events-none transition-opacity duration-300 ease-out z-10 ${isCardReady ? "opacity-0" : "opacity-100"}`}>
+          <div className="hidden">
             <div className="h-3.5 bg-white/[0.06] rounded w-11/12" />
             <div className="h-2.5 bg-white/[0.04] rounded w-2/3" />
           </div>
           
-          <div className={`flex flex-col justify-center min-w-0 transition-opacity duration-300 ease-out ${isCardReady ? "opacity-100" : "opacity-0"}`}>
+          <div className="flex flex-col justify-center min-w-0">
             <h4 className="text-white text-xs sm:text-sm font-bold leading-snug tracking-tight group-hover:text-[#ff6b35] transition-colors line-clamp-2 font-sans">
               {mainTitle}
             </h4>
@@ -191,18 +175,16 @@ export const AnimeCard = React.memo(({ anime, onClick, layout = "grid", index = 
             </span>
           </div>
         </div>
-      </motion.div>
+      </div>
     );
   }
 
   // Standard HOMEPAGE Premium Portrait Card Layout
-  const poster = anime.coverImage.extraLarge || anime.coverImage.large || anime.bannerImage || "";
   const year = anime.seasonYear || "TBA";
   const format = anime.format || "TV";
 
   return (
-    <motion.div
-      {...motionProps}
+    <div
       onClick={onClick}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
@@ -211,19 +193,10 @@ export const AnimeCard = React.memo(({ anime, onClick, layout = "grid", index = 
         width: "200px", 
       }}
     >
-      {/* SKELETON OVERLAY */}
-      <div className={`absolute inset-0 z-50 flex flex-col pointer-events-none transition-opacity duration-300 ease-out ${isCardReady ? "opacity-0" : "opacity-100"} transform-gpu`}>
-        <div className="relative w-[200px] flex-shrink-0 aspect-[2/3] rounded-[20px] shimmer-bone border border-white/[0.04] shadow-sm transform-gpu" style={{ transform: `perspective(1000px) rotateX(${rotate.x}deg) rotateY(${rotate.y}deg)` }} />
-        <div className="mt-3.5 flex flex-col gap-1.5 z-0 px-1">
-          <div className="space-y-2">
-            <div className="h-4 bg-white/[0.06] rounded w-11/12" />
-            <div className="h-3 bg-white/[0.03] rounded w-2/3" />
-          </div>
-        </div>
-      </div>
+      
 
       {/* ACTUAL CARD CONTENT */}
-      <div className={`flex flex-col transition-opacity duration-300 ease-out ${isCardReady ? "opacity-100" : "opacity-0"}`}>
+      <div className="flex flex-col">
         {/* 2:3 Poster Container with Dark Liquid Glass */}
         <div 
           className="relative w-[200px] aspect-[2/3] rounded-[20px] overflow-hidden bg-white/[0.04] backdrop-blur-[12px] border border-white/[0.08] shadow-lg sm:group-hover:shadow-[0_8px_30px_rgb(0,0,0,0.8)] sm:group-hover:border-white/[0.2] transition-transform duration-100 ease-out z-10 isolate group/wrapper transform-gpu"
@@ -235,7 +208,7 @@ export const AnimeCard = React.memo(({ anime, onClick, layout = "grid", index = 
             alt={mainTitle}
             className="w-full h-full object-cover transform sm:group-hover:scale-[1.04] transition-transform duration-300 ease-out"
             referrerPolicy="no-referrer"
-            onLoadComplete={() => setIsCardReady(true)}
+            
           />
           
           {/* Rating Badge (Floating Glass Pill) */}
@@ -278,7 +251,7 @@ export const AnimeCard = React.memo(({ anime, onClick, layout = "grid", index = 
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }, (prev, next) => {
   // Only re-render if core data changes. This prevents the "blanking" caused by unstable function references in loops.

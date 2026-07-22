@@ -1,3 +1,4 @@
+import { fetchJikan } from "../services/fetchUtils";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { fetchAnimeFeed } from "../services/anilist";
 import { AniListAnime } from "../types";
@@ -14,8 +15,26 @@ interface BrowseFeedProps {
   onSelectAnime: (id: number) => void;
 }
 
+const DEFAULT_GENRES: Genre[] = [
+  { mal_id: 1, name: "Action" },
+  { mal_id: 2, name: "Adventure" },
+  { mal_id: 4, name: "Comedy" },
+  { mal_id: 8, name: "Drama" },
+  { mal_id: 10, name: "Fantasy" },
+  { mal_id: 22, name: "Romance" },
+  { mal_id: 24, name: "Sci-Fi" },
+  { mal_id: 36, name: "Slice of Life" },
+  { mal_id: 37, name: "Supernatural" },
+  { mal_id: 7, name: "Mystery" },
+  { mal_id: 30, name: "Sports" },
+  { mal_id: 14, name: "Horror" },
+  { mal_id: 41, name: "Suspense" },
+  { mal_id: 44, name: "Award Winning" },
+  { mal_id: 45, name: "Gourmet" },
+];
+
 export default function BrowseFeed({ onSelectAnime }: BrowseFeedProps) {
-  const [genres, setGenres] = useState<Genre[]>([]);
+  const [genres, setGenres] = useState<Genre[]>(DEFAULT_GENRES);
   const [selectedGenreId, setSelectedGenreId] = useState<number | "trending">("trending");
   const [animeList, setAnimeList] = useState<AniListAnime[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -28,8 +47,7 @@ export default function BrowseFeed({ onSelectAnime }: BrowseFeedProps) {
 
   // Fetch genres on mount
   useEffect(() => {
-    fetch("https://api.jikan.moe/v4/genres/anime")
-      .then(r => r.json())
+    fetchJikan("https://api.jikan.moe/v4/genres/anime")
       .then(data => {
         if (data && data.data) {
           setGenres(data.data);

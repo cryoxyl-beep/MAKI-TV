@@ -1,3 +1,4 @@
+import { fetchJikan } from "../services/fetchUtils";
 import { filterReleasedEpisodes, isEpisodeReleased } from "../utils/releaseGate";
 /**
  * @license
@@ -357,12 +358,9 @@ export default function WatchPage({
     async function fetchEpisodesPage(page: number) {
       if (episodesMap[page]) return; // Already fetched
       try {
-        const res = await fetch(`https://api.jikan.moe/v4/anime/${animeId}/episodes?page=${page}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (mounted && data.data) {
-            setEpisodesMap(prev => ({ ...prev, [page]: filterReleasedEpisodes(data.data) }));
-          }
+        const data = await fetchJikan(`https://api.jikan.moe/v4/anime/${animeId}/episodes?page=${page}`);
+        if (mounted && data.data) {
+          setEpisodesMap(prev => ({ ...prev, [page]: filterReleasedEpisodes(data.data) }));
         }
       } catch (e) {
       }
@@ -377,12 +375,9 @@ export default function WatchPage({
     async function fetchEpisodeDetails() {
       try {
         setEpisodeDescription(null);
-        const res = await fetch(`https://api.jikan.moe/v4/anime/${animeId}/episodes/${episodeNumber}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (mounted && data.data?.synopsis && isEpisodeReleased(data.data)) {
-            setEpisodeDescription(data.data.synopsis);
-          }
+        const data = await fetchJikan(`https://api.jikan.moe/v4/anime/${animeId}/episodes/${episodeNumber}`);
+        if (mounted && data.data?.synopsis && isEpisodeReleased(data.data)) {
+          setEpisodeDescription(data.data.synopsis);
         }
       } catch (e) {
       }

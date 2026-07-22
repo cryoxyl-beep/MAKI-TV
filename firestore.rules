@@ -27,6 +27,20 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Movies, Series, Anime Cache Collections
+    match /movies/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    match /series/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    match /anime/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
     // Account-scoped Users master collection
     match /users/{userId} {
       allow read, write: if isOwner(userId);
