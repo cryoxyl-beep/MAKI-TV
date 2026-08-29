@@ -5,10 +5,12 @@ import MoviesApp from "./MoviesApp";
 import SeriesApp from "./SeriesApp";
 import BoxdApp from "./boxd/BoxdApp";
 import InviteRedirect from "./boxd/InviteRedirect";
+import MaintenanceNotice from "./components/MaintenanceNotice";
 
 export default function App() {
   return (
     <BrowserRouter>
+      <MaintenanceNotice />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/anime/*" element={<AnimeApp />} />
